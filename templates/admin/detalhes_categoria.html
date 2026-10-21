@@ -1,0 +1,127 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}
+Detalhes da Categoria | {{ categoria.nome }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO (WELCOME CARD) -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title">
+                <i class="bi bi-bookmarks me-2"></i>Detalhes da Categoria
+            </h1>
+            <p class="welcome-subtitle">
+                Visualização detalhada dos parâmetros de classificação de itens no FindLog.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'lista_categorias' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- COLUNA PRINCIPAL (DADOS DA CATEGORIA) -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4">
+                
+                <!-- IDENTIFICAÇÃO E STATUS -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-avatar-md">
+                            <i class="bi bi-tag-fill"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">{{ categoria.nome }}</h4>
+                            <span class="text-muted small">
+                                Código Identificador: <strong class="text-secondary">#{{ categoria.codigo }}</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if categoria.ativa %}
+                        <span class="badge-status badge-status-ativo">
+                            <i class="bi bi-check-circle-fill me-1"></i>Ativo
+                        </span>
+                        {% else %}
+                        <span class="badge-status badge-status-inativo">
+                            <i class="bi bi-dash-circle-fill me-1"></i>Inativo
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRADE DE PROPRIEDADES -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Identificador do Registro</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-hash profile-info-icon"></i>
+                            <span>{{ categoria.codigo }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Situação Cadastral</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-shield-check profile-info-icon"></i>
+                            <span>
+                                {% if categoria.ativa %}
+                                Disponível para novos cadastros
+                                {% else %}
+                                Bloqueada para classificação
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="profile-data-label">Descrição da Categoria</span>
+                        <div class="message-content-box mt-1">
+                            {{ categoria.descricao|default:"Nenhuma descrição detalhada informada para esta categoria." }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- COLUNA LATERAL (AÇÕES E INFORMAÇÕES) -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- CARD DE AÇÕES -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Ações</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'atualizar_categoria' categoria.pk %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar Categoria</span>
+                    </a>
+                    <a href="{% url 'lista_categorias' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Voltar para Lista</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CARD INFORMATIVO -->
+            <div class="card table-card security-notice-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Informações do Sistema</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Categorias configuradas como <strong>Ativas</strong> ficam instantaneamente visíveis na triagem e no cadastro de novos itens perdidos em todas as instituições vinculadas.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

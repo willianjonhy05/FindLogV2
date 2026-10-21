@@ -1,0 +1,238 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Detalhes da Sala | Sala {{ sala.numero }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title">
+                <i class="bi bi-door-closed me-2"></i>Detalhes da Sala
+            </h1>
+            <p class="welcome-subtitle">
+                Visualização completa das informações e dependências físicas da sala no FindLog.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'lista_salas' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- INFORMAÇÕES DA SALA -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4 h-100">
+                
+                <!-- HEADER DO AMBIENTE -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-avatar-md">
+                            <i class="bi bi-door-closed-fill"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">Sala {{ sala.numero }}</h4>
+                            <span class="text-muted small">Prédio / Bloco: <strong class="text-secondary">{{ sala.predio }}</strong></span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Badge de Status -->
+                        {% if sala.ativa or sala.ativo %}
+                            <span class="badge-status badge-status-ativo"><i class="bi bi-check-circle-fill me-1"></i>Ativa</span>
+                        {% else %}
+                            <span class="badge-status badge-status-inativo"><i class="bi bi-slash-circle-fill me-1"></i>Inativa</span>
+                        {% endif %}
+
+                        <!-- Tipos de Espaço -->
+                        {% if sala.laboratorio %}
+                            <span class="badge-role badge-role-manager"><i class="bi bi-cpu-fill me-1"></i>Laboratório</span>
+                        {% endif %}
+                        {% if sala.sala_de_aula %}
+                            <span class="badge-role badge-role-user"><i class="bi bi-book-fill me-1"></i>Sala de Aula</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRADE DE DADOS -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Número da Sala</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-hash profile-info-icon"></i>
+                            <span>{{ sala.numero }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Prédio / Edificação</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-building profile-info-icon"></i>
+                            <span>{{ sala.predio }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Andar / Pavimento</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-layers profile-info-icon"></i>
+                            <span>{{ sala.andar|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Ramal / Telefone</span>
+                        <div class="profile-data-value telefone-format">
+                            <i class="bi bi-telephone profile-info-icon"></i>
+                            <span>{{ sala.telefone_formatado|default:sala.telefone|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="profile-data-label">Instituição Vinculada</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-building-check profile-info-icon"></i>
+                            <span>
+                                {% if sala.instituicao %}
+                                    <a href="{% url 'detalhes_instituicao' sala.instituicao.pk %}" class="text-decoration-none fw-semibold">
+                                        {{ sala.instituicao.nome|default:sala.instituicao }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Nenhuma instituição vinculada</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="profile-data-label">Servidor(es) Responsável(is)</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-person-badge profile-info-icon"></i>
+                            <span>
+                                {% for servidor in servidores %}
+                                    <a href="{% url 'visualizar_usuario' servidor.pk %}" class="text-decoration-none fw-semibold">
+                                        {{ servidor.nome|default:servidor.username }}
+                                    </a>{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    <span class="text-muted">Nenhum servidor atribuído a esta sala</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="profile-data-label">Descrição e Observações</span>
+                        <div class="message-content-box mt-1 p-3 rounded bg-light border text-break">
+                            {{ sala.descricao|linebreaksbr|default:"Nenhuma descrição detalhada informada para esta sala." }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL DE AÇÕES -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- CARD DE GERENCIAMENTO -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Gerenciar Sala</h5>
+                <div class="d-grid gap-2">
+                    
+                    <!-- Botão Editar -->
+                    <a href="{% url 'editar_sala' sala.pk %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar Sala</span>
+                    </a>
+
+                    <!-- Botão Ativar / Desativar -->
+                    <a href="{% url 'alternar_status_sala' sala.pk %}" 
+                       class="btn {% if sala.ativa or sala.ativo %}btn-outline-warning text-dark{% else %}btn-success{% endif %} d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi {% if sala.ativa or sala.ativo %}bi-toggle-on fs-5{% else %}bi-toggle-off fs-5{% endif %}"></i>
+                        <span>{% if sala.ativa or sala.ativo %}Desativar Sala{% else %}Ativar Sala{% endif %}</span>
+                    </a>
+
+                    <!-- Botão Excluir -->
+                    <a href="{% url 'excluir_sala' sala.pk %}" 
+                       class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" 
+                       data-nome="a Sala {{ sala.numero }} ({{ sala.predio }})">
+                        <i class="bi bi-trash"></i>
+                        <span>Excluir Sala</span>
+                    </a>
+
+                    <a href="{% url 'lista_salas' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2 mt-1">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Voltar para Lista</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CARD INFORMATIVO -->
+            <div class="card table-card security-notice-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Identificador do Espaço</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Código de identificação física no sistema: <strong class="text-dark">#{{ sala.codigo|default:sala.pk }}</strong>.
+                    {% if not sala.ativa and not sala.ativo %}
+                        <span class="text-danger d-block mt-2 fw-semibold">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Esta sala encontra-se inativa para novos registros de achados e perdidos.
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir permanentemente esta sala?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Sala {{ sala.numero }}</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Certifique-se de que não haja itens ou gestores vinculados a este espaço físico.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'excluir_sala' sala.pk %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/formatar_dados.js' %}"></script>
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

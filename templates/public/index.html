@@ -1,0 +1,384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindLog | Gestão Inteligente de Achados e Perdidos</title>
+    <!-- Fonte Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body class="landing-body">
+
+    <!-- NAVBAR NAVEGAÇÃO FIXA -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <span class="logo-icon-wrapper">
+                    <i class="bi bi-search"></i>
+                </span>
+                <span class="logo-text text-white">Find<span class="logo-accent">Log</span></span>
+            </a>
+            <button class="navbar-toggler custom-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                aria-controls="menu" aria-expanded="false" aria-label="Alternar navegação">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="#vantagens">Vantagens</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#funciona">Como Funciona</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
+                    <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
+                        <a href="#" class="btn btn-primary-custom d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Área de Login</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7 text-center text-lg-start">
+                    <span class="hero-badge mb-3">
+                        <i class="bi bi-stars me-1"></i> Plataforma Corporativa & Educacional
+                    </span>
+                    <h1 class="hero-title mt-2">
+                        Transforme a gestão de achados e perdidos da sua instituição
+                    </h1>
+                    <p class="hero-subtitle mt-3">
+                        O FindLog é uma plataforma inteligente para escolas, universidades e empresas organizarem
+                        objetos encontrados, reduzirem extravios e oferecerem mais segurança para alunos, colaboradores
+                        e visitantes.
+                    </p>
+                    <div
+                        class="hero-cta-group mt-4 d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a href="#contato" class="btn btn-primary-custom btn-lg d-inline-flex align-items-center gap-2">
+                            <span>Solicitar Demonstração</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                        <a href="#funciona" class="btn btn-hero-secondary btn-lg">
+                            Conhecer Recursos
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="hero-card">
+                        <div class="hero-card-header d-flex align-items-center gap-3 mb-3">
+                            <div class="hero-card-icon">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <h4 class="hero-card-title mb-0">Gestão corporativa eficiente</h4>
+                        </div>
+                        <p class="hero-card-text">
+                            Centralize registros, acompanhe objetos encontrados e facilite a devolução para seus
+                            verdadeiros proprietários com agilidade.
+                        </p>
+                        <ul class="list-unstyled hero-feature-list mb-0">
+                            <li>
+                                <i class="bi bi-check-circle-fill hero-check-icon"></i>
+                                <span>Controle completo e catalogação dos itens</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill hero-check-icon"></i>
+                                <span>Histórico, logs e total rastreabilidade</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill hero-check-icon"></i>
+                                <span>Acesso seguro com múltiplos níveis de permissão</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO VANTAGENS -->
+    <section id="vantagens" class="benefits-section py-5">
+        <div class="container py-lg-4">
+            <div class="text-center section-header mb-5">
+                <span class="section-tag">Diferenciais</span>
+                <h2 class="section-title mt-2">Por que escolher o FindLog?</h2>
+                <p class="section-subtitle">Uma solução criada para tornar o processo de achados e perdidos simples,
+                    rápido e organizado.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card-benefit h-100">
+                        <div class="icon-box">
+                            <i class="bi bi-gear"></i>
+                        </div>
+                        <h5 class="card-benefit-title">Organização Automatizada</h5>
+                        <p class="card-benefit-text">Cadastre, categorize e acompanhe objetos encontrados em poucos
+                            cliques.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card-benefit h-100">
+                        <div class="icon-box">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h5 class="card-benefit-title">Segurança de Dados</h5>
+                        <p class="card-benefit-text">Informações protegidas com controle rigoroso de acesso e histórico
+                            completo.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card-benefit h-100">
+                        <div class="icon-box">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <h5 class="card-benefit-title">Economia de Tempo</h5>
+                        <p class="card-benefit-text">Reduza processos manuais e planilhas, agilizando a localização dos
+                            pertences.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card-benefit h-100">
+                        <div class="icon-box">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <h5 class="card-benefit-title">Menos Extravios</h5>
+                        <p class="card-benefit-text">Aumente exponencialmente a taxa de devolução para os donos
+                            originais.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO COMO FUNCIONA -->
+    <section id="funciona" class="steps-section py-5">
+        <div class="container py-lg-4">
+            <div class="text-center section-header mb-5">
+                <span class="section-tag">Fluxo Operacional</span>
+                <h2 class="section-title mt-2">Como funciona o sistema</h2>
+                <p class="section-subtitle">Três etapas simples para recuperar qualquer item com total controle.</p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-4">
+                    <div class="step-card h-100">
+                        <div class="step-number">1</div>
+                        <h5 class="step-title mt-4">Cadastro do Objeto</h5>
+                        <p class="step-text">A instituição ou o responsável pela sala registra o item com detalhes e
+                            foto na plataforma.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="step-card h-100">
+                        <div class="step-number">2</div>
+                        <h5 class="step-title mt-4">Centralização & Busca</h5>
+                        <p class="step-text">Os itens ficam catalogados por categoria, facilitando consultas e validação
+                            de posse.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="step-card h-100">
+                        <div class="step-number">3</div>
+                        <h5 class="step-title mt-4">Devolução Segura</h5>
+                        <p class="step-text">O proprietário é identificado, o termo de entrega é registrado e o pertence
+                            retorna ao dono.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO CONTATO -->
+    <section class="contact-section py-5" id="contato">
+        <div class="container py-lg-4">
+
+         {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="contact-card p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <span class="section-tag">Atendimento</span>
+                            <h2 class="section-title mt-2">Fale com nossa equipe</h2>
+                            <p class="section-subtitle">Tire suas dúvidas ou solicite uma apresentação institucional sob
+                                medida.</p>
+                        </div>
+
+                        <!-- FORMULÁRIO DE CONTATO -->
+
+                        <form method="POST" action="{% url 'home' %}">
+                            {% csrf_token %}
+
+                            <div class="row g-3 mb-4">
+
+                                <div class="col-md-6">
+                                    <label for="nome" class="form-label form-label-custom">
+                                        Nome Completo <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" placeholder="Ex: Maria Pereira"
+                                        class="form-control form-control-custom" id="nome" name="nome" maxlength="100"
+                                        value="{{ form_contato.nome.value|default:'' }}" required>
+                                    {% for erro in form_contato.nome.errors %}
+                                    <div class="text-danger small">{{ erro }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label form-label-custom">
+                                        E-mail Corporativo <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" class="form-control form-control-custom"
+                                        placeholder="exemplo@instituicao.com.br" id="email" name="email" maxlength="100"
+                                        value="{{ form_contato.email.value|default:'' }}" required>
+                                    {% for erro in form_contato.email.errors %}
+                                    <div class="text-danger small">{{ erro }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="telefone" class="form-label form-label-custom">
+                                        Telefone / WhatsApp <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="tel" class="form-control form-control-custom" id="telefone"
+                                        name="telefone" placeholder="(00) 00000-0000" maxlength="15"
+                                        value="{{ form_contato.telefone.value|default:'' }}" required>
+                                    {% for erro in form_contato.telefone.errors %}
+                                    <div class="text-danger small">{{ erro }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="assunto" class="form-label form-label-custom">
+                                        Assunto <span class="text-danger">*</span>
+                                    </label>
+                                   <select class="form-select form-select-custom {% if form_contato.assunto.errors %}is-invalid{% endif %}" id="assunto" name="assunto" required>
+                                        <option value="" disabled {% if not form_contato.assunto.value %}selected{% endif %}>
+                                            Selecione um assunto...
+                                        </option>
+
+                                        {% for valor, rotulo in form_contato.fields.assunto.choices %}
+                                            {% if valor %} {# Ignora a opção em branco padrão gerada pelo ModelChoice/CharField se houver #}
+                                            <option value="{{ valor }}" {% if form_contato.assunto.value == valor %}selected{% endif %}>
+                                                {{ rotulo }}
+                                            </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% for erro in form_contato.assunto.errors %}
+                                    <div class="text-danger small">{{ erro }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="mensagem" class="form-label form-label-custom">
+                                        Mensagem <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control form-control-custom" id="mensagem" name="mensagem"
+                                        rows="6" maxlength="2000"
+                                        placeholder="Conte como podemos ajudar a sua instituição..."
+                                        required>{{ form_contato.mensagem.value|default:'' }}</textarea>
+                                    {% for erro in form_contato.mensagem.errors %}
+                                    <div class="text-danger small">{{ erro }}</div>
+                                    {% endfor %}
+                                </div>
+
+                            </div>
+
+                            <div class="text-center text-md-end">
+                                <button type="submit" class="btn btn-primary-custom btn-lg px-4">
+                                    <i class="bi bi-send-fill me-1"></i>
+                                    Enviar mensagem
+                                </button>
+                            </div>
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="main-footer pt-5 pb-4">
+        <div class="container">
+            <div class="row g-4 pb-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="logo-icon-wrapper">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <span class="logo-text text-white fs-4 fw-bold">Find<span class="logo-accent">Log</span></span>
+                    </div>
+                    <p class="footer-description">
+                        Sistema inteligente e integrado para rastreabilidade, catalogação e gerenciamento de achados e
+                        perdidos corporativos e educacionais.
+                    </p>
+                </div>
+
+                <div class="col-lg-4 col-md-6 ps-lg-5">
+                    <h5 class="footer-heading mb-3">Links Rápidos</h5>
+                    <ul class="list-unstyled footer-nav">
+                        <li><a href="#vantagens">Vantagens da Plataforma</a></li>
+                        <li><a href="#funciona">Como Funciona</a></li>
+                        <li><a href="#contato">Fale com a Equipe</a></li>
+                        <li><a href="#">Acesso Administrativo</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h5 class="footer-heading mb-3">Contato Institucional</h5>
+                    <p class="footer-contact-item mb-2">
+                        <i class="bi bi-envelope me-2 footer-icon"></i> contato@findlog.com.br
+                    </p>
+                    <p class="footer-contact-item mb-2">
+                        <i class="bi bi-telephone me-2 footer-icon"></i> (86) 4000-2026
+                    </p>
+                    <p class="footer-contact-item mb-0">
+                        <i class="bi bi-geo-alt me-2 footer-icon"></i> Teresina / Piauí — Brasil
+                    </p>
+                </div>
+            </div>
+
+            <hr class="footer-divider my-4">
+
+            <div class="text-center footer-copy">
+                <p class="mb-1">© 2026 <strong>FindLog</strong> — Todos os direitos reservados.</p>
+                <p class="footer-team mb-0">Projeto desenvolvido pela Equipe Primeira Classe de Desenvolvimento</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts Bootstrap e Máscaras -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/mascara.js' %}"></script>
+</body>
+
+</html>

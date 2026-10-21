@@ -1,0 +1,215 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Novo Usuário{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-person-plus me-2"></i>Novo Usuário</h1>
+            <p class="welcome-subtitle">Cadastre um novo usuário no sistema definindo suas permissões e vínculos.</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- FORMULÁRIO -->
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'novo_usuario' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- SEÇÃO 1: INFORMAÇÕES PESSOAIS -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-person-badge me-2"></i>Informações Pessoais</h5>
+            </div>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-8">
+                    <label for="nome" class="form-label form-label-custom">Nome Completo <span class="text-danger">*</span></label>
+                    <input type="text" id="nome" name="nome" class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" placeholder="Ex: João da Silva" value="{{ form.nome.value|default:'' }}" required>
+                    {% for erro in form.nome.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label for="cpf" class="form-label form-label-custom">CPF <span class="text-danger">*</span></label>
+                    <input type="text" id="cpf" name="cpf" class="form-control form-control-custom {% if form.cpf.errors %}is-invalid{% endif %}" placeholder="000.000.000-00" maxlength="14" value="{{ form.cpf.value|default:'' }}" required>
+                    {% for erro in form.cpf.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="data_nascimento" class="form-label form-label-custom">Data de Nascimento <span class="text-danger">*</span></label>
+                    <input type="date" id="data_nascimento" name="data_nascimento" class="form-control form-control-custom {% if form.data_nascimento.errors %}is-invalid{% endif %}" value="{{ form.data_nascimento.value|default:'' }}" required>
+                    {% for erro in form.data_nascimento.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="telefone" class="form-label form-label-custom">Telefone / Celular</label>
+                    <input type="text" id="telefone" name="telefone" class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}" placeholder="(00) 00000-0000" value="{{ form.telefone.value|default:'' }}">
+                    {% for erro in form.telefone.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- SEÇÃO 2: CREDENCIAIS DE ACESSO -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-shield-lock me-2"></i>Credenciais de Acesso</h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <label for="email" class="form-label form-label-custom">E-mail (Login Principal) <span class="text-danger">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control form-control-custom {% if form.email.errors %}is-invalid{% endif %}" placeholder="exemplo@dominio.com" value="{{ form.email.value|default:'' }}" required>
+                    {% for erro in form.email.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="senha" class="form-label form-label-custom">Senha de Acesso <span class="text-danger">*</span></label>
+                    <input type="password" id="senha" name="senha" class="form-control form-control-custom {% if form.senha.errors %}is-invalid{% endif %}" placeholder="Mínimo de 6 caracteres" required>
+                    {% for erro in form.senha.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="confirmar_senha" class="form-label form-label-custom">Confirmar Senha <span class="text-danger">*</span></label>
+                    <input type="password" id="confirmar_senha" name="confirmar_senha" class="form-control form-control-custom {% if form.confirmar_senha.errors %}is-invalid{% endif %}" placeholder="Repita a senha digitada" required>
+                    {% for erro in form.confirmar_senha.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- SEÇÃO 3: VÍNCULO INSTITUCIONAL E PERMISSÕES -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-building me-2"></i>Vínculo Institucional e Papel</h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-6">
+                    <label for="instituicao_cnpj" class="form-label form-label-custom">Instituição Parceira <span class="text-danger">*</span></label>
+                    <select id="instituicao_cnpj" name="instituicao_cnpj" class="form-select form-select-custom {% if form.instituicao_cnpj.errors %}is-invalid{% endif %}" required>
+                        <option value="" disabled {% if not form.instituicao_cnpj.value %}selected{% endif %}>Selecione a instituição...</option>
+                        {% for inst in instituicoes %}
+                            <option value="{{ inst.cnpj }}" {% if form.instituicao_cnpj.value == inst.cnpj %}selected{% endif %}>
+                                {{ inst.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.instituicao_cnpj.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="tipo_usuario" class="form-label form-label-custom">Nível de Permissão (Tipo) <span class="text-danger">*</span></label>
+                    <select id="tipo_usuario" name="tipo" class="form-select form-select-custom {% if form.tipo.errors %}is-invalid{% endif %}" required>
+                        {% for valor, rotulo in tipos_usuario %}
+                            <option value="{{ valor }}" {% if form.tipo.value|stringformat:"s" == valor|stringformat:"s" or not form.tipo.value and valor == 2 %}selected{% endif %}>
+                                {{ rotulo }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.tipo.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Bloco condicional para Servidor de Sala (tipo = 3) -->
+                <div class="col-12" id="bloco_sala" style="display: none;">
+                    <div class="p-3 rounded border bg-light">
+                        <label for="sala_codigo" class="form-label form-label-custom">Sala de Responsabilidade <span class="text-danger">*</span></label>
+                        <select id="sala_codigo" name="sala_codigo" class="form-select form-select-custom {% if form.sala_codigo.errors %}is-invalid{% endif %}">
+                            <option value="" disabled {% if not form.sala_codigo.value %}selected{% endif %}>Selecione a sala vinculada...</option>
+                            {% for sala in salas %}
+                                <option value="{{ sala.pk }}" {% if form.sala_codigo.value|stringformat:"s" == sala.pk|stringformat:"s" %}selected{% endif %}>
+                                    Sala {{ sala.numero }} - Bloco/Prédio {{ sala.predio }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted mt-1 d-block">Este funcionário responderá pelos achados e perdidos desta sala.</small>
+                        {% for erro in form.sala_codigo.errors %}
+                            <div class="invalid-feedback d-block">{{ erro }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label for="foto" class="form-label form-label-custom">Foto de Identificação</label>
+                    <input type="file" id="foto" name="foto" class="form-control form-control-custom {% if form.foto.errors %}is-invalid{% endif %}" accept="image/*">
+                    <div class="form-text small text-muted">Formatos aceitos: JPG, PNG ou WEBP (Opcional).</div>
+                    {% for erro in form.foto.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary-custom">Cancelar</a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Usuário
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectTipo = document.getElementById('tipo_usuario');
+        const blocoSala = document.getElementById('bloco_sala');
+        const selectSala = document.getElementById('sala_codigo');
+
+        function verificarTipoUsuario() {
+            // Servidor = 3
+            if (selectTipo.value === '3') {
+                blocoSala.style.display = 'block';
+                selectSala.setAttribute('required', 'required');
+            } else {
+                blocoSala.style.display = 'none';
+                selectSala.removeAttribute('required');
+                selectSala.value = '';
+            }
+        }
+
+        verificarTipoUsuario();
+        selectTipo.addEventListener('change', verificarTipoUsuario);
+    });
+</script>
+{% endblock %}

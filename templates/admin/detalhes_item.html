@@ -1,0 +1,330 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Detalhes do Item | {{ item.nome|default:item.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-box-seam me-2"></i>Detalhes do Item</h1>
+            <p class="welcome-subtitle">Ficha cadastral completa, especificações físicas e rastreamento de devolução.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'lista_itens' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- COLUNA PRINCIPAL: DADOS E CARACTERÍSTICAS -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4 mb-4">
+                
+                <!-- HEADER DO OBJETO -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-avatar-md bg-light border text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                            <i class="bi bi-box-seam-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">{{ item.nome|default:"Item sem identificação formal" }}</h4>
+                            <span class="text-muted small">
+                                Código de Rastreamento: <strong class="text-secondary font-monospace">#{{ item.codigo }}</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if item.status == 1 %}
+                            <span class="badge bg-danger fs-6 px-3 py-2"><i class="bi bi-question-circle me-1"></i>Perdido</span>
+                        {% elif item.status == 2 %}
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2"><i class="bi bi-search me-1"></i>Encontrado</span>
+                        {% elif item.status == 3 %}
+                            <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Devolvido</span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">Outro</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRADE DE PROPRIEDADES FÍSICAS -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Categoria</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-bookmarks profile-info-icon"></i>
+                            <span>{{ item.categoria.nome|default:"Não categorizado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Instituição</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-building profile-info-icon"></i>
+                            <span>{{ item.instituicao.nome }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Marca / Modelo</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-tag profile-info-icon"></i>
+                            <span>{{ item.marca_ou_modelo|default:"Não especificado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Cor Predominante</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-palette profile-info-icon"></i>
+                            <span>{{ item.cor|default:"Não informada" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Material de Fabricação</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-layers profile-info-icon"></i>
+                            <span>{{ item.material|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Tamanho / Porte</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-arrows-fullscreen profile-info-icon"></i>
+                            <span>{{ item.tamanho|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Local Onde Foi Encontrado</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-geo-alt profile-info-icon"></i>
+                            <span>
+                                {% if item.local %}
+                                    Sala {{ item.local.numero }} ({{ item.local.predio }})
+                                {% else %}
+                                    Local não informado
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Local Atual de Armazenamento</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-shield-lock profile-info-icon"></i>
+                            <span>
+                                {% if item.local_guardado %}
+                                    Sala {{ item.local_guardado.numero }} ({{ item.local_guardado.predio }})
+                                {% else %}
+                                    Não guardado formalmente
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Usuário que Registrou</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-person profile-info-icon"></i>
+                            <span>{{ item.usuario_registro.nome|default:item.usuario_registro.username|default:"Sistema" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Dono / Proprietário Reconhecido</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-person-check profile-info-icon"></i>
+                            <span>
+                                {% if item.dono %}
+                                    <a href="{% url 'visualizar_usuario' item.dono.pk %}" class="fw-semibold text-decoration-none">
+                                        {{ item.dono.nome|default:item.dono.username }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Ainda não identificado</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if item.data_devolucao %}
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label text-success fw-bold">Data da Efetiva Devolução</span>
+                        <div class="profile-data-value text-success">
+                            <i class="bi bi-calendar-check profile-info-icon"></i>
+                            <span>{{ item.data_devolucao|date:"d/m/Y \à\s H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- DESCRIÇÃO DETALHADA -->
+                    <div class="col-12">
+                        <span class="profile-data-label">Descrição Pormenorizada</span>
+                        <div class="message-content-box mt-1 p-3 rounded bg-light border text-break">
+                            {{ item.descricao|linebreaksbr|default:"Nenhuma observação descritiva fornecida para este item." }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABELA DE REIVINDICAÇÕES RELACIONADAS AO ITEM -->
+            <div class="card table-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="card-section-title mb-0"><i class="bi bi-clipboard-data me-2"></i>Reivindicações deste Item</h5>
+                    <span class="badge bg-light text-secondary border">{{ reivindicacoes|length }} solicitação(ões)</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Protocolo</th>
+                                <th>Solicitante</th>
+                                <th>Data</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reivindicacoes %}
+                            <tr>
+                                <td class="fw-bold font-monospace">#{{ r.protocolo }}</td>
+                                <td>{{ r.autor.nome|default:r.autor.username }}</td>
+                                <td class="small text-secondary">{{ r.data|date:"d/m/Y H:i" }}</td>
+                                <td class="text-center">
+                                    <span class="badge 
+                                        {% if r.status == 1 %}bg-warning text-dark
+                                        {% elif r.status == 2 %}bg-info text-dark
+                                        {% elif r.status == 3 %}bg-success
+                                        {% elif r.status == 4 %}bg-danger
+                                        {% elif r.status == 5 %}bg-secondary
+                                        {% else %}bg-light text-dark border{% endif %}">
+                                        {{ r.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'detalhes_reivindicacao' r.protocolo %}" class="btn-action btn-action-view" title="Ver reivindicação">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted small">
+                                    Nenhum usuário abriu reivindicação para este item até o momento.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL: FOTO E GESTÃO -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- FOTO DO OBJETO -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Registro Fotográfico</h5>
+                <div class="text-center">
+                    {% if item.foto %}
+                        <img src="{{ item.foto.url }}" alt="{{ item.nome|default:'Item' }}" class="img-fluid rounded border object-fit-cover shadow-sm mb-2" style="max-height: 280px; width: 100%;">
+                        <small class="text-muted d-block font-monospace">UUID: {{ item.uuid }}</small>
+                    {% else %}
+                        <div class="bg-light text-secondary border rounded d-flex flex-column justify-content-center align-items-center py-5">
+                            <i class="bi bi-camera fs-1 mb-2"></i>
+                            <span class="small text-muted">Nenhuma fotografia anexada</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- AÇÕES -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Ações</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'atualizar_item' item.uuid %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar Informações do Item</span>
+                    </a>
+
+                    <a href="{% url 'apagar_item' item.uuid %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" 
+                       data-nome="{{ item.nome|default:item.codigo }}">
+                        <i class="bi bi-trash"></i>
+                        <span>Excluir Item</span>
+                    </a>
+
+                    <a href="{% url 'lista_itens' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2 mt-1">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Voltar para Lista</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CARD INFORMATIVO -->
+            <div class="card table-card security-notice-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Auditoria e Registro</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Item registrado no banco de dados em <strong>{{ item.data_registro|date:"d/m/Y \à\s H:i" }}</strong>. Modificações em seu status influenciam diretamente a exibição no catálogo público de achados e perdidos.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja remover permanentemente este item?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">{{ item.nome|default:item.codigo }}</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Esta ação é irreversível.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'apagar_item' item.uuid %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

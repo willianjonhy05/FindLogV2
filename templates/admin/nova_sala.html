@@ -1,0 +1,179 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Nova Sala{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title">
+                <i class="bi bi-door-closed me-2"></i>Nova Sala
+            </h1>
+            <p class="welcome-subtitle">
+                Cadastre uma nova sala, laboratório ou ambiente no sistema para controle de achados e perdidos.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'lista_salas' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- FORMULÁRIO -->
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'nova_sala' %}">
+            {% csrf_token %}
+            
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title">
+                    <i class="bi bi-geo-alt me-2"></i>Localização e Vínculo
+                </h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- Select Instituição -->
+                <div class="col-12 col-md-6">
+                    <label for="instituicao" class="form-label form-label-custom">
+                        Instituição Parceira <span class="text-danger">*</span>
+                    </label>
+                    <select id="instituicao" name="instituicao" class="form-select form-select-custom {% if form.instituicao.errors %}is-invalid{% endif %}" required>
+                        <option value="" disabled {% if not form.instituicao.value %}selected{% endif %}>Selecione a instituição...</option>
+                        {% for inst in form.fields.instituicao.queryset %}
+                            <option value="{{ inst.pk }}" {% if form.instituicao.value|stringformat:"s" == inst.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ inst.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.instituicao.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Prédio -->
+                <div class="col-12 col-md-6">
+                    <label for="predio" class="form-label form-label-custom">
+                        Prédio / Bloco <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="predio" name="predio" class="form-control form-control-custom {% if form.predio.errors %}is-invalid{% endif %}" 
+                           placeholder="Ex: Prédio Central / Bloco A" 
+                           value="{{ form.predio.value|default:'' }}" required>
+                    {% for erro in form.predio.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Nome da Sala -->
+                <div class="col-12 col-md-4">
+                    <label for="nome" class="form-label form-label-custom">
+                        Nome/Número da Sala <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                           placeholder="Ex: 101, 204" 
+                           value="{{ form.nome.value|default:'' }}" required>
+                    {% for erro in form.nome.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Andar -->
+                <div class="col-12 col-md-4">
+                    <label for="andar" class="form-label form-label-custom">
+                        Andar
+                    </label>
+                    <input type="text" id="andar" name="andar" class="form-control form-control-custom {% if form.andar.errors %}is-invalid{% endif %}" 
+                           placeholder="Ex: 1º Andar, Térreo" 
+                           value="{{ form.andar.value|default:'' }}">
+                    {% for erro in form.andar.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Telefone -->
+                <div class="col-12 col-md-4">
+                    <label for="telefone" class="form-label form-label-custom">
+                        Ramal / Telefone da Sala
+                    </label>
+                    <input type="text" id="telefone" name="telefone" class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}" 
+                           placeholder="(00) 0000-0000" 
+                           value="{{ form.telefone.value|default:'' }}">
+                    {% for erro in form.telefone.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Descrição -->
+                <div class="col-12">
+                    <label for="descricao" class="form-label form-label-custom">
+                        Descrição e Observações
+                    </label>
+                    <textarea id="descricao" name="descricao" rows="3" class="form-control form-control-custom {% if form.descricao.errors %}is-invalid{% endif %}" 
+                              placeholder="Detalhes adicionais sobre a sala, pontos de referência...">{{ form.descricao.value|default:'' }}</textarea>
+                    {% for erro in form.descricao.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- Checkboxes de Classificação e Status -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title">
+                    <i class="bi bi-tag me-2"></i>Classificação e Operação
+                </h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="p-3 rounded border bg-light d-flex flex-wrap gap-4 align-items-center">
+                        <div class="form-check form-switch m-0 fs-6">
+                            <input class="form-check-input custom-switch" type="checkbox" id="laboratorio" name="laboratorio" {% if form.laboratorio.value %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold text-dark" for="laboratorio">É Laboratório</label>
+                        </div>
+                        <div class="form-check form-switch m-0 fs-6">
+                            <input class="form-check-input custom-switch" type="checkbox" id="sala_de_aula" name="sala_de_aula" {% if form.sala_de_aula.value %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold text-dark" for="sala_de_aula">É Sala de Aula</label>
+                        </div>
+                        <div class="form-check form-switch m-0 fs-6 ms-sm-auto">
+                            <input class="form-check-input custom-switch" type="checkbox" id="ativa" name="ativa" {% if form.ativa.value or form.ativa.value is None %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold text-dark" for="ativa">Sala Ativa</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'lista_salas' %}" class="btn btn-secondary-custom">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Sala
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% load static %}
+{% extends "admin/base.html" %}
+{% block title %}Lista de Contatos{% endblock %}
+
+{% block search %}
+<form method="GET" action="{% url 'lista_contatos' %}" class="topbar-search-form">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control topbar-search-input" placeholder="Pesquisar por nome, email ou assunto..." value="{{ q }}">
+        {% if q %}
+            <a href="{% url 'lista_contatos' %}" class="btn topbar-search-clear" title="Limpar busca"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button class="btn topbar-search-btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title">
+                <i class="bi bi-envelope me-2"></i>Contatos
+            </h1>
+            <p class="welcome-subtitle">
+                Consulte, acompanhe e gerencie as mensagens enviadas através do portal FindLog.
+            </p>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- TABELA -->
+    <div class="card table-card p-3 p-md-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
+            <div>
+                <h4 class="card-section-title mb-1">Mensagens Recebidas</h4>
+                <p class="text-muted small mb-0">Total listado de acordo com os filtros de pesquisa</p>
+            </div>
+            <div class="text-muted small">
+                Exibindo: <strong>{{ contatos.object_list|length }}</strong> de <strong>{{ contatos.paginator.count }}</strong> mensagem(ns)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 180px;">Remetente</th>
+                        <th scope="col" style="min-width: 200px;">E-mail</th>
+                        <th scope="col" style="min-width: 180px;">Assunto</th>
+                        <th scope="col" style="min-width: 150px;">Data de Envio</th>
+                        <th scope="col" class="text-end" style="min-width: 120px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contato in contatos %}
+                    <tr>
+                        <td class="fw-bold text-dark">{{ contato.nome|default:"-" }}</td>
+                        <td class="text-secondary">{{ contato.email|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-normal">
+                                {{ contato.get_assunto_display|default:contato.assunto }}
+                            </span>
+                        </td>
+                        <td class="text-secondary small">{{ contato.data|date:"d/m/Y H:i" }}</td>
+                        <td class="text-end">
+                            <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
+                                <a href="{% url 'view_contato' contato.pk %}" class="btn-action btn-action-view" title="Visualizar mensagem completa">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'apagar_contato' contato.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}" title="Excluir mensagem">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-envelope-open fs-1 text-muted d-block mb-2"></i>
+                                <h6 class="fw-bold text-secondary">Nenhuma mensagem encontrada</h6>
+                                <p class="small text-muted mb-0">Quando os usuários enviarem dúvidas ou sugestões pelo formulário, elas aparecerão listadas aqui.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if contatos.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de páginas" class="mt-4 pt-2 border-top">
+        <ul class="pagination pagination-custom justify-content-end mb-0">
+            <li class="page-item {% if not contatos.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if contatos.has_previous %}?page={{ contatos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for num in contatos.paginator.page_range %}
+                <li class="page-item {% if num == contatos.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if not contatos.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if contatos.has_next %}?page={{ contatos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    Próxima <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir este registro?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Registro de Contato</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Esta ação removerá a mensagem definitivamente da base de dados.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

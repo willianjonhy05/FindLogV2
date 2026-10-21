@@ -1,0 +1,230 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Reivindicação de Itens{% endblock %}
+
+{% block search %}
+<form method="GET" action="{% url 'lista_reivindicacoes' %}" class="topbar-search-form">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control topbar-search-input" placeholder="Pesquisar por protocolo, autor, item ou código..." value="{{ q }}">
+        {% if q %}
+            <a href="{% url 'lista_reivindicacoes' %}" class="btn topbar-search-clear" title="Limpar busca"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button class="btn topbar-search-btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO DA SEÇÃO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-clipboard-data me-2"></i>Reivindicação de Itens</h1>
+            <p class="welcome-subtitle">Consulte a lista e veja detalhes das reivindicações de itens perdidos.</p>
+        </div>
+        <div>
+            <span class="welcome-badge">
+                <i class="bi bi-clipboard-data me-1"></i> Total: {{ reivindicacoes.paginator.count }} reivindicações
+            </span>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- CARD DA TABELA -->
+    <div class="card table-card p-3 p-md-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
+            <div>
+                <h4 class="card-section-title mb-1">Reivindicações</h4>
+                <p class="text-muted small mb-0">Usuários que reconheceram itens que podem pertencer a eles</p>
+            </div>
+            <div class="text-muted small">
+                Exibindo <strong>{{ reivindicacoes.object_list|length }}</strong> de <strong>{{ reivindicacoes.paginator.count }}</strong> registro(s)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 140px;">Protocolo</th>
+                        <th scope="col" style="min-width: 220px;">Item Reivindicado</th>
+                        <th scope="col" style="min-width: 180px;">Solicitante</th>
+                        <th scope="col" style="min-width: 140px;">Data</th>
+                        <th scope="col" class="text-center" style="min-width: 130px;">Status</th>
+                        <th scope="col" class="text-end" style="min-width: 130px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reivindicacoes %}
+                    <tr>
+                        <td class="fw-bold text-dark font-monospace">#{{ r.protocolo }}</td>
+                        
+                        <!-- Coluna do Item -->
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if r.item.foto %}
+                                    <img src="{{ r.item.foto.url }}" alt="Foto do item" class="rounded me-2 border object-fit-cover"
+                                         style="width: 45px; height: 45px;">
+                                {% else %}
+                                    <div class="bg-light text-secondary border rounded d-flex justify-content-center align-items-center me-2 flex-shrink-0"
+                                         style="width: 45px; height: 45px;">
+                                        <i class="bi bi-box-seam fs-5"></i>
+                                    </div>
+                                {% endif %}
+
+                                <div class="text-truncate" style="max-width: 200px;">
+                                    <span class="d-block fw-semibold text-dark text-truncate" title="{{ r.item.nome|default:'Item sem nome' }}">
+                                        {{ r.item.nome|default:"Item sem nome" }}
+                                    </span>
+                                    <small class="text-muted font-monospace">Cód: {{ r.item.codigo|default:"-" }}</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Coluna do Autor -->
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-2 flex-shrink-0"
+                                     style="width: 35px; height: 35px;">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="text-truncate" style="max-width: 180px;">
+                                    <span class="d-block text-dark fw-medium text-truncate" title="{{ r.autor.nome|default:r.autor.username }}">
+                                        {{ r.autor.nome|default:r.autor.username }}
+                                    </span>
+                                    <small class="text-muted text-truncate d-block">{{ r.autor.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Data -->
+                        <td class="text-secondary small">{{ r.data|date:"d/m/Y H:i" }}</td>
+
+                        <!-- Status Badge -->
+                        <td class="text-center">
+                            {% if r.status == 1 %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendente</span>
+                            {% elif r.status == 2 %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>Em Análise</span>
+                            {% elif r.status == 3 %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Aprovada</span>
+                            {% elif r.status == 4 %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Rejeitada</span>
+                            {% elif r.status == 5 %}
+                                <span class="badge bg-secondary"><i class="bi bi-box-arrow-right me-1"></i>Concluída</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">{{ r.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="text-end">
+                            <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
+                                <a href="{% url 'detalhes_reivindicacao' r.protocolo %}"
+                                   class="btn-action btn-action-view" title="Visualizar detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <a href="{% url 'atualizar_reivindicacao' r.protocolo %}" 
+                                   class="btn-action btn-action-edit" title="Avaliar / Editar reivindicação">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <a href="{% url 'apagar_reivindicacao' r.protocolo %}" 
+                                   class="btn-action btn-action-delete btn-delete" 
+                                   data-nome="Reivindicação #{{ r.protocolo }}" 
+                                   title="Excluir reivindicação">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-clipboard-x fs-1 text-muted d-block mb-2"></i>
+                                <h6 class="fw-bold text-secondary">Nenhuma reivindicação encontrada</h6>
+                                <p class="small text-muted mb-0">Quando os usuários solicitarem a devolução de itens perdidos, as solicitações aparecerão listadas aqui.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if reivindicacoes.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de páginas" class="mt-4 pt-2 border-top">
+        <ul class="pagination pagination-custom justify-content-end mb-0">
+            <li class="page-item {% if not reivindicacoes.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if reivindicacoes.has_previous %}?page={{ reivindicacoes.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for num in reivindicacoes.paginator.page_range %}
+                <li class="page-item {% if num == reivindicacoes.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if not reivindicacoes.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if reivindicacoes.has_next %}?page={{ reivindicacoes.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    Próxima <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir permanentemente esta solicitação?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Reivindicação</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> O histórico e os anexos desta reivindicação serão removidos da base de dados.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

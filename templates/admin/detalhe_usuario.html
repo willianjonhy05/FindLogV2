@@ -1,0 +1,264 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Detalhes do Usuário | {{ usuario.nome|default:usuario.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-person-badge me-2"></i>Detalhes do Usuário</h1>
+            <p class="welcome-subtitle">Visualização completa das informações cadastrais e níveis de privilégio.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- INFORMAÇÕES DO USUÁRIO -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4 h-100">
+                
+                <!-- HEADER DO PERFIL -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if usuario.foto %}
+                            <img src="{{ usuario.foto.url }}" alt="Foto de Perfil" class="profile-avatar-md rounded-circle object-fit-cover" style="width: 64px; height: 64px;">
+                        {% else %}
+                            <div class="profile-avatar-md profile-avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-light border text-secondary fs-3" style="width: 64px; height: 64px;">
+                                <i class="bi bi-person"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">{{ usuario.nome|default:usuario.username }}</h4>
+                            <span class="text-muted small">Username: <strong class="text-secondary">@{{ usuario.username }}</strong></span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Badge de Status -->
+                        {% if usuario.ativo %}
+                            <span class="badge-status badge-status-ativo"><i class="bi bi-check-circle-fill me-1"></i>Ativo</span>
+                        {% else %}
+                            <span class="badge-status badge-status-inativo"><i class="bi bi-slash-circle-fill me-1"></i>Inativo</span>
+                        {% endif %}
+
+                        <!-- Badge de Papel/Função -->
+                        {% if usuario.tipo == 1 %}
+                            <span class="badge-role badge-role-admin"><i class="bi bi-shield-lock-fill me-1"></i>Administrador</span>
+                        {% elif usuario.tipo == 3 %}
+                            <span class="badge-role badge-role-manager"><i class="bi bi-door-open-fill me-1"></i>Servidor</span>
+                        {% else %}
+                            <span class="badge-role badge-role-user"><i class="bi bi-person-fill me-1"></i>Comum</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRADE DE DADOS -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">E-mail de Login</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-envelope profile-info-icon"></i>
+                            <span>{{ usuario.email }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">CPF</span>
+                        <div class="profile-data-value cpf-format">
+                            <i class="bi bi-person-vcard profile-info-icon"></i>
+                            <span>{{ usuario.cpf_formatado|default:usuario.cpf }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Data de Nascimento</span>
+                        <div class="profile-data-value data">
+                            <i class="bi bi-calendar3 profile-info-icon"></i>
+                            <span>{{ usuario.data_nascimento|date:"d/m/Y"|default:"Não informada" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Idade Calculada</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-hourglass-split profile-info-icon"></i>
+                            <span>
+                                {% if usuario.idade %}
+                                    {{ usuario.idade }} anos
+                                {% else %}
+                                    Não informada
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Telefone de Contato</span>
+                        <div class="profile-data-value telefone-format">
+                            <i class="bi bi-telephone profile-info-icon"></i>
+                            <span>{{ usuario.telefone_formatado|default:usuario.telefone|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Instituição(ões) Vinculada(s)</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-building profile-info-icon"></i>
+                            <span>
+                                {% for inst in usuario.instituicao.all %}
+                                    <a href="{% url 'detalhes_instituicao' inst.pk %}" class="text-decoration-none fw-semibold">
+                                        {{ inst.nome }}
+                                    </a>{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    <span class="text-muted">Nenhuma instituição vinculada</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if usuario.tipo == 3 %}
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Sala de Responsabilidade</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-door-closed profile-info-icon"></i>
+                            <span>
+                                {% if usuario.sala %}
+                                    Sala {{ usuario.sala.numero }} - Bloco/Prédio {{ usuario.sala.predio }}
+                                {% else %}
+                                    Nenhuma sala atribuída
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if usuario.codigo %}
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Matrícula / Código</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-card-text profile-info-icon"></i>
+                            <span>{{ usuario.codigo }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL DE AÇÕES -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- CARD DE AÇÕES -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Gerenciar Conta</h5>
+                <div class="d-grid gap-2">
+                    
+                    <!-- Botão Ativar / Desativar Usuário -->
+                    {% if usuario != request.user %}
+                        <a href="{% url 'alternar_status_usuario' usuario.pk %}" 
+                           class="btn {% if usuario.ativo %}btn-outline-warning text-dark{% else %}btn-success{% endif %} d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi {% if usuario.ativo %}bi-person-x-fill{% else %}bi-person-check-fill{% endif %}"></i>
+                            <span>{% if usuario.ativo %}Desativar Acesso{% else %}Ativar Acesso{% endif %}</span>
+                        </a>
+
+                        <!-- Botão de Excluir -->
+                        <a href="{% url 'excluir_usuario' usuario.pk %}" 
+                           class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" 
+                           data-nome="{{ usuario.nome|default:usuario.email }}">
+                            <i class="bi bi-trash"></i>
+                            <span>Excluir Conta</span>
+                        </a>
+                    {% else %}
+                        <div class="alert alert-info py-2 px-3 small mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Você está visualizando o seu próprio perfil autenticado.
+                        </div>
+                    {% endif %}
+
+                    <a href="{% url 'lista_usuarios' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2 mt-1">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Voltar para Lista</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CARD INFORMATIVO -->
+            <div class="card table-card security-notice-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-shield-check text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Informações do Sistema</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Perfil de acesso configurado com nível de 
+                    <strong>
+                        {% if usuario.tipo == 1 %}
+                            Administração do sistema
+                        {% elif usuario.tipo == 3 %}
+                            Funcionário / Servidor de Sala
+                        {% else %}
+                            Usuário Padrão
+                        {% endif %}
+                    </strong>.
+                    {% if not usuario.ativo %}
+                        <span class="text-danger d-block mt-2 fw-semibold">
+                            <i class="bi bi-exclamation-octagon me-1"></i> Esta conta encontra-se atualmente inativa e bloqueada para autenticação.
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja remover a conta do usuário?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">{{ usuario.nome|default:usuario.email }}</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> O usuário perderá o acesso definitivo ao portal.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'excluir_usuario' usuario.pk %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/formatar_dados.js' %}"></script>
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

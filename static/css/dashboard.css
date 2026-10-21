@@ -1,0 +1,1080 @@
+/* ==========================================================================
+   VARIÁVEIS DE IDENTIDADE VISUAL & DESIGN SYSTEM
+   ========================================================================== */
+:root {
+  /* Cores da Identidade */
+  --azul-escuro: #1A2B45;
+  --azul-medio: #243B5E;
+  --laranja-destaque: #FF6200;
+  --laranja-hover: #E05500;
+  --bege-principal: #F7F3EB;
+  --bege-areia: #EAE2D3;
+  --bege-secao: #EFE9DC;
+  --bege-card: #FCFBF7;
+  --texto-escuro: #111827;
+  --texto-apoio: #4B5563;
+  --texto-claro: #F3F4F6;
+  --borda-suave: rgba(26, 43, 69, 0.08);
+
+  /* Dimensões do Layout */
+  --topbar-height: 70px;
+  --sidebar-width: 260px;
+  --transition-speed: 0.25s;
+  --border-radius-base: 10px;
+  --border-radius-lg: 16px;
+  --shadow-sm: 0 2px 6px rgba(26, 43, 69, 0.05);
+  --shadow-md: 0 6px 18px rgba(26, 43, 69, 0.07);
+  --shadow-lg: 0 12px 32px rgba(26, 43, 69, 0.12);
+}
+
+/* Reset básico e Fontes */
+body.dashboard-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bege-principal);
+  color: var(--texto-escuro);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   TOPBAR (HEADER)
+   ========================================================================== */
+.topbar {
+  height: var(--topbar-height);
+  background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+  color: #FFFFFF;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Botão Hamburguer Mobile */
+.btn-menu {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-speed) ease, transform 0.15s ease;
+}
+
+.btn-menu:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.btn-menu:active {
+  transform: scale(0.95);
+}
+
+/* Logo */
+.logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #FFFFFF;
+}
+
+.logo-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background-color: var(--laranja-destaque);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(255, 98, 0, 0.4);
+}
+
+.logo-text {
+  color: #FFFFFF;
+}
+
+.logo-accent {
+  color: var(--laranja-destaque);
+}
+
+/* Card de Perfil no Header */
+.profile-card {
+  padding: 4px 10px 4px 6px;
+  border-radius: 30px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all var(--transition-speed) ease;
+  user-select: none;
+}
+
+.profile-card:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.profile-avatar {
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--laranja-destaque) !important;
+}
+
+.profile-avatar-placeholder {
+  width: 38px;
+  height: 38px;
+  background-color: var(--azul-medio);
+  border: 2px solid var(--laranja-destaque);
+}
+
+.profile-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.profile-role {
+  font-size: 0.725rem;
+  color: var(--bege-areia);
+}
+
+.profile-arrow {
+  font-size: 0.75rem;
+  color: var(--bege-areia);
+  transition: transform var(--transition-speed) ease;
+}
+
+.dropdown.show .profile-arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  border-radius: var(--border-radius-base);
+  border: 1px solid var(--bege-areia);
+  background-color: var(--bege-card);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  margin-top: 8px !important;
+}
+
+.dropdown-header {
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  color: var(--texto-apoio);
+}
+
+.dropdown-item {
+  border-radius: 6px;
+  font-weight: 500;
+  color: var(--texto-escuro);
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  transition: all var(--transition-speed) ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bege-secao);
+  color: var(--azul-escuro);
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: #fee2e2;
+  color: #dc2626 !important;
+}
+
+/* ==========================================================================
+   SIDEBAR (MENU LATERAL)
+   ========================================================================== */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--azul-escuro);
+  position: fixed;
+  top: var(--topbar-height);
+  bottom: 0;
+  left: 0;
+  z-index: 1025;
+  overflow-y: auto;
+  padding: 20px 12px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbar na Sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-header {
+  padding: 8px 12px 14px 12px;
+}
+
+.sidebar-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 700;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Links da Sidebar */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: var(--border-radius-base);
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 0.915rem;
+  font-weight: 500;
+  transition: all var(--transition-speed) ease;
+  position: relative;
+}
+
+.nav-item i {
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.65);
+  transition: color var(--transition-speed) ease;
+}
+
+.nav-item:hover {
+  color: #FFFFFF;
+  background-color: var(--azul-medio);
+}
+
+.nav-item:hover i {
+  color: var(--laranja-destaque);
+}
+
+/* Item Ativo */
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(255, 98, 0, 0.18), rgba(255, 98, 0, 0.05));
+  color: #FFFFFF;
+  font-weight: 600;
+  border-left: 4px solid var(--laranja-destaque);
+}
+
+.nav-item.active i {
+  color: var(--laranja-destaque);
+}
+
+/* ==========================================================================
+   CONTEÚDO PRINCIPAL (MAIN) & FOOTER
+   ========================================================================== */
+.main {
+  flex: 1 0 auto;
+  margin-top: var(--topbar-height);
+  margin-left: var(--sidebar-width);
+  background-color: var(--bege-principal);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+.footer-admin {
+  flex-shrink: 0;
+  margin-left: var(--sidebar-width);
+  padding: 20px 16px;
+  background-color: var(--bege-secao);
+  border-top: 1px solid var(--bege-areia);
+  color: var(--texto-apoio);
+  font-size: 0.825rem;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.footer-subtext {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+/* ==========================================================================
+   ESTILOS COMPARTILHADOS PARA CONTEÚDO (CARDS, BOTÕES, TABELAS)
+   ========================================================================== */
+.card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-speed) ease, transform var(--transition-speed) ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary {
+  background-color: var(--laranja-destaque) !important;
+  border-color: var(--laranja-destaque) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 8px 18px;
+  box-shadow: 0 2px 6px rgba(255, 98, 0, 0.25);
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--laranja-hover) !important;
+  border-color: var(--laranja-hover) !important;
+  box-shadow: 0 4px 12px rgba(255, 98, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 1020;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 991.98px) {
+  /* Em telas menores que o breakpoint desktop, o menu fica recolhido */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  /* Quando o menu é aberto via JS */
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .main, .footer-admin {
+    margin-left: 0 !important;
+  }
+
+  .overlay.active {
+    display: block;
+    opacity: 1;
+  }
+}
+
+
+/* ==========================================================================
+   TELA INICIAL: CARTÃO DE BOAS-VINDAS (WELCOME-CARD)
+   ========================================================================== */
+.welcome-card {
+  background: linear-gradient(135deg, var(--azul-escuro) 0%, var(--azul-medio) 100%);
+  color: var(--bege-principal);
+  border-radius: var(--border-radius-lg);
+  padding: 1.75rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 24px -6px rgba(26, 43, 69, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Detalhe sutil de iluminação de fundo no cartão de boas-vindas */
+.welcome-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(255, 98, 0, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.welcome-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: #FFFFFF;
+  margin-bottom: 0.35rem;
+}
+
+.welcome-subtitle {
+  color: var(--bege-areia);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+  opacity: 0.9;
+}
+
+.welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--bege-principal);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+  padding: 0.5rem 1.15rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================================
+   TELA INICIAL: CARDS DE ESTATÍSTICAS (STAT-CARDS)
+   ========================================================================== */
+.stat-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease;
+  position: relative;
+}
+
+/* Efeito Hover Elegante */
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px -4px rgba(26, 43, 69, 0.1);
+  border-color: rgba(26, 43, 69, 0.18);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--texto-apoio);
+  margin-bottom: 0.35rem;
+}
+
+.stat-value {
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: var(--texto-escuro);
+  line-height: 1.15;
+  margin-bottom: 0;
+}
+
+/* Ícones dos Cards */
+.stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.08);
+}
+
+/* Rodapé dos Cards e Links */
+.stat-footer {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--bege-secao);
+}
+
+.stat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: gap 0.2s ease, opacity 0.2s ease;
+}
+
+.stat-link i {
+  transition: transform 0.2s ease;
+}
+
+.stat-link:hover {
+  gap: 0.55rem;
+}
+
+.stat-link:hover i {
+  transform: translateX(2px);
+}
+
+/* ==========================================================================
+   MODIFICADORES DE COR (PALETA DO FINDLOG)
+   ========================================================================== */
+
+/* Variante 1: Laranja Destaque (Principal destaque do sistema) */
+.stat-card--orange .stat-icon {
+  background-color: rgba(255, 98, 0, 0.12);
+  color: var(--laranja-destaque);
+}
+
+.stat-card--orange .stat-link {
+  color: var(--laranja-destaque);
+}
+
+/* Variante 2: Azul Escuro (Seriedade e autoridade) */
+.stat-card--navy .stat-icon {
+  background-color: rgba(26, 43, 69, 0.1);
+  color: var(--azul-escuro);
+}
+
+.stat-card--navy .stat-link {
+  color: var(--azul-escuro);
+}
+
+/* Variante 3: Azul Médio (Equilíbrio e navegação) */
+.stat-card--blue .stat-icon {
+  background-color: rgba(36, 59, 94, 0.1);
+  color: var(--azul-medio);
+}
+
+.stat-card--blue .stat-link {
+  color: var(--azul-medio);
+}
+
+
+/* ==========================================================================
+   FORMULÁRIOS & CARDS DE TABELA (TABLE-CARD)
+   ========================================================================== */
+.table-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+
+.form-label-custom {
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-apoio);
+}
+
+.form-control-custom {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-base);
+  color: var(--texto-escuro);
+  padding: 0.65rem 0.95rem;
+  font-size: 0.925rem;
+  transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.form-control-custom:focus {
+  background-color: #FFFFFF;
+  border-color: var(--laranja-destaque);
+  box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.15);
+  color: var(--texto-escuro);
+}
+
+.hr-custom {
+  border-top: 1px solid var(--bege-secao);
+  opacity: 1;
+}
+
+/* Switches Customizados */
+.custom-switch:checked {
+  background-color: var(--laranja-destaque);
+  border-color: var(--laranja-destaque);
+}
+
+/* ==========================================================================
+   TABELAS MODERNAS & BOTÕES DE AÇÃO
+   ========================================================================== */
+.table-custom {
+  border-color: var(--bege-secao);
+}
+
+.table-custom thead th {
+  background-color: var(--bege-secao);
+  color: var(--azul-escuro);
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  border-bottom: 2px solid var(--bege-areia);
+  padding: 12px 14px;
+}
+
+.table-custom tbody td {
+  padding: 14px;
+  font-size: 0.925rem;
+  border-bottom: 1px solid var(--bege-secao);
+}
+
+.table-custom tbody tr:hover {
+  background-color: rgba(234, 226, 211, 0.35);
+}
+
+/* Badges de Status Personalizados */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+
+.badge-status-ativo {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.badge-status-inativo {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Grupo de Botões de Ação na Tabela */
+.btn-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-action-view {
+  background-color: rgba(36, 59, 94, 0.08);
+  color: var(--azul-medio);
+}
+.btn-action-view:hover {
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+}
+
+.btn-action-edit {
+  background-color: rgba(255, 98, 0, 0.1);
+  color: var(--laranja-destaque);
+}
+.btn-action-edit:hover {
+  background-color: var(--laranja-destaque);
+  color: #FFFFFF;
+}
+
+.btn-action-delete {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+.btn-action-delete:hover {
+  background-color: #dc2626;
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   BOTÕES GERAIS E PAGINAÇÃO
+   ========================================================================== */
+.btn-primary-custom {
+  background-color: var(--laranja-destaque) !important;
+  border-color: var(--laranja-destaque) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 8px 18px;
+  box-shadow: 0 2px 6px rgba(255, 98, 0, 0.25);
+  transition: all var(--transition-speed) ease;
+}
+.btn-primary-custom:hover {
+  background-color: var(--laranja-hover) !important;
+  border-color: var(--laranja-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 98, 0, 0.35);
+}
+
+.btn-secondary-custom {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-areia);
+  color: var(--texto-apoio);
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 8px 18px;
+  transition: all var(--transition-speed) ease;
+}
+.btn-secondary-custom:hover {
+  background-color: var(--bege-secao);
+  color: var(--azul-escuro);
+}
+
+.btn-danger-custom {
+  background-color: #dc2626;
+  border-color: #dc2626;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 8px 18px;
+  transition: all var(--transition-speed) ease;
+}
+.btn-danger-custom:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-action-btn-primary {
+  background-color: var(--azul-escuro);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 8px 18px;
+  border: none;
+  transition: all var(--transition-speed) ease;
+}
+.btn-action-btn-primary:hover {
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+}
+
+/* Paginação */
+.pagination-custom .page-link {
+  color: var(--azul-escuro);
+  background-color: #FFFFFF;
+  border-color: var(--bege-areia);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 14px;
+}
+.pagination-custom .page-item.active .page-link {
+  background-color: var(--laranja-destaque);
+  border-color: var(--laranja-destaque);
+  color: #FFFFFF;
+}
+.pagination-custom .page-link:hover {
+  background-color: var(--bege-secao);
+}
+
+/* ==========================================================================
+   SEARCH BAR DO CABEÇALHO
+   ========================================================================== */
+.topbar-search-form .input-group {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.topbar-search-input {
+  background: transparent !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  font-size: 0.875rem;
+  box-shadow: none !important;
+}
+.topbar-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.topbar-search-btn, .topbar-search-clear {
+  color: rgba(255, 255, 255, 0.7) !important;
+  border: none !important;
+  background: transparent !important;
+}
+.topbar-search-btn:hover, .topbar-search-clear:hover {
+  color: #FFFFFF !important;
+}
+
+/* ==========================================================================
+   MODAIS & INDICADORES DE DETALHES
+   ========================================================================== */
+.custom-modal-content {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-highlight-box {
+  background-color: var(--bege-secao);
+  border-left: 4px solid var(--laranja-destaque);
+}
+
+.status-indicator-badge {
+  padding: 16px;
+  border-radius: var(--border-radius-base);
+}
+.status-indicator-active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+.status-indicator-inactive {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+
+/* ==========================================================================
+   MÓDULO DE PERFIL DE USUÁRIO (AVATARES & DADOS)
+   ========================================================================== */
+
+/* Tamanhos Padronizados de Imagem de Perfil */
+.profile-avatar-lg {
+  width: 65px;
+  height: 65px;
+  object-fit: cover;
+  border: 3px solid var(--bege-areia);
+  box-shadow: var(--shadow-sm);
+  background-color: #FFFFFF;
+}
+
+.profile-avatar-xl {
+  width: 82px;
+  height: 82px;
+  object-fit: cover;
+  border: 3px solid var(--laranja-destaque);
+  box-shadow: var(--shadow-md);
+  background-color: #FFFFFF;
+}
+
+/* Placeholders de Avatar quando o usuário não tiver foto */
+.profile-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+}
+
+.profile-avatar-lg.profile-avatar-placeholder {
+  font-size: 1.85rem;
+}
+
+.profile-avatar-xl.profile-avatar-placeholder {
+  font-size: 2.35rem;
+}
+
+/* Área de Upload em destaque */
+.profile-upload-header {
+  background-color: var(--bege-secao);
+  border: 1px dashed var(--bege-areia);
+}
+
+/* Badges de Função/Papel do Usuário */
+.badge-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-role-admin {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge-role-manager {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-role-user {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+/* Exibição dos Dados do Perfil */
+.profile-data-label {
+  display: block;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  font-weight: 700;
+  color: var(--texto-apoio);
+  margin-bottom: 0.25rem;
+}
+
+.profile-data-value {
+  display: flex;
+  align-items: center;
+  font-size: 0.965rem;
+  font-weight: 600;
+  color: var(--texto-escuro);
+  background-color: #FFFFFF;
+  padding: 10px 14px;
+  border-radius: var(--border-radius-base);
+  border: 1px solid var(--bege-secao);
+}
+
+.profile-info-icon {
+  color: var(--laranja-destaque);
+  font-size: 1.15rem;
+  margin-right: 0.65rem;
+  flex-shrink: 0;
+}
+
+/* Botão Outline Customizado (Contraste Elegante com Fundo Bege) */
+.btn-outline-custom {
+  background-color: #FFFFFF;
+  border: 1px solid var(--azul-medio);
+  color: var(--azul-medio);
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 10px 18px;
+  transition: all var(--transition-speed) ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline-custom:hover {
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+  border-color: var(--azul-escuro);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Card Informativo de Segurança */
+.security-notice-card {
+  border-left: 4px solid var(--azul-medio);
+  background-color: var(--bege-secao);
+}
+
+
+/* ==========================================================================
+   MÓDULO DE MENSAGENS (CONTATOS)
+   ========================================================================== */
+
+/* Avatar de Ícone Médio */
+.icon-avatar-md {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  font-size: 1.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+  border: 3px solid var(--bege-secao);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Caixa de Exibição do Texto da Mensagem */
+.message-content-box {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-secao);
+  border-radius: var(--border-radius-base);
+  padding: 1.25rem 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--texto-escuro);
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+/* Estado Vazio de Tabelas (Empty State) */
+.empty-state {
+  color: var(--texto-apoio);
+  padding: 1rem 0;
+}
+
+
+/* ==========================================================================
+   MÓDULO DE USUÁRIOS
+   ========================================================================== */
+
+/* Avatar de Tamanho Médio (55px) */
+.profile-avatar-md {
+  width: 55px;
+  height: 55px;
+  min-width: 55px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--bege-areia);
+  box-shadow: var(--shadow-sm);
+  background-color: #FFFFFF;
+}
+
+.profile-avatar-md.profile-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--azul-medio);
+  color: #FFFFFF;
+  font-size: 1.55rem;
+}
+
+/* Títulos de Seção de Formulários Complexos */
+.form-section-header {
+  border-left: 3px solid var(--laranja-destaque);
+  padding-left: 10px;
+}
+
+.form-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+  margin-bottom: 0;
+}
+
+/* Selects Padronizados com a Identidade Visual */
+.form-select-custom {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-base);
+  color: var(--texto-escuro);
+  padding: 0.65rem 2.25rem 0.65rem 0.95rem;
+  font-size: 0.925rem;
+  transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.form-select-custom:focus {
+  border-color: var(--laranja-destaque);
+  box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.15);
+}
+
+/* Efeito de Link em Cartões de Dados */
+.profile-data-link {
+  transition: all var(--transition-speed) ease;
+  cursor: pointer;
+}
+
+.profile-data-link:hover {
+  background-color: var(--bege-secao);
+  border-color: var(--laranja-destaque);
+  color: var(--azul-escuro);
+}

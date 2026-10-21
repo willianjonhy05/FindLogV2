@@ -1,0 +1,476 @@
+/* ==========================================================================
+   VARIÁVEIS DE IDENTIDADE VISUAL & TOKENS DE DESIGN (FINDLOG)
+   ========================================================================== */
+:root {
+  --azul-escuro: #1A2B45;
+  --azul-medio: #243B5E;
+  --laranja-destaque: #FF6200;
+  --laranja-hover: #E05500;
+  --bege-principal: #F7F3EB;
+  --bege-areia: #EAE2D3;
+  --bege-secao: #EFE9DC;
+  --bege-card: #FCFBF7;
+  --texto-escuro: #111827;
+  --texto-apoio: #4B5563;
+  
+  --border-radius-base: 10px;
+  --border-radius-lg: 16px;
+  --shadow-sm: 0 4px 12px rgba(26, 43, 69, 0.05);
+  --shadow-md: 0 10px 24px -4px rgba(26, 43, 69, 0.08);
+  --shadow-lg: 0 20px 40px -8px rgba(26, 43, 69, 0.15);
+  --transition-speed: 0.25s;
+}
+
+/* ==========================================================================
+   RESET & TIPOGRAFIA GLOBAL
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body.landing-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--texto-escuro);
+  background-color: #FFFFFF;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   LOGOMARCA & COMPONENTES COMPARTILHADOS
+   ========================================================================== */
+.logo-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--laranja-destaque);
+  border-radius: 9px;
+  color: #FFFFFF;
+  font-size: 1.1rem;
+  box-shadow: 0 3px 8px rgba(255, 98, 0, 0.35);
+}
+
+.logo-text {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-accent {
+  color: var(--laranja-destaque);
+}
+
+/* Botão Primário Laranja */
+.btn-primary-custom {
+  background-color: var(--laranja-destaque) !important;
+  border-color: var(--laranja-destaque) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 10px 22px;
+  box-shadow: 0 4px 12px rgba(255, 98, 0, 0.25);
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-primary-custom:hover {
+  background-color: var(--laranja-hover) !important;
+  border-color: var(--laranja-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(255, 98, 0, 0.35);
+}
+
+.btn-primary-custom:active {
+  transform: translateY(0);
+}
+
+/* Títulos de Seção Padronizados */
+.section-tag {
+  display: inline-block;
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--laranja-destaque);
+  background-color: rgba(255, 98, 0, 0.1);
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+
+.section-title {
+  font-size: 2.15rem;
+  font-weight: 800;
+  color: var(--azul-escuro);
+  letter-spacing: -0.5px;
+}
+
+.section-subtitle {
+  color: var(--texto-apoio);
+  font-size: 1.05rem;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   NAVBAR (FIXA E ELEGANTE)
+   ========================================================================== */
+.custom-navbar {
+  background-color: var(--azul-escuro);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all var(--transition-speed) ease;
+}
+
+.custom-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 8px 14px !important;
+  transition: color var(--transition-speed) ease;
+}
+
+.custom-navbar .nav-link:hover {
+  color: var(--laranja-destaque) !important;
+}
+
+.custom-toggler {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+.hero-section {
+  padding-top: 140px;
+  padding-bottom: 90px;
+  background: linear-gradient(135deg, var(--azul-escuro) 0%, var(--azul-medio) 100%);
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ponto de luz sutil no fundo da hero */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 60%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 98, 0, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--bege-principal);
+  font-size: 0.825rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 50px;
+  backdrop-filter: blur(4px);
+}
+
+.hero-title {
+  font-size: 2.85rem;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.8px;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--bege-areia);
+  opacity: 0.92;
+}
+
+.btn-hero-secondary {
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--border-radius-base);
+  padding: 10px 22px;
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-hero-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+/* Card Flutuante da Hero */
+.hero-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-lg);
+  color: var(--texto-escuro);
+}
+
+.hero-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: rgba(26, 43, 69, 0.08);
+  color: var(--azul-escuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.hero-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+
+.hero-card-text {
+  color: var(--texto-apoio);
+  font-size: 0.95rem;
+  margin: 1rem 0 1.25rem 0;
+}
+
+.hero-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--texto-escuro);
+  margin-bottom: 0.75rem;
+}
+
+.hero-check-icon {
+  color: var(--laranja-destaque);
+  font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   SEÇÃO VANTAGENS (FUNDO BEGE PRINCIPAL)
+   ========================================================================== */
+.benefits-section {
+  background-color: var(--bege-principal);
+}
+
+.card-benefit {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  padding: 2rem 1.6rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.card-benefit:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(255, 98, 0, 0.3);
+}
+
+.icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background-color: rgba(255, 98, 0, 0.12);
+  color: var(--laranja-destaque);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  margin-bottom: 1.25rem;
+  transition: transform var(--transition-speed) ease;
+}
+
+.card-benefit:hover .icon-box {
+  transform: scale(1.1);
+}
+
+.card-benefit-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+  margin-bottom: 0.5rem;
+}
+
+.card-benefit-text {
+  font-size: 0.92rem;
+  color: var(--texto-apoio);
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   SEÇÃO COMO FUNCIONA (FUNDO BRANCO)
+   ========================================================================== */
+.steps-section {
+  background-color: #FFFFFF;
+}
+
+.step-card {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-speed) ease;
+}
+
+.step-card:hover {
+  transform: translateY(-4px);
+}
+
+.step-number {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--laranja-destaque), var(--laranja-hover));
+  color: #FFFFFF;
+  font-size: 1.35rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(255, 98, 0, 0.35);
+}
+
+.step-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+
+.step-text {
+  font-size: 0.925rem;
+  color: var(--texto-apoio);
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   SEÇÃO CONTATO (FUNDO BEGE PRINCIPAL)
+   ========================================================================== */
+.contact-section {
+  background-color: var(--bege-principal);
+}
+
+.contact-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.form-label-custom {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--texto-apoio);
+  margin-bottom: 0.35rem;
+}
+
+.form-control-custom, .form-select-custom {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-areia);
+  border-radius: var(--border-radius-base);
+  color: var(--texto-escuro);
+  font-size: 0.925rem;
+  padding: 0.7rem 0.95rem;
+  transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.form-control-custom:focus, .form-select-custom:focus {
+  background-color: #FFFFFF;
+  border-color: var(--laranja-destaque);
+  box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.15);
+  color: var(--texto-escuro);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.main-footer {
+  background-color: var(--azul-escuro);
+  color: var(--bege-areia);
+  font-size: 0.925rem;
+}
+
+.footer-description {
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;
+}
+
+.footer-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.2px;
+}
+
+.footer-nav li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-nav a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease, transform var(--transition-speed) ease;
+  display: inline-block;
+}
+
+.footer-nav a:hover {
+  color: var(--laranja-destaque);
+  transform: translateX(3px);
+}
+
+.footer-contact-item {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.footer-icon {
+  color: var(--laranja-destaque);
+}
+
+.footer-divider {
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.footer-copy {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.825rem;
+}
+
+.footer-team {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+@media (max-width: 991.98px) {
+  .hero-section {
+    padding-top: 110px;
+    padding-bottom: 60px;
+  }
+  .hero-title {
+    font-size: 2.15rem;
+  }
+  .section-title {
+    font-size: 1.85rem;
+  }
+}

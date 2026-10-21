@@ -1,0 +1,64 @@
+{% load static %}
+{% extends "admin/base.html" %}
+{% block title %}Nova Instituição{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-building-add me-2"></i>Nova Instituição</h1>
+            <p class="welcome-subtitle">Preencha as informações cadastrais para registrar uma nova entidade no FindLog.</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_instituicoes' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- FORMULÁRIO -->
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'nova_instituicao' %}">
+            {% csrf_token %}
+            <div class="row g-4">
+                <div class="col-12 col-md-8">
+                    <label class="form-label form-label-custom" for="nome">Nome da Instituição <span class="text-danger">*</span></label>
+                    <input type="text" id="nome" name="nome" class="form-control form-control-custom" placeholder="Ex: Instituto de Tecnologia e Logística LTDA" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="cnpj" class="form-label form-label-custom">CNPJ <span class="text-danger">*</span></label>
+                    <input id="cnpj" type="text" name="cnpj" placeholder="00.000.000/0000-00" class="form-control form-control-custom" maxlength="18" required>
+                </div>
+                <div class="col-12">
+                    <label for="endereco" class="form-label form-label-custom">Endereço Completo <span class="text-danger">*</span></label>
+                    <input id="endereco" type="text" name="endereco" class="form-control form-control-custom" placeholder="Ex: Av. Paulista, 1000, Bloco B - Bela Vista, São Paulo/SP" required>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="telefone" class="form-label form-label-custom">Telefone de Contato</label>
+                    <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" class="form-control form-control-custom">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="email" class="form-label form-label-custom">E-mail Corporativo</label>
+                    <input type="email" id="email" name="email" placeholder="contato@instituicao.org.br" class="form-control form-control-custom">
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'lista_instituicoes' %}" class="btn btn-secondary-custom">Cancelar</a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Instituição
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
+{% endblock %}

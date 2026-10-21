@@ -1,0 +1,169 @@
+{% load static %}
+{% extends "admin/base.html" %}
+{% block title %}Lista de Categorias{% endblock %}
+
+
+{% block search %}
+<form method="GET" action="{% url 'lista_categorias' %}" class="topbar-search-form">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control topbar-search-input" placeholder="Pesquisar por código ou descrição..." value="{{ q }}">
+        {% if q %}
+            <a href="{% url 'lista_categorias' %}" class="btn topbar-search-clear" title="Limpar busca"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button class="btn topbar-search-btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title">
+                <i class="bi bi-bookmarks me-2"></i>Categorias
+            </h1>
+            <p class="welcome-subtitle">
+                Gerencie as categorias utilizadas para classificar os achados e perdidos no FindLog.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'nova_categoria' %}" class="btn btn-primary-custom d-inline-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Nova Categoria</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="card table-card p-3 p-md-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
+            <div>
+                <h4 class="card-section-title mb-1">Categorias Cadastradas</h4>
+                <p class="text-muted small mb-0">Classificação de itens e objetos registrados no sistema</p>
+            </div>
+            <div class="text-muted small">
+                Total: <strong>{{ categorias|length }}</strong> categoria(s)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 180px;">Nome</th>
+                        <th scope="col" style="min-width: 280px;">Descrição</th>
+                        <th scope="col" class="text-center" style="width: 120px;">Status</th>
+                        <th scope="col" class="text-end" style="min-width: 130px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for categoria in categorias %}
+                    <tr>
+                        <td class="fw-bold text-dark">{{ categoria.nome }}</td>
+                        <td class="text-secondary">{{ categoria.descricao }}</td>
+                        <td class="text-center">
+                            {% if categoria.ativa %}
+                            <span class="badge-status badge-status-ativo">
+                                <i class="bi bi-check-circle-fill me-1"></i>Ativo
+                            </span>
+                            {% else %}
+                            <span class="badge-status badge-status-inativo">
+                                <i class="bi bi-dash-circle-fill me-1"></i>Inativo
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
+                                <a href="{% url 'view_categoria' categoria.pk %}" class="btn-action btn-action-view" title="Visualizar categoria">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'atualizar_categoria' categoria.pk %}" class="btn-action btn-action-edit" title="Editar categoria">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'excluir_categoria' categoria.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="{{ categoria.nome }}" title="Excluir categoria">
+                                    <i class="bi bi-trash"></i>
+                                </a>                                
+                                
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-bookmarks fs-1 text-muted d-block mb-2"></i>
+                                <h6 class="fw-bold text-secondary">Nenhuma categoria cadastrada</h6>
+                                <p class="small text-muted mb-3">Cadastre categorias para que os itens possam ser organizados no sistema.</p>
+                                <a href="{% url 'nova_categoria' %}" class="btn btn-sm btn-primary-custom">Cadastrar Primeira Categoria</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+        <!-- PAGINAÇÃO -->
+    {% if categorias.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de páginas" class="mt-4 pt-2 border-top">
+        <ul class="pagination pagination-custom justify-content-end mb-0">
+            <li class="page-item {% if not categorias.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if categorias.has_previous %}?page={{ categorias.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for num in categorias.paginator.page_range %}
+                <li class="page-item {% if num == categorias.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if not categorias.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if categorias.has_next %}?page={{ categorias.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    Próxima <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir a categoria?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Categoria</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Esta ação poderá impactar a classificação de itens já cadastrados.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

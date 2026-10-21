@@ -1,0 +1,167 @@
+{% load static %}
+{% extends "admin/base.html" %}
+{% block title %}Lista de Instituições{% endblock %}
+
+{% block search %}
+<form method="GET" action="{% url 'lista_instituicoes' %}" class="topbar-search-form">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control topbar-search-input" placeholder="Pesquisar por nome ou CNPJ..." value="{{ q }}">
+        {% if q %}
+            <a href="{% url 'lista_instituicoes' %}" class="btn topbar-search-clear" title="Limpar busca"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button class="btn topbar-search-btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO DA SEÇÃO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-building me-2"></i>Instituições</h1>
+            <p class="welcome-subtitle">Gerencie as instituições parceiras e unidades cadastradas no sistema.</p>
+        </div>
+        <div>
+            <a href="{% url 'nova_instituicao' %}" class="btn btn-primary-custom d-inline-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>Nova Instituição</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- CARD DA TABELA -->
+    <div class="card table-card p-3 p-md-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
+            <div>
+                <h4 class="card-section-title mb-1">Instituições Cadastradas</h4>
+                <p class="text-muted small mb-0">Total listado de acordo com os filtros atuais</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 170px;">CNPJ</th>
+                        <th scope="col" style="min-width: 220px;">Nome da Instituição</th>
+                        <th scope="col" class="text-center" style="width: 120px;">Status</th>
+                        <th scope="col" class="text-end" style="min-width: 140px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instituicao in instituicoes %}
+                    <tr>
+                        <td class="fw-semibold text-secondary cnpj-format">{{ instituicao.cnpj_formatado|default:instituicao.cnpj }}</td>
+                        <td class="fw-bold text-dark">{{ instituicao.nome }}</td>
+                        <td class="text-center">
+                            {% if instituicao.ativo %}
+                            <span class="badge-status badge-status-ativo"><i class="bi bi-check-circle-fill me-1"></i>Ativo</span>
+                            {% else %}
+                            <span class="badge-status badge-status-inativo"><i class="bi bi-dash-circle-fill me-1"></i>Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
+                                <a href="{% url 'detalhes_instituicao' instituicao.pk %}" class="btn-action btn-action-view" title="Visualizar detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'editar_instituicao' instituicao.pk %}" class="btn-action btn-action-edit" title="Editar instituição">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'excluir_instituicao' instituicao.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="{{ instituicao.nome }}" title="Excluir instituição">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-building-slash fs-1 text-muted d-block mb-2"></i>
+                                <h6 class="fw-bold text-secondary">Nenhuma instituição encontrada</h6>
+                                <p class="small text-muted mb-3">Tente refinar sua pesquisa ou cadastre uma nova instituição.</p>
+                                <a href="{% url 'nova_instituicao' %}" class="btn btn-sm btn-primary-custom">Cadastrar Agora</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if instituicoes.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de páginas" class="mt-4 pt-2 border-top">
+        <ul class="pagination pagination-custom justify-content-end mb-0">
+            <li class="page-item {% if not instituicoes.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if instituicoes.has_previous %}?page={{ instituicoes.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for num in instituicoes.paginator.page_range %}
+                <li class="page-item {% if num == instituicoes.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if not instituicoes.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if instituicoes.has_next %}?page={{ instituicoes.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% else %}#{% endif %}">
+                    Próxima <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- MODAL BOOTSTRAP DE CONFIRMAÇÃO DE EXCLUSÃO -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir o cadastro desta instituição?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark" id="modalItemNome">Nome da Instituição</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Esta ação é irreversível e removerá todos os vínculos dependentes.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

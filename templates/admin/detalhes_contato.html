@@ -1,0 +1,175 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Detalhes da Mensagem | {{ contato.nome|default:"Contato" }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-envelope-open me-2"></i>Detalhes da Mensagem</h1>
+            <p class="welcome-subtitle">Visualização completa do contato recebido pelo formulário público.</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_contatos' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar para Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- DETALHES PRINCIPAIS E CONTEÚDO -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4 h-100">
+                
+                <!-- IDENTIFICAÇÃO DO REMETENTE -->
+                <div class="d-flex align-items-center mb-4 pb-3 border-bottom gap-3">
+                    <div class="icon-avatar-md">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-dark">{{ contato.nome|default:"Nome não informado" }}</h4>
+                        <span class="text-muted small">
+                            UUID: <strong class="text-secondary font-monospace">#{{ contato.uuid|default:contato.pk }}</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- METADADOS DA MENSAGEM -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">E-mail do Remetente</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-envelope profile-info-icon"></i>
+                            <span>{{ contato.email|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Telefone de Contato</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-telephone profile-info-icon"></i>
+                            <span>{{ contato.telefone_formatado|default:contato.telefone|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Assunto</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-chat-square-text profile-info-icon"></i>
+                            <span>{{ contato.get_assunto_display|default:contato.assunto|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Data de Recebimento</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-calendar-event profile-info-icon"></i>
+                            <span>{{ contato.data|date:"d/m/Y \à\s H:i" }}</span>
+                        </div>
+                    </div>
+
+                    {% if contato.ip_contato %}
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">IP de Origem</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-globe profile-info-icon"></i>
+                            <span class="font-monospace small">{{ contato.ip_contato }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- CORPO DA MENSAGEM -->
+                    <div class="col-12">
+                        <span class="profile-data-label">Conteúdo da Mensagem</span>
+                        <div class="message-content-box mt-1 p-3 rounded bg-light border text-break">
+                            {{ contato.mensagem|linebreaksbr|default:"Nenhum texto contido nesta mensagem." }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL DE AÇÕES -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- CARD DE AÇÕES -->
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Ações Disponíveis</h5>
+                <div class="d-grid gap-2">
+                    {% if contato.email %}
+                    <a href="mailto:{{ contato.email }}?subject=Ref: {{ contato.get_assunto_display|default:contato.assunto }}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-reply-fill fs-5"></i>
+                        <span>Responder por E-mail</span>
+                    </a>
+                    {% endif %}
+
+                    {% if contato.telefone %}
+                    <a href="https://wa.me/55{{ contato.telefone }}?text=Ol%C3%A1%20{{ contato.nome|urlencode }},%20recebemos%20sua%20mensagem%20no%20FindLog." target="_blank" rel="noopener noreferrer" class="btn btn-success d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-whatsapp"></i>
+                        <span>Conversar no WhatsApp</span>
+                    </a>
+                    {% endif %}
+
+                    <a href="{% url 'apagar_contato' contato.pk %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}">
+                        <i class="bi bi-trash"></i>
+                        <span>Excluir Mensagem</span>
+                    </a>
+
+                    <a href="{% url 'lista_contatos' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Voltar para Lista</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CARD INFORMATIVO -->
+            <div class="card table-card security-notice-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Informações do Sistema</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Esta mensagem foi submetida publicamente através do canal de atendimento do portal e encontra-se armazenada de forma segura na base de dados do FindLog.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja excluir esta mensagem?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">{{ contato.nome|default:"Mensagem" }}</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Esta ação removerá o registro definitivamente da base de dados.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'apagar_contato' contato.pk %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

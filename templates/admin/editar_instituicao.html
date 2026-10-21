@@ -1,0 +1,104 @@
+{% load static %}
+{% extends "admin/base.html" %}
+{% block title %}Atualizar Instituição{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-pencil-square me-2"></i>Atualizar Instituição</h1>
+            <p class="welcome-subtitle">Modifique os dados cadastrais da instituição {{ instituicao.nome }}.</p>
+        </div>
+        <div>
+            <a href="{% url 'lista_instituicoes' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH (ERROS / SUCESSO) -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- FORMULÁRIO -->
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'editar_instituicao' instituicao.pk %}">
+            {% csrf_token %}
+            <div class="row g-4">
+                <div class="col-12 col-md-8">
+                    <label class="form-label form-label-custom" for="nome">Nome da Instituição <span class="text-danger">*</span></label>
+                    <input type="text" id="nome" name="nome" class="form-control form-control-custom" value="{{ form.nome.value|default:instituicao.nome }}" required>
+                    {% for erro in form.nome.errors %}
+                        <div class="text-danger small mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label for="cnpj" class="form-label form-label-custom">CNPJ (Imutável)</label>
+                    <input id="cnpj" type="text" name="cnpj" class="form-control form-control-custom bg-light text-muted" value="{{ instituicao.cnpj_formatado|default:instituicao.cnpj }}" readonly>
+                </div>
+
+                <div class="col-12">
+                    <label for="endereco" class="form-label form-label-custom">Endereço Completo <span class="text-danger">*</span></label>
+                    <input id="endereco" type="text" name="endereco" class="form-control form-control-custom" value="{{ form.endereco.value|default:instituicao.endereco }}" required>
+                    {% for erro in form.endereco.errors %}
+                        <div class="text-danger small mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="telefone" class="form-label form-label-custom">Telefone</label>
+                    <input type="text" id="telefone" name="telefone" class="form-control form-control-custom" value="{{ form.telefone.value|default:instituicao.telefone_formatado|default:instituicao.telefone }}">
+                    {% for erro in form.telefone.errors %}
+                        <div class="text-danger small mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="email" class="form-label form-label-custom">E-mail</label>
+                    <input type="email" id="email" name="email" class="form-control form-control-custom" value="{{ form.email.value|default:instituicao.email }}">
+                    {% for erro in form.email.errors %}
+                        <div class="text-danger small mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12">
+                    <div class="p-3 rounded border bg-light d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="fw-bold mb-0 d-block text-dark" for="ativo">Status de Operação</label>
+                            <small class="text-muted">Define se a instituição possui permissões ativas no FindLog</small>
+                        </div>
+                        <div class="form-check form-switch m-0 fs-5">
+                            <input class="form-check-input custom-switch" type="checkbox" role="switch" id="ativo" name="ativo" {% if form.ativo.value or instituicao.ativo %}checked{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'lista_instituicoes' %}" class="btn btn-secondary-custom">Cancelar</a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
+{% endblock %}

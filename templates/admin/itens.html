@@ -1,0 +1,234 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Itens Cadastrados{% endblock %}
+
+{% block search %}
+<form method="GET" action="{% url 'lista_itens' %}" class="topbar-search-form">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control topbar-search-input" placeholder="Pesquisar por nome, código, marca ou cor..." value="{{ q }}">
+        {% if q or status_filtro %}
+            <a href="{% url 'lista_itens' %}" class="btn topbar-search-clear" title="Limpar filtros"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button class="btn topbar-search-btn" type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </div>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-box-seam me-2"></i>Itens Cadastrados</h1>
+            <p class="welcome-subtitle">Acompanhe todos os objetos perdidos, encontrados e devolvidos no sistema.</p>
+        </div>
+        <div>
+            <span class="welcome-badge">
+                <i class="bi bi-box-seam me-1"></i> Total: {{ itens.paginator.count }} item(ns)
+            </span>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- TABELA -->
+    <div class="card table-card p-3 p-md-4">
+        
+        <!-- BARRA SUPERIOR: TÍTULO E FILTRO RÁPIDO DE STATUS -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center pb-3 mb-3 border-bottom gap-3">
+            <div>
+                <h4 class="card-section-title mb-1">Relação de Objetos</h4>
+                <p class="text-muted small mb-0">Controle patrimonial e triagem de achados e perdidos</p>
+            </div>
+            
+            <!-- Filtro rápido por status -->
+            <div class="d-flex align-items-center gap-2">
+                <label for="filtro_status" class="small text-muted text-nowrap">Filtrar status:</label>
+                <select id="filtro_status" class="form-select form-select-sm" onchange="location = this.value;">
+                    <option value="{% url 'lista_itens' %}{% if q %}?q={{ q }}{% endif %}">Todos os status</option>
+                    {% for valor, rotulo in status_choices %}
+                        <option value="?status={{ valor }}{% if q %}&q={{ q }}{% endif %}" {% if status_filtro|stringformat:"s" == valor|stringformat:"s" %}selected{% endif %}>
+                            {{ rotulo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 250px;">Item</th>
+                        <th scope="col" style="min-width: 140px;">Categoria</th>
+                        <th scope="col" style="min-width: 170px;">Localização</th>
+                        <th scope="col" style="min-width: 140px;">Registro</th>
+                        <th scope="col" class="text-center" style="min-width: 120px;">Status</th>
+                        <th scope="col" class="text-end" style="min-width: 130px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <!-- Item (Foto + Nome + Código) -->
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if item.foto %}
+                                    <img src="{{ item.foto.url }}" alt="{{ item.nome|default:'Item' }}" class="rounded me-2 border object-fit-cover flex-shrink-0" style="width: 45px; height: 45px;">
+                                {% else %}
+                                    <div class="bg-light text-secondary border rounded d-flex justify-content-center align-items-center me-2 flex-shrink-0" style="width: 45px; height: 45px;">
+                                        <i class="bi bi-box-seam fs-5"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="text-truncate" style="max-width: 210px;">
+                                    <a href="{% url 'detalhes_item' item.uuid %}" class="d-block fw-semibold text-dark text-decoration-none text-truncate" title="{{ item.nome|default:'Item sem nome' }}">
+                                        {{ item.nome|default:"Item sem nome" }}
+                                    </a>
+                                    <small class="text-muted font-monospace">#{{ item.codigo }}</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Categoria -->
+                        <td>
+                            <span class="badge bg-light text-dark border fw-normal">
+                                {{ item.categoria.nome|default:"Sem categoria" }}
+                            </span>
+                        </td>
+
+                        <!-- Localização -->
+                        <td>
+                            <div class="small">
+                                <span class="d-block text-dark fw-medium">
+                                    {% if item.local %}
+                                        Sala {{ item.local.numero }} ({{ item.local.predio }})
+                                    {% else %}
+                                        <span class="text-muted">Local não informado</span>
+                                    {% endif %}
+                                </span>
+                                <small class="text-muted text-truncate d-block" style="max-width: 180px;">{{ item.instituicao.nome }}</small>
+                            </div>
+                        </td>
+
+                        <!-- Data de Registro -->
+                        <td class="text-secondary small">{{ item.data_registro|date:"d/m/Y H:i" }}</td>
+
+                        <!-- Status Badge -->
+                        <td class="text-center">
+                            {% if item.status == 1 %}
+                                <span class="badge bg-danger"><i class="bi bi-question-circle me-1"></i>Perdido</span>
+                            {% elif item.status == 2 %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-search me-1"></i>Encontrado</span>
+                            {% elif item.status == 3 %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Devolvido</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Outro</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="text-end">
+                            <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
+                                <a href="{% url 'detalhes_item' item.uuid %}" class="btn-action btn-action-view" title="Visualizar detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <a href="{% url 'atualizar_item' item.uuid %}" class="btn-action btn-action-edit" title="Editar item">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <a href="{% url 'apagar_item' item.uuid %}" class="btn-action btn-action-delete btn-delete" 
+                                   data-nome="{{ item.nome|default:item.codigo }}" title="Excluir item">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <h6 class="fw-bold text-secondary">Nenhum item encontrado</h6>
+                                <p class="small text-muted mb-0">Nenhum registro corresponde aos filtros selecionados ou nenhuma ocorrência foi cadastrada.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if itens.paginator.num_pages > 1 %}
+    <nav aria-label="Navegação de páginas" class="mt-4 pt-2 border-top">
+        <ul class="pagination pagination-custom justify-content-end mb-0">
+            <li class="page-item {% if not itens.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if itens.has_previous %}?page={{ itens.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% else %}#{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for num in itens.paginator.page_range %}
+                <li class="page-item {% if num == itens.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if not itens.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if itens.has_next %}?page={{ itens.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% else %}#{% endif %}">
+                    Próxima <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- MODAL DE EXCLUSÃO BOOTSTRAP -->
+<div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalConfirmarExclusaoLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-2">Tem certeza de que deseja remover este item permanentemente?</p>
+                <div class="modal-highlight-box p-3 rounded">
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Item</strong>
+                </div>
+                <small class="text-danger mt-2 d-inline-block">
+                    <i class="bi bi-info-circle me-1"></i> Todas as fotos e reivindicações diretamente vinculadas a este objeto serão excluídas.
+                </small>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                    <i class="bi bi-trash-fill me-1"></i> Sim, excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+{% endblock %}

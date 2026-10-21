@@ -1,0 +1,222 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Editar Item | {{ item.nome|default:item.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-pencil-square me-2"></i>Editar Item</h1>
+            <p class="welcome-subtitle">Modifique as informações cadastrais, status operacional ou proprietário do item #{{ item.codigo }}.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'detalhes_item' item.uuid %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar aos Detalhes
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- FORMULÁRIO -->
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'atualizar_item' item.uuid %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- SEÇÃO 1: IDENTIFICAÇÃO E STATUS -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-info-circle me-2"></i>Identificação e Status</h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- Nome -->
+                <div class="col-12 col-md-6">
+                    <label for="id_nome" class="form-label form-label-custom">Nome do Item <span class="text-danger">*</span></label>
+                    <input type="text" id="id_nome" name="nome" class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                           value="{{ form.nome.value|default:item.nome|default:'' }}" placeholder="Ex: Chaveiro com 3 chaves" required>
+                    {% for erro in form.nome.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <!-- Status -->
+                <div class="col-12 col-md-3">
+                    <label for="id_status" class="form-label form-label-custom">Status <span class="text-danger">*</span></label>
+                    <select id="id_status" name="status" class="form-select form-select-custom {% if form.status.errors %}is-invalid{% endif %}" required>
+                        {% for valor, rotulo in form.fields.status.choices %}
+                            <option value="{{ valor }}" {% if form.status.value|stringformat:"s" == valor|stringformat:"s" or item.status|stringformat:"s" == valor|stringformat:"s" and not form.status.value %}selected{% endif %}>
+                                {{ rotulo }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.status.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <!-- Categoria -->
+                <div class="col-12 col-md-3">
+                    <label for="id_categoria" class="form-label form-label-custom">Categoria</label>
+                    <select id="id_categoria" name="categoria" class="form-select form-select-custom {% if form.categoria.errors %}is-invalid{% endif %}">
+                        <option value="">Selecione...</option>
+                        {% for cat in form.fields.categoria.queryset %}
+                            <option value="{{ cat.pk }}" {% if form.categoria.value|stringformat:"s" == cat.pk|stringformat:"s" or item.categoria.pk == cat.pk and not form.categoria.value %}selected{% endif %}>
+                                {{ cat.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.categoria.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <!-- Instituição -->
+                <div class="col-12 col-md-6">
+                    <label for="id_instituicao" class="form-label form-label-custom">Instituição <span class="text-danger">*</span></label>
+                    <select id="id_instituicao" name="instituicao" class="form-select form-select-custom {% if form.instituicao.errors %}is-invalid{% endif %}" required>
+                        {% for inst in form.fields.instituicao.queryset %}
+                            <option value="{{ inst.pk }}" {% if form.instituicao.value|stringformat:"s" == inst.pk|stringformat:"s" or item.instituicao.pk == inst.pk and not form.instituicao.value %}selected{% endif %}>
+                                {{ inst.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.instituicao.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <!-- Dono / Reivindicador -->
+                <div class="col-12 col-md-6">
+                    <label for="id_dono" class="form-label form-label-custom">Proprietário / Dono</label>
+                    <select id="id_dono" name="dono" class="form-select form-select-custom {% if form.dono.errors %}is-invalid{% endif %}">
+                        <option value="">Nenhum dono atribuído...</option>
+                        {% for user in form.fields.dono.queryset %}
+                            <option value="{{ user.pk }}" {% if form.dono.value|stringformat:"s" == user.pk|stringformat:"s" or item.dono.pk == user.pk and not form.dono.value %}selected{% endif %}>
+                                {{ user.nome|default:user.username }} ({{ user.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.dono.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- SEÇÃO 2: CARACTERÍSTICAS FÍSICAS -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-tag me-2"></i>Características Físicas</h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-3">
+                    <label for="id_marca_ou_modelo" class="form-label form-label-custom">Marca ou Modelo</label>
+                    <input type="text" id="id_marca_ou_modelo" name="marca_ou_modelo" class="form-control form-control-custom {% if form.marca_ou_modelo.errors %}is-invalid{% endif %}" 
+                           value="{{ form.marca_ou_modelo.value|default:item.marca_ou_modelo|default:'' }}" placeholder="Ex: Samsung, Faber-Castell">
+                    {% for erro in form.marca_ou_modelo.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="id_cor" class="form-label form-label-custom">Cor Predominante</label>
+                    <input type="text" id="id_cor" name="cor" class="form-control form-control-custom {% if form.cor.errors %}is-invalid{% endif %}" 
+                           value="{{ form.cor.value|default:item.cor|default:'' }}" placeholder="Ex: Azul, Preto">
+                    {% for erro in form.cor.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="id_material" class="form-label form-label-custom">Material</label>
+                    <input type="text" id="id_material" name="material" class="form-control form-control-custom {% if form.material.errors %}is-invalid{% endif %}" 
+                           value="{{ form.material.value|default:item.material|default:'' }}" placeholder="Ex: Plástico, Metal, Tecido">
+                    {% for erro in form.material.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="id_tamanho" class="form-label form-label-custom">Tamanho</label>
+                    <input type="text" id="id_tamanho" name="tamanho" class="form-control form-control-custom {% if form.tamanho.errors %}is-invalid{% endif %}" 
+                           value="{{ form.tamanho.value|default:item.tamanho|default:'' }}" placeholder="Ex: Pequeno, Médio, 20cm">
+                    {% for erro in form.tamanho.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- SEÇÃO 3: LOCALIZAÇÃO E LOGÍSTICA -->
+            <div class="form-section-header mb-3">
+                <h5 class="form-section-title"><i class="bi bi-geo-alt me-2"></i>Localização e Devolução</h5>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-4">
+                    <label for="id_local" class="form-label form-label-custom">Local Onde Foi Encontrado</label>
+                    <select id="id_local" name="local" class="form-select form-select-custom {% if form.local.errors %}is-invalid{% endif %}">
+                        <option value="">Selecione a sala...</option>
+                        {% for sala in form.fields.local.queryset %}
+                            <option value="{{ sala.pk }}" {% if form.local.value|stringformat:"s" == sala.pk|stringformat:"s" or item.local.pk == sala.pk and not form.local.value %}selected{% endif %}>
+                                Sala {{ sala.numero }} - {{ sala.predio }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.local.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label for="id_local_guardado" class="form-label form-label-custom">Local Guardado (Achados e Perdidos)</label>
+                    <select id="id_local_guardado" name="local_guardado" class="form-select form-select-custom {% if form.local_guardado.errors %}is-invalid{% endif %}">
+                        <option value="">Selecione a sala...</option>
+                        {% for sala in form.fields.local_guardado.queryset %}
+                            <option value="{{ sala.pk }}" {% if form.local_guardado.value|stringformat:"s" == sala.pk|stringformat:"s" or item.local_guardado.pk == sala.pk and not form.local_guardado.value %}selected{% endif %}>
+                                Sala {{ sala.numero }} - {{ sala.predio }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for erro in form.local_guardado.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label for="id_data_devolucao" class="form-label form-label-custom">Data de Devolução</label>
+                    <input type="datetime-local" id="id_data_devolucao" name="data_devolucao" 
+                           class="form-control form-control-custom {% if form.data_devolucao.errors %}is-invalid{% endif %}"
+                           value="{{ form.data_devolucao.value|date:'Y-m-d\TH:i'|default:item.data_devolucao|date:'Y-m-d\TH:i'|default:'' }}">
+                    {% for erro in form.data_devolucao.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="id_foto" class="form-label form-label-custom">Foto do Item</label>
+                    <input type="file" id="id_foto" name="foto" class="form-control form-control-custom {% if form.foto.errors %}is-invalid{% endif %}" accept="image/*">
+                    {% if item.foto %}
+                        <div class="form-text small text-muted mt-1">
+                            Foto atual: <a href="{{ item.foto.url }}" target="_blank" class="fw-semibold">Ver imagem</a> (enviar novo arquivo substitui a foto).
+                        </div>
+                    {% endif %}
+                    {% for erro in form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+
+                <div class="col-12">
+                    <label for="id_descricao" class="form-label form-label-custom">Descrição Detalhada</label>
+                    <textarea id="id_descricao" name="descricao" rows="4" 
+                              class="form-control form-control-custom {% if form.descricao.errors %}is-invalid{% endif %}" 
+                              placeholder="Observações complementares, marcas de uso, detalhes de adesivos...">{{ form.descricao.value|default:item.descricao|default:'' }}</textarea>
+                    {% for erro in form.descricao.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- BOTÕES DE AÇÃO -->
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'detalhes_item' item.uuid %}" class="btn btn-secondary-custom">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,221 @@
+/* ==========================================================================
+   VARIÁVEIS DE IDENTIDADE VISUAL (FINDLOG)
+   ========================================================================== */
+:root {
+  --azul-escuro: #1A2B45;
+  --azul-medio: #243B5E;
+  --laranja-destaque: #FF6200;
+  --laranja-hover: #E05500;
+  --bege-principal: #F7F3EB;
+  --bege-areia: #EAE2D3;
+  --bege-secao: #EFE9DC;
+  --bege-card: #FCFBF7;
+  --texto-escuro: #111827;
+  --texto-apoio: #4B5563;
+
+  --border-radius-base: 10px;
+  --border-radius-lg: 18px;
+  --shadow-card: 0 20px 45px -10px rgba(26, 43, 69, 0.35);
+  --transition-speed: 0.25s;
+}
+
+/* ==========================================================================
+   LAYOUT CENTRALIZADO (100VH)
+   ========================================================================== */
+html, body.error-body {
+  height: 100%;
+}
+
+body.error-body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bege-principal);
+  background-image: radial-gradient(circle at 50% 25%, rgba(234, 226, 211, 0.8) 0%, var(--bege-principal) 85%);
+  color: var(--texto-escuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.error-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   CARD DE ERRO (PREMIUM DARK CARD)
+   ========================================================================== */
+.error-card {
+  width: 100%;
+  background: linear-gradient(145deg, var(--azul-escuro) 0%, var(--azul-medio) 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 3rem 2.25rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ponto de luz decorativo sutil no fundo do card */
+.error-card::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(255, 98, 0, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Logomarca */
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background-color: var(--laranja-destaque);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  box-shadow: 0 3px 8px rgba(255, 98, 0, 0.35);
+}
+
+.logo-accent {
+  color: var(--laranja-destaque);
+}
+
+/* ==========================================================================
+   ÍCONE, TIPOGRAFIA E TEXTOS
+   ========================================================================== */
+.error-icon-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Variações de cor do ícone */
+.error-icon-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.error-icon-info {
+  background-color: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.error-icon-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.error-code {
+  font-size: 4.25rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1.5px;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
+}
+
+.error-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.85rem;
+}
+
+.error-description {
+  color: var(--bege-areia);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto 2.25rem auto;
+  opacity: 0.92;
+}
+
+/* ==========================================================================
+   BOTÕES DE AÇÃO
+   ========================================================================== */
+.btn-error-primary {
+  background-color: var(--laranja-destaque) !important;
+  border-color: var(--laranja-destaque) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.925rem;
+  border-radius: var(--border-radius-base);
+  padding: 10px 22px;
+  box-shadow: 0 4px 14px rgba(255, 98, 0, 0.35);
+  text-decoration: none;
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-error-primary:hover {
+  background-color: var(--laranja-hover) !important;
+  border-color: var(--laranja-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(255, 98, 0, 0.45);
+}
+
+.btn-error-secondary {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.925rem;
+  border-radius: var(--border-radius-base);
+  padding: 10px 22px;
+  text-decoration: none;
+  transition: all var(--transition-speed) ease;
+}
+
+.btn-error-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE)
+   ========================================================================== */
+@media (max-width: 576px) {
+  .error-card {
+    padding: 2.5rem 1.5rem;
+  }
+  .error-code {
+    font-size: 3.5rem;
+  }
+  .error-title {
+    font-size: 1.25rem;
+  }
+  .error-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+  .error-actions .btn {
+    width: 100%;
+  }
+}
