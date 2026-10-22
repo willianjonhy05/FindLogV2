@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "adm/base.html" %}
 {% load static %}
 {% block title %}Atualizar Instituição{% endblock %}
 
@@ -45,7 +45,7 @@
 
                 <div class="col-12 col-md-4">
                     <label for="cnpj" class="form-label form-label-custom">CNPJ (Imutável)</label>
-                    <input id="cnpj" type="text" name="cnpj" class="form-control form-control-custom bg-light text-muted" value="{{ instituicao.cnpj_formatado|default:instituicao.cnpj }}" readonly>
+                    <input id="cnpj" type="text" name="cnpj" class="form-control form-control-custom bg-light text-muted" value="{{ instituicao.cnpj_formatado|default:instituicao.cnpj }}" readonly disabled>
                 </div>
 
                 <div class="col-12">

@@ -55,7 +55,11 @@
             <div class="d-none d-md-block text-start lh-sm pe-1">
                 {% if request.user.is_authenticated %}
                     <div class="profile-name fw-semibold text-dark">
+                        {% if request.user.is_superuser %}
+                        Administrador Superusuário
+                        {% else %}
                         {{ request.session.primeiro_nome|default:request.user.primeiro_nome|default:request.session.username|default:request.user.username }}
+                        {% endif %}
                     </div>
                     <small class="profile-role text-muted">
                         {% if request.user.tipo == 1 or request.user.is_superuser %}

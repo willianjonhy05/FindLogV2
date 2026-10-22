@@ -3,7 +3,7 @@ from .models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivind
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, ProtectedError
-from .forms import InstituicaoForm, CategoriaForm, NovoUsuarioForm, SalaForm, ItemUpdateForm, ReivindicacaoUpdateForm, EditarMeuPerfilForm, TrocarMinhaSenhaForm
+from .forms import InstituicaoForm, CategoriaForm, NovoUsuarioForm, SalaForm, ItemUpdateForm, ReivindicacaoUpdateForm, EditarMeuPerfilForm, TrocarMinhaSenhaForm, InstituicaoUpdateForm
 from .utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
@@ -27,7 +27,7 @@ def dashboard_adm(request):
         "total_contatos": total_contatos   
     }
 
-    return render(request, "admin/dashboard.html", context)
+    return render(request, "adm/dashboard.html", context)
 
 
 def nova_instituicao(request):
@@ -45,6 +45,8 @@ def nova_instituicao(request):
         form = InstituicaoForm(dados_post)
 
         if form.is_valid():
+            instituicao = form.save(commit=False)
+            instituicao.ativo = True
             instituicao = form.save()
             messages.success(
                 request,
@@ -57,7 +59,7 @@ def nova_instituicao(request):
     else:
         form = InstituicaoForm()
 
-    return render(request, "admin/nova_instituicao.html", {"form": form})
+    return render(request, "adm/nova_instituicao.html", {"form": form})
 
 
 def lista_instituicoes(request):
@@ -90,14 +92,14 @@ def lista_instituicoes(request):
         "page": instituicoes_paginadas.number,
         "total_pages": paginator.num_pages,
     }
-    return render(request, "admin/instituicoes.html", context)
+    return render(request, "adm/instituicoes.html", context)
 
 def detalhes_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
     context = {
         "instituicao": instituicao
     }
-    return render(request, "admin/detalhes_instituicao.html",context)
+    return render(request, "adm/detalhes_instituicao.html",context)
 
 
 def editar_instituicao(request, cnpj):
@@ -105,7 +107,9 @@ def editar_instituicao(request, cnpj):
 
     if request.method == "POST":
         # Bloqueia alteração manual de CNPJ se for PK
-        form = InstituicaoForm(request.POST, instance=instituicao)
+
+        
+        form = InstituicaoUpdateForm(request.POST, instance=instituicao)
         if form.is_valid():
             form.save()
             messages.success(request, f"Instituição '{instituicao.nome}' atualizada com sucesso!")
@@ -115,11 +119,11 @@ def editar_instituicao(request, cnpj):
             for erro in erros:
                 messages.error(request, f"{campo.capitalize()}: {erro}")
     else:
-        form = InstituicaoForm(instance=instituicao)
+        form = InstituicaoUpdateForm(instance=instituicao)
 
     return render(
         request,
-        "admin/editar_instituicao.html",
+        "adm/editar_instituicao.html",
         {"form": form, "instituicao": instituicao}
     )
 
@@ -158,7 +162,7 @@ def lista_categorias(request):
         "q": termo_busca,
     }
 
-    return render(request, "admin/categorias.html", context)    
+    return render(request, "adm/categorias.html", context)    
 
 
 def nova_categoria(request):
@@ -179,7 +183,7 @@ def nova_categoria(request):
     else:
         form = CategoriaForm()
 
-    return render(request, "admin/nova_categoria.html", {"form": form})
+    return render(request, "adm/nova_categoria.html", {"form": form})
 
 
 def atualizar_categoria(request, codigo):
@@ -221,7 +225,7 @@ def atualizar_categoria(request, codigo):
         "form": form,
         "categoria": categoria,
     }
-    return render(request, "admin/editar_categoria.html", context)
+    return render(request, "adm/editar_categoria.html", context)
 
 
 def excluir_categoria(request, codigo):
@@ -245,7 +249,7 @@ def excluir_categoria(request, codigo):
 
 def view_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
-    return render(request, "admin/detalhes_categoria.html", {"categoria": categoria})
+    return render(request, "adm/detalhes_categoria.html", {"categoria": categoria})
 
 
 def lista_contatos(request):
@@ -275,12 +279,12 @@ def lista_contatos(request):
         "contatos": contatos_paginados,
         "q": termo_busca,
     }
-    return render(request, "admin/contatos.html", context)
+    return render(request, "adm/contatos.html", context)
 
 
 def view_contato(request, pk):
     contato = get_object_or_404(Contato, pk=pk)
-    return render(request, "admin/detalhes_contato.html", {"contato": contato})
+    return render(request, "adm/detalhes_contato.html", {"contato": contato})
 
 
 def apagar_contato(request, pk):
@@ -317,7 +321,7 @@ def novo_usuario(request):
         "salas": Sala.objects.all().order_by("numero"),
         "tipos_usuario": Perfil.TipoUsuario.choices,
     }
-    return render(request, "admin/novo_usuario.html", context)
+    return render(request, "adm/novo_usuario.html", context)
 
 @login_required
 def lista_usuarios(request):
@@ -355,7 +359,7 @@ def lista_usuarios(request):
         "usuarios": usuarios_paginados,
         "q": termo_busca,
     }
-    return render(request, "admin/usuarios.html", context)
+    return render(request, "adm/usuarios.html", context)
 
 
 @login_required
@@ -437,7 +441,7 @@ def excluir_usuario(request, pk):
 @login_required
 def visualizar_usuario(request, pk):
     usuario = get_object_or_404(Perfil, pk=pk)
-    return render(request, "admin/detalhes_usuario.html", {"usuario": usuario})
+    return render(request, "adm/detalhes_usuario.html", {"usuario": usuario})
 
 
 @login_required
@@ -475,7 +479,7 @@ def lista_salas(request):
         "salas": salas_paginadas,
         "q": termo_busca,
     }
-    return render(request, "admin/salas.html", context)
+    return render(request, "adm/salas.html", context)
 
 
 @login_required
@@ -494,7 +498,7 @@ def nova_sala(request):
     else:
         form = SalaForm(initial={"ativa": True})
 
-    return render(request, "admin/nova_sala.html", {"form": form, "acao": "Nova Sala"})
+    return render(request, "adm/nova_sala.html", {"form": form, "acao": "Nova Sala"})
 
 
 @login_required
@@ -505,7 +509,7 @@ def detalhes_sala(request, codigo):
     # Servidores vinculados a esta sala
     servidores = Perfil.objects.filter(sala=sala, tipo=Perfil.TipoUsuario.SERVIDOR)
 
-    return render(request, "admin/detalhes_sala.html", {
+    return render(request, "adm/detalhes_sala.html", {
         "sala": sala,
         "servidores": servidores,
     })
@@ -529,7 +533,7 @@ def editar_sala(request, codigo):
     else:
         form = SalaForm(instance=sala)
 
-    return render(request, "admin/editar_sala.html", {
+    return render(request, "adm/editar_sala.html", {
         "form": form,
         "sala": sala,
         "acao": "Editar Sala",
@@ -610,14 +614,14 @@ def lista_itens(request):
         "status_filtro": status_filtro,
         "status_choices": Item.StatusItem.choices,
     }
-    return render(request, "admin/itens.html", context)
+    return render(request, "adm/itens.html", context)
 
 
 @login_required
 def detalhes_item(request, uuid):
     item = get_object_or_404(Item.objects.select_related("categoria", "instituicao", "local", "local_guardado", "usuario_registro", "dono"), uuid=uuid)
     reivindicacoes = item.reivindicacoes.select_related("autor").order_by("-data")
-    return render(request, "admin/detalhes_item.html", {"item": item, "reivindicacoes": reivindicacoes})
+    return render(request, "adm/detalhes_item.html", {"item": item, "reivindicacoes": reivindicacoes})
 
 
 @login_required
@@ -634,7 +638,7 @@ def atualizar_item(request, uuid):
     else:
         form = ItemUpdateForm(instance=item)
 
-    return render(request, "admin/editar_item.html", {"form": form, "item": item})
+    return render(request, "adm/editar_item.html", {"form": form, "item": item})
 
 
 @login_required
@@ -689,7 +693,7 @@ def lista_reivindicacoes(request):
         "status_filtro": status_filtro,
         "status_choices": Reivindicacao.StatusReivindicacao.choices,
     }
-    return render(request, "admin/reivindicacoes.html", context)
+    return render(request, "adm/reivindicacoes.html", context)
 
 
 @login_required
@@ -700,7 +704,7 @@ def detalhes_reivindicacao(request, protocolo):
         ),
         protocolo=protocolo
     )
-    return render(request, "admin/detalhes_reivindicacao.html", {"reivindicacao": reivindicacao})
+    return render(request, "adm/detalhes_reivindicacao.html", {"reivindicacao": reivindicacao})
 
 
 @login_required
@@ -734,7 +738,7 @@ def atualizar_reivindicacao(request, protocolo):
 
     return render(
         request,
-        "admin/editar_reivindicacao.html",
+        "adm/editar_reivindicacao.html",
         {"form": form, "reivindicacao": reivindicacao}
     )
 
@@ -751,7 +755,7 @@ def apagar_reivindicacao(request, protocolo):
 
 @login_required
 def meu_perfil(request):
-    return render(request, "admin/meu_perfil.html", {"usuario": request.user})
+    return render(request, "adm/meu_perfil.html", {"usuario": request.user})
 
 
 @login_required
@@ -773,7 +777,7 @@ def editar_meu_perfil(request):
     else:
         form = EditarMeuPerfilForm(instance=usuario)
 
-    return render(request, "admin/editar_perfil.html", {"form": form, "usuario": usuario})
+    return render(request, "adm/editar_perfil.html", {"form": form, "usuario": usuario})
 
 
 
@@ -791,4 +795,4 @@ def trocar_minha_senha(request):
     else:
         form = TrocarMinhaSenhaForm(user=request.user)
 
-    return render(request, "admin/trocar_senha.html", {"form": form})
+    return render(request, "adm/trocar_senha.html", {"form": form})

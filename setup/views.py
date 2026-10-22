@@ -115,7 +115,7 @@ def selecionar_instituicao(request):
     }
     return render(request, "public/selecionar_instituicao.html", context)
 
-@require_POST
+
 def logout_view(request):
     logout(request)
     messages.info(request, "Sua sessão foi encerrada com segurança.")
