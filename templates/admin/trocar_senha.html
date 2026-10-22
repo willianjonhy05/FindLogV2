@@ -1,0 +1,116 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Alterar Minha Senha{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-shield-lock me-2"></i>Alterar Senha</h1>
+            <p class="welcome-subtitle">Atualize sua credencial de acesso ao sistema FindLog periodicamente por segurança.</p>
+        </div>
+        <div>
+            <a href="{% url 'meu_perfil' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar ao Perfil
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4">
+                <form method="POST" action="{% url 'trocar_minha_senha' %}">
+                    {% csrf_token %}
+
+                    <!-- Erros globais do form -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <div>{{ error }}</div>
+                                </div>
+                            {% endfor %}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-4">
+                        <!-- Senha Atual -->
+                        <div class="col-12">
+                            <label for="{{ form.old_password.id_for_label }}" class="form-label form-label-custom">
+                                Senha Atual <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" id="{{ form.old_password.id_for_label }}" name="{{ form.old_password.name }}" 
+                                   class="form-control form-control-custom {% if form.old_password.errors %}is-invalid{% endif %}" 
+                                   placeholder="Digite sua senha de acesso atual" required>
+                            {% for erro in form.old_password.errors %}
+                                <div class="invalid-feedback d-block">{{ erro }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Nova Senha -->
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.new_password1.id_for_label }}" class="form-label form-label-custom">
+                                Nova Senha <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" id="{{ form.new_password1.id_for_label }}" name="{{ form.new_password1.name }}" 
+                                   class="form-control form-control-custom {% if form.new_password1.errors %}is-invalid{% endif %}" 
+                                   placeholder="Mínimo de 8 caracteres" required>
+                            {% for erro in form.new_password1.errors %}
+                                <div class="invalid-feedback d-block">{{ erro }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Confirmar Nova Senha -->
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.new_password2.id_for_label }}" class="form-label form-label-custom">
+                                Confirmar Nova Senha <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" id="{{ form.new_password2.id_for_label }}" name="{{ form.new_password2.name }}" 
+                                   class="form-control form-control-custom {% if form.new_password2.errors %}is-invalid{% endif %}" 
+                                   placeholder="Repita a nova senha" required>
+                            {% for erro in form.new_password2.errors %}
+                                <div class="invalid-feedback d-block">{{ erro }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if form.new_password1.help_text %}
+                        <div class="form-text text-muted small mt-3">
+                            {{ form.new_password1.help_text|safe }}
+                        </div>
+                    {% endif %}
+
+                    <hr class="my-4 hr-custom">
+
+                    <div class="d-flex justify-content-end align-items-center gap-2">
+                        <a href="{% url 'meu_perfil' %}" class="btn btn-secondary-custom">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-circle-fill me-1"></i> Atualizar Senha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

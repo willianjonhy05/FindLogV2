@@ -3,9 +3,10 @@ from .models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivind
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, ProtectedError
-from .forms import InstituicaoForm, CategoriaForm, NovoUsuarioForm, SalaForm, ItemUpdateForm, ReivindicacaoUpdateForm
+from .forms import InstituicaoForm, CategoriaForm, NovoUsuarioForm, SalaForm, ItemUpdateForm, ReivindicacaoUpdateForm, EditarMeuPerfilForm, TrocarMinhaSenhaForm
 from .utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 # Create your views here.
 
 
@@ -734,3 +735,49 @@ def apagar_reivindicacao(request, protocolo):
     reivindicacao.delete()
     messages.success(request, f"Reivindicação #{num_protocolo} removida com sucesso.")
     return redirect("lista_reivindicacoes")    
+
+
+
+@login_required
+def meu_perfil(request):
+    return render(request, "admin/meu_perfil.html", {"usuario": request.user})
+
+
+@login_required
+def editar_meu_perfil(request):
+    usuario = request.user
+    if request.method == "POST":
+        form = EditarMeuPerfilForm(request.POST, request.FILES, instance=usuario)
+        if form.is_valid():
+            usuario_salvo = form.save()
+
+            # Sincroniza os novos dados com a sessão do usuário
+            request.session["username"] = usuario_salvo.username
+            request.session["primeiro_nome"] = usuario_salvo.primeiro_nome
+            request.session["foto_url"] = usuario_salvo.foto.url if usuario_salvo.foto else None
+
+            messages.success(request, "Seus dados foram atualizados com sucesso!")
+            return redirect("meu_perfil")
+        messages.error(request, "Erro ao atualizar seus dados. Verifique os campos.")
+    else:
+        form = EditarMeuPerfilForm(instance=usuario)
+
+    return render(request, "admin/editar_perfil.html", {"form": form, "usuario": usuario})
+
+
+
+@login_required
+def trocar_minha_senha(request):
+    if request.method == "POST":
+        form = TrocarMinhaSenhaForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Impede que o usuário seja desconectado após alterar a credencial
+            update_session_auth_hash(request, user)
+            messages.success(request, "Sua senha foi alterada com sucesso!")
+            return redirect("meu_perfil")
+        messages.error(request, "Não foi possível alterar sua senha. Confira os requisitos abaixo.")
+    else:
+        form = TrocarMinhaSenhaForm(user=request.user)
+
+    return render(request, "admin/trocar_senha.html", {"form": form})

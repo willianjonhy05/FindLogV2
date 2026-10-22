@@ -1,0 +1,118 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Editar Meus Dados{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-pencil-square me-2"></i>Editar Meus Dados</h1>
+            <p class="welcome-subtitle">Mantenha suas informações cadastrais e foto de identificação atualizadas.</p>
+        </div>
+        <div>
+            <a href="{% url 'meu_perfil' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-arrow-left me-1"></i> Voltar ao Perfil
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card table-card p-4">
+        <form method="POST" action="{% url 'editar_meu_perfil' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- FOTO DE PERFIL COM PREVIEW -->
+            <div class="p-3 rounded border bg-light d-flex flex-column flex-sm-row align-items-sm-center gap-3 mb-4">
+                <div class="flex-shrink-0">
+                    {% if usuario.foto %}
+                        <img src="{{ usuario.foto.url }}" alt="Foto Atual" 
+                             class="rounded-circle border object-fit-cover shadow-sm" style="width: 75px; height: 75px;">
+                    {% else %}
+                        <div class="rounded-circle bg-white border text-secondary d-flex align-items-center justify-content-center" 
+                             style="width: 75px; height: 75px;">
+                            <i class="bi bi-person fs-1"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <label for="id_foto" class="form-label form-label-custom mb-1">Alterar Foto de Perfil</label>
+                    <input type="file" id="id_foto" name="foto" class="form-control form-control-custom {% if form.foto.errors %}is-invalid{% endif %}" accept="image/*">
+                    <div class="form-text text-muted small mt-1">Formatos compatíveis: PNG, JPG ou WEBP.</div>
+                    {% for erro in form.foto.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- FORMULÁRIO DE DADOS PESSOAIS -->
+            <div class="row g-4">
+                <div class="col-12 col-md-8">
+                    <label for="id_nome" class="form-label form-label-custom">Nome Completo <span class="text-danger">*</span></label>
+                    <input type="text" id="id_nome" name="nome" class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                           value="{{ form.nome.value|default:usuario.nome|default:'' }}" required>
+                    {% for erro in form.nome.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label for="id_email" class="form-label form-label-custom">E-mail (Login) <span class="text-danger">*</span></label>
+                    <input type="email" id="id_email" name="email" class="form-control form-control-custom {% if form.email.errors %}is-invalid{% endif %}" 
+                           value="{{ form.email.value|default:usuario.email|default:'' }}" required>
+                    {% for erro in form.email.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="id_data_nascimento" class="form-label form-label-custom">Data de Nascimento</label>
+                    <input type="date" id="id_data_nascimento" name="data_nascimento" class="form-control form-control-custom {% if form.data_nascimento.errors %}is-invalid{% endif %}" 
+                           value="{{ form.data_nascimento.value|date:'Y-m-d'|default:usuario.data_nascimento|date:'Y-m-d'|default:'' }}">
+                    {% for erro in form.data_nascimento.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label for="id_telefone" class="form-label form-label-custom">Telefone / Celular</label>
+                    <input type="text" id="id_telefone" name="telefone" class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}" 
+                           placeholder="(00) 00000-0000" value="{{ form.telefone.value|default:usuario.telefone|default:'' }}">
+                    {% for erro in form.telefone.errors %}
+                        <div class="invalid-feedback d-block">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <a href="{% url 'meu_perfil' %}" class="btn btn-secondary-custom">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
+{% endblock %}

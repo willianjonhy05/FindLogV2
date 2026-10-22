@@ -34,7 +34,10 @@ from .adm_views import (
     lista_reivindicacoes,
     detalhes_reivindicacao,
     atualizar_reivindicacao,
-    apagar_reivindicacao
+    apagar_reivindicacao,
+    meu_perfil,
+    trocar_minha_senha,
+    editar_meu_perfil
 )
 
 
@@ -81,5 +84,10 @@ urlpatterns = [
     path("reivindicacoes/<int:protocolo>/", detalhes_reivindicacao, name="detalhes_reivindicacao"),
     path("reivindicacoes/<int:protocolo>/editar/", atualizar_reivindicacao, name="atualizar_reivindicacao"),
     path("reivindicacoes/<int:protocolo>/excluir/", apagar_reivindicacao, name="apagar_reivindicacao"),    
+
+
+    path("meu-perfil/", meu_perfil, name="meu_perfil"),
+    path("meu-perfil/editar/", editar_meu_perfil, name="editar_meu_perfil"),
+    path("meu-perfil/trocar-senha/", trocar_minha_senha, name="trocar_minha_senha"),    
 
 ]

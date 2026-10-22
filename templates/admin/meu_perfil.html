@@ -1,0 +1,145 @@
+{% load static %}
+{% extends "admin/base.html" %}
+
+{% block title %}Meu Perfil | {{ usuario.primeiro_nome|default:usuario.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO -->
+    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="welcome-title"><i class="bi bi-person-circle me-2"></i>Meu Perfil</h1>
+            <p class="welcome-subtitle">Gerencie e visualize suas informações pessoais cadastradas no FindLog.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary-custom">
+                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- INFORMAÇÕES PESSOAIS -->
+        <div class="col-12 col-lg-8">
+            <div class="card table-card p-4 h-100">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-4 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if usuario.foto %}
+                            <img src="{{ usuario.foto.url }}" alt="{{ usuario.primeiro_nome|default:'Perfil' }}" 
+                                 class="rounded-circle border object-fit-cover shadow-sm" style="width: 68px; height: 68px;">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary bg-opacity-10 text-primary border d-flex align-items-center justify-content-center" 
+                                 style="width: 68px; height: 68px;">
+                                <i class="bi bi-person-fill fs-2"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">{{ usuario.nome|default:usuario.username }}</h4>
+                            <span class="text-muted small">Nome de usuário: <strong class="text-secondary font-monospace">@{{ usuario.username }}</strong></span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if usuario.tipo == 1 or usuario.is_superuser %}
+                            <span class="badge bg-danger fs-6 px-3 py-2"><i class="bi bi-shield-lock-fill me-1"></i>Administrador</span>
+                        {% elif usuario.tipo == 3 %}
+                            <span class="badge bg-primary fs-6 px-3 py-2"><i class="bi bi-door-open-fill me-1"></i>Servidor</span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2"><i class="bi bi-person-fill me-1"></i>Usuário Comum</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRADE DE DADOS CADASTRAIS -->
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">E-mail (Login Principal)</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-envelope profile-info-icon"></i>
+                            <span>{{ usuario.email|default:"Não cadastrado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">CPF</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-person-vcard profile-info-icon"></i>
+                            <span class="font-monospace">{{ usuario.cpf|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Data de Nascimento</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-calendar3 profile-info-icon"></i>
+                            <span>{{ usuario.data_nascimento|date:"d/m/Y"|default:"Não informada" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="profile-data-label">Telefone / Celular</span>
+                        <div class="profile-data-value">
+                            <i class="bi bi-telephone profile-info-icon"></i>
+                            <span>{{ usuario.telefone|default:"Não informado" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="profile-data-label">Instituições Vinculadas</span>
+                        <div class="profile-data-value d-flex flex-wrap gap-2 mt-1">
+                            <i class="bi bi-building profile-info-icon align-self-start mt-1"></i>
+                            <div>
+                                {% for inst in usuario.instituicao.all %}
+                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ inst.nome }}</span>
+                                {% empty %}
+                                    <span class="text-muted small">Nenhum campus associado.</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL LATERAL DE AÇÕES & SEGURANÇA -->
+        <div class="col-12 col-lg-4">
+            <div class="card table-card p-4 mb-4">
+                <h5 class="card-section-title pb-2 mb-3 border-bottom">Gerenciar Conta</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'editar_meu_perfil' %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar Meus Dados</span>
+                    </a>
+                    <a href="{% url 'trocar_minha_senha' %}" class="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-key-fill"></i>
+                        <span>Alterar Senha</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card table-card security-notice-card p-4" style="background-color: #f8f9fa; border-left: 4px solid #198754;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-shield-check text-success fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Segurança da Conta</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    Mantenha suas credenciais de acesso sempre atualizadas. Nunca compartilhe sua senha administrativa com terceiros.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

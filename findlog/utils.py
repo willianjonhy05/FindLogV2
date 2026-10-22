@@ -124,16 +124,18 @@ def obter_ip_usuario(request):
 
 
 
-def redirecionar_por_perfil(usuario):
-    from models import Perfil
+def redirecionar_por_perfil(request, usuario):
+    from .models import Perfil
     """
-    Encaminha o usuário para o painel correspondente ao seu perfil:
-    - Administrador (1) -> Dashboard Administrativo
-    - Usuário Comum (2) -> Tela inicial ou Minhas Demandas do Portal
-    - Servidor (3)      -> Painel Operacional da Sala vinculada
+    Encaminha o usuário para o painel correspondente ao seu perfil,
+    respeitando o parâmetro ?next= se existir.
     """
+    next_url = request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
+
     if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser:
-        return redirect("admin_dashboard")
+        return redirect("dashboard_admin")
     elif usuario.tipo == Perfil.TipoUsuario.SERVIDOR:
         return redirect("servidor_painel")
     return redirect("usuario_home")

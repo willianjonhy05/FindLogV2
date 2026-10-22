@@ -322,3 +322,40 @@ class ReivindicacaoUpdateForm(forms.ModelForm):
             "local_devolucao": forms.Select(attrs={"class": "form-select form-select-custom"}),
             "data_devolucao": forms.DateTimeInput(attrs={"class": "form-control form-control-custom", "type": "datetime-local"}),
         }        
+
+
+
+class EditarMeuPerfilForm(forms.ModelForm):
+    class Meta:
+        model = Perfil
+        fields = ["nome", "email", "data_nascimento", "telefone", "foto"]
+        widgets = {
+            "nome": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "Seu nome completo"
+            }),
+            "email": forms.EmailInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "seu.email@exemplo.com"
+            }),
+            "data_nascimento": forms.DateInput(attrs={
+                "class": "form-control form-control-custom",
+                "type": "date"
+            }),
+            "telefone": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "(00) 00000-0000"
+            }),
+            "foto": forms.FileInput(attrs={
+                "class": "form-control form-control-custom",
+                "accept": "image/png, image/jpeg, image/webp"
+            }),
+        }
+
+
+class TrocarMinhaSenhaForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-control form-control-custom"})
+            field.widget.attrs.pop("autofocus", None)        
