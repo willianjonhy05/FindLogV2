@@ -2,6 +2,7 @@
 from django import forms
 from findlog.models import Contato, Instituicao, Categoria, Perfil, Sala, Item, Reivindicacao
 from .utils import apenas_digitos
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import authenticate
 
 
