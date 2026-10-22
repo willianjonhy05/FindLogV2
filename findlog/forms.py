@@ -54,11 +54,11 @@ class InstituicaoForm(forms.ModelForm):
         fields = ["cnpj", "nome", "endereco", "telefone", "email", "ativo"]
 
     def clean_cnpj(self):
+        cnpj = self.cleaned_data.get("cnpj", "")
         # Se estiver editando uma instância existente, mantém o PK original
         if self.instance.pk:
             return self.instance.pk
 
-        cnpj = self.cleaned_data.get("cnpj", "")
         cnpj_limpo = apenas_digitos(cnpj)
         if Instituicao.objects.filter(pk=cnpj_limpo).exists():
             raise forms.ValidationError("Já existe uma instituição com este CNPJ.")

@@ -1,5 +1,5 @@
-{% load static %}
 {% extends "admin/base.html" %}
+{% load static %}
 {% block title %}Nova Instituição{% endblock %}
 
 {% block content %}
@@ -18,30 +18,125 @@
         </div>
     </div>
 
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- FORMULÁRIO -->
     <div class="card table-card p-4">
         <form method="POST" action="{% url 'nova_instituicao' %}">
             {% csrf_token %}
+
+            <!-- ERROS GERAIS DO FORMULÁRIO (NON-FIELD ERRORS) -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    {% for error in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div class="row g-4">
+                <!-- NOME -->
                 <div class="col-12 col-md-8">
                     <label class="form-label form-label-custom" for="nome">Nome da Instituição <span class="text-danger">*</span></label>
-                    <input type="text" id="nome" name="nome" class="form-control form-control-custom" placeholder="Ex: Instituto de Tecnologia e Logística LTDA" required>
+                    <input type="text" 
+                           id="nome" 
+                           name="nome" 
+                           value="{{ form.nome.value|default_if_none:'' }}" 
+                           class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                           placeholder="Ex: Instituto de Tecnologia e Logística LTDA" 
+                           required>
+                    {% if form.nome.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.nome.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
+
+                <!-- CNPJ -->
                 <div class="col-12 col-md-4">
                     <label for="cnpj" class="form-label form-label-custom">CNPJ <span class="text-danger">*</span></label>
-                    <input id="cnpj" type="text" name="cnpj" placeholder="00.000.000/0000-00" class="form-control form-control-custom" maxlength="18" required>
+                    <input type="text" 
+                           id="cnpj" 
+                           name="cnpj" 
+                           value="{{ form.cnpj.value|default_if_none:'' }}" 
+                           placeholder="00.000.000/0000-00" 
+                           class="form-control form-control-custom {% if form.cnpj.errors %}is-invalid{% endif %}" 
+                           maxlength="18" 
+                           required>
+                    {% if form.cnpj.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.cnpj.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
+
+                <!-- ENDEREÇO -->
                 <div class="col-12">
                     <label for="endereco" class="form-label form-label-custom">Endereço Completo <span class="text-danger">*</span></label>
-                    <input id="endereco" type="text" name="endereco" class="form-control form-control-custom" placeholder="Ex: Av. Paulista, 1000, Bloco B - Bela Vista, São Paulo/SP" required>
+                    <input type="text" 
+                           id="endereco" 
+                           name="endereco" 
+                           value="{{ form.endereco.value|default_if_none:'' }}" 
+                           class="form-control form-control-custom {% if form.endereco.errors %}is-invalid{% endif %}" 
+                           placeholder="Ex: Av. Paulista, 1000, Bloco B - Bela Vista, São Paulo/SP" 
+                           required>
+                    {% if form.endereco.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.endereco.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
+
+                <!-- TELEFONE -->
                 <div class="col-12 col-md-6">
                     <label for="telefone" class="form-label form-label-custom">Telefone de Contato</label>
-                    <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" class="form-control form-control-custom">
+                    <input type="text" 
+                           id="telefone" 
+                           name="telefone" 
+                           value="{{ form.telefone.value|default_if_none:'' }}" 
+                           placeholder="(11) 99999-9999" 
+                           class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}">
+                    {% if form.telefone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.telefone.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
+
+                <!-- E-MAIL -->
                 <div class="col-12 col-md-6">
                     <label for="email" class="form-label form-label-custom">E-mail Corporativo</label>
-                    <input type="email" id="email" name="email" placeholder="contato@instituicao.org.br" class="form-control form-control-custom">
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           value="{{ form.email.value|default_if_none:'' }}" 
+                           placeholder="contato@instituicao.org.br" 
+                           class="form-control form-control-custom {% if form.email.errors %}is-invalid{% endif %}">
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 

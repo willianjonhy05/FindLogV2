@@ -32,7 +32,17 @@ def dashboard_adm(request):
 
 def nova_instituicao(request):
     if request.method == "POST":
-        form = InstituicaoForm(request.POST)
+        # Cria uma cópia mutável do QueryDict
+        dados_post = request.POST.copy()
+
+        # Remove caracteres não numéricos
+        if 'cnpj' in dados_post:
+            dados_post['cnpj'] = apenas_digitos(dados_post['cnpj'])
+        if 'telefone' in dados_post:
+            dados_post['telefone'] = apenas_digitos(dados_post['telefone'])
+
+        # Instancia o formulário com os dados higienizados
+        form = InstituicaoForm(dados_post)
 
         if form.is_valid():
             instituicao = form.save()
@@ -42,11 +52,12 @@ def nova_instituicao(request):
             )
             return redirect("lista_instituicoes")
 
-        for campo, erros in form.errors.items():
-            for erro in erros:
-                messages.error(request, f"{campo.capitalize()}: {erro}")
+        messages.error(request, "Por favor, corrija os erros abaixo.")
 
-    return render(request, "admin/nova_instituicao.html")
+    else:
+        form = InstituicaoForm()
+
+    return render(request, "admin/nova_instituicao.html", {"form": form})
 
 
 def lista_instituicoes(request):
@@ -79,7 +90,7 @@ def lista_instituicoes(request):
         "page": instituicoes_paginadas.number,
         "total_pages": paginator.num_pages,
     }
-    return render(request, "admin/lista_instituicoes.html", context)
+    return render(request, "admin/instituicoes.html", context)
 
 def detalhes_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)

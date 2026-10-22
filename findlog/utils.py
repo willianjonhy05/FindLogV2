@@ -126,6 +126,7 @@ def obter_ip_usuario(request):
 
 def redirecionar_por_perfil(request, usuario):
     from .models import Perfil
+
     """
     Encaminha o usuário para o painel correspondente ao seu perfil,
     respeitando o parâmetro ?next= se existir.
@@ -134,8 +135,14 @@ def redirecionar_por_perfil(request, usuario):
     if next_url:
         return redirect(next_url)
 
-    if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser:
+    # 1. Superusuário vai direto para o Django Admin nativo
+    if usuario.is_superuser:
+        return redirect("admin:index")
+
+    # 2. Administrador comum vai para a dashboard personalizada
+    if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR:
         return redirect("dashboard_admin")
     elif usuario.tipo == Perfil.TipoUsuario.SERVIDOR:
         return redirect("servidor_painel")
+
     return redirect("usuario_home")
