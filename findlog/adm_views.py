@@ -3,13 +3,25 @@ from .models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivind
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, ProtectedError
-from .forms import InstituicaoForm, CategoriaForm, NovoUsuarioForm, SalaForm, ItemUpdateForm, ReivindicacaoUpdateForm, EditarMeuPerfilForm, TrocarMinhaSenhaForm, InstituicaoUpdateForm
+from .forms import (
+    InstituicaoForm,
+    CategoriaForm,
+    NovoUsuarioForm,
+    SalaForm,
+    ItemUpdateForm,
+    ReivindicacaoUpdateForm,
+    EditarMeuPerfilForm,
+    TrocarMinhaSenhaForm,
+    InstituicaoUpdateForm,
+)
 from .utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+import re
+from .decorators import superuser_required
+
 # Create your views here.
 
-
+@superuser_required
 def dashboard_adm(request):
     total_instituicoes = Instituicao.objects.count()
     total_categorias = Categoria.objects.count()
@@ -29,7 +41,7 @@ def dashboard_adm(request):
 
     return render(request, "adm/dashboard.html", context)
 
-
+@superuser_required
 def nova_instituicao(request):
     if request.method == "POST":
         # Cria uma cópia mutável do QueryDict
@@ -61,7 +73,7 @@ def nova_instituicao(request):
 
     return render(request, "adm/nova_instituicao.html", {"form": form})
 
-
+@superuser_required
 def lista_instituicoes(request):
     termo_busca = request.GET.get("q", "").strip()
     instituicoes_query = Instituicao.objects.all().order_by("-data_criacao")
@@ -94,6 +106,7 @@ def lista_instituicoes(request):
     }
     return render(request, "adm/instituicoes.html", context)
 
+@superuser_required
 def detalhes_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
     context = {
@@ -101,7 +114,7 @@ def detalhes_instituicao(request, cnpj):
     }
     return render(request, "adm/detalhes_instituicao.html",context)
 
-
+@superuser_required
 def editar_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
 
@@ -127,6 +140,7 @@ def editar_instituicao(request, cnpj):
         {"form": form, "instituicao": instituicao}
     )
 
+@superuser_required
 def excluir_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
     nome = instituicao.nome
@@ -135,6 +149,7 @@ def excluir_instituicao(request, cnpj):
     return redirect("lista_instituicoes")
 
 
+@superuser_required
 def lista_categorias(request):
     termo_busca = request.GET.get("q", "").strip()
     categorias_query = Categoria.objects.all().order_by("nome")
@@ -164,7 +179,7 @@ def lista_categorias(request):
 
     return render(request, "adm/categorias.html", context)    
 
-
+@superuser_required
 def nova_categoria(request):
     if request.method == "POST":
         form = CategoriaForm(request.POST)
@@ -185,7 +200,7 @@ def nova_categoria(request):
 
     return render(request, "adm/nova_categoria.html", {"form": form})
 
-
+@superuser_required
 def atualizar_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
 
@@ -228,6 +243,7 @@ def atualizar_categoria(request, codigo):
     return render(request, "adm/editar_categoria.html", context)
 
 
+@superuser_required
 def excluir_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
     nome = categoria.nome
@@ -247,11 +263,12 @@ def excluir_categoria(request, codigo):
 
     return redirect("lista_categorias")
 
+@superuser_required
 def view_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
     return render(request, "adm/detalhes_categoria.html", {"categoria": categoria})
 
-
+@superuser_required
 def lista_contatos(request):
     termo_busca = request.GET.get("q", "").strip()
     contatos_query = Contato.objects.all().order_by("-data")
@@ -282,11 +299,12 @@ def lista_contatos(request):
     return render(request, "adm/contatos.html", context)
 
 
-def view_contato(request, pk):
-    contato = get_object_or_404(Contato, pk=pk)
+@superuser_required
+def view_contato(request, uuid):
+    contato = get_object_or_404(Contato, uuid=uuid)
     return render(request, "adm/detalhes_contato.html", {"contato": contato})
 
-
+@superuser_required
 def apagar_contato(request, pk):
     contato = get_object_or_404(Contato, pk=pk)
     nome = contato.nome or "Contato anônimo"
@@ -294,7 +312,7 @@ def apagar_contato(request, pk):
     messages.success(request, f"Mensagem de '{nome}' excluída com sucesso.")
     return redirect("lista_contatos")
 
-@login_required
+@superuser_required
 def novo_usuario(request):
     # Restringe a criação de usuários a administradores
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
@@ -302,7 +320,16 @@ def novo_usuario(request):
         return redirecionar_por_perfil(request.user)
 
     if request.method == "POST":
-        form = NovoUsuarioForm(request.POST, request.FILES)
+
+        dados_post = request.POST.copy()
+
+        if "cpf" in dados_post and dados_post["cpf"]:
+            dados_post["cpf"] = re.sub(r"\D", "", dados_post["cpf"])
+
+        if "telefone" in dados_post and dados_post["telefone"]:
+            dados_post["telefone"] = re.sub(r"\D", "", dados_post["telefone"])
+
+        form = NovoUsuarioForm(dados_post, request.FILES)
         if form.is_valid():
             usuario = form.save()
             messages.success(
@@ -318,12 +345,12 @@ def novo_usuario(request):
     context = {
         "form": form,
         "instituicoes": Instituicao.objects.filter(ativo=True).order_by("nome"),
-        "salas": Sala.objects.all().order_by("numero"),
+        "salas": Sala.objects.filter(ativa=True),
         "tipos_usuario": Perfil.TipoUsuario.choices,
     }
     return render(request, "adm/novo_usuario.html", context)
 
-@login_required
+@superuser_required
 def lista_usuarios(request):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Acesso restrito a administradores.")
@@ -362,7 +389,7 @@ def lista_usuarios(request):
     return render(request, "adm/usuarios.html", context)
 
 
-@login_required
+@superuser_required
 def alternar_status_usuario(request, pk):
     """
     Alterna o status entre Ativo e Inativo.
@@ -389,7 +416,7 @@ def alternar_status_usuario(request, pk):
     return redirect("lista_usuarios")
 
 
-@login_required
+@superuser_required
 def ativar_usuario(request, pk):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -403,7 +430,7 @@ def ativar_usuario(request, pk):
     return redirect("lista_usuarios")
 
 
-@login_required
+@superuser_required
 def desativar_usuario(request, pk):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -421,7 +448,7 @@ def desativar_usuario(request, pk):
     return redirect("lista_usuarios")
 
 
-@login_required
+@superuser_required
 def excluir_usuario(request, pk):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -438,20 +465,20 @@ def excluir_usuario(request, pk):
     return redirect("lista_usuarios")
 
 
-@login_required
+@superuser_required
 def visualizar_usuario(request, pk):
     usuario = get_object_or_404(Perfil, pk=pk)
-    return render(request, "adm/detalhes_usuario.html", {"usuario": usuario})
+    return render(request, "adm/detalhe_usuario.html", {"usuario": usuario})
 
 
-@login_required
+@superuser_required
 def lista_salas(request):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Acesso restrito a administradores.")
         return redirect("usuario_home")
 
     termo_busca = request.GET.get("q", "").strip()
-    salas_query = Sala.objects.all().order_by("predio", "numero")
+    salas_query = Sala.objects.all()
 
     if termo_busca:
         filtro = (
@@ -482,7 +509,7 @@ def lista_salas(request):
     return render(request, "adm/salas.html", context)
 
 
-@login_required
+@superuser_required
 def nova_sala(request):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -501,7 +528,7 @@ def nova_sala(request):
     return render(request, "adm/nova_sala.html", {"form": form, "acao": "Nova Sala"})
 
 
-@login_required
+@superuser_required
 def detalhes_sala(request, codigo):
     # Se a PK de Sala for 'codigo', usa-se pk=codigo; caso contrário, use id=codigo
     sala = get_object_or_404(Sala, pk=codigo)
@@ -515,7 +542,7 @@ def detalhes_sala(request, codigo):
     })
 
 
-@login_required
+@superuser_required
 def editar_sala(request, codigo):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -540,7 +567,7 @@ def editar_sala(request, codigo):
     })
 
 
-@login_required
+@superuser_required
 def alternar_status_sala(request, codigo):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -558,7 +585,7 @@ def alternar_status_sala(request, codigo):
     return redirect("lista_salas")
 
 
-@login_required
+@superuser_required
 def excluir_sala(request, codigo):
     if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
         messages.error(request, "Permissão negada.")
@@ -580,7 +607,7 @@ def excluir_sala(request, codigo):
     return redirect("lista_salas")
 
 
-@login_required
+@superuser_required
 def lista_itens(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
@@ -617,14 +644,14 @@ def lista_itens(request):
     return render(request, "adm/itens.html", context)
 
 
-@login_required
+@superuser_required
 def detalhes_item(request, uuid):
     item = get_object_or_404(Item.objects.select_related("categoria", "instituicao", "local", "local_guardado", "usuario_registro", "dono"), uuid=uuid)
     reivindicacoes = item.reivindicacoes.select_related("autor").order_by("-data")
     return render(request, "adm/detalhes_item.html", {"item": item, "reivindicacoes": reivindicacoes})
 
 
-@login_required
+@superuser_required
 def atualizar_item(request, uuid):
     item = get_object_or_404(Item, uuid=uuid)
 
@@ -641,7 +668,7 @@ def atualizar_item(request, uuid):
     return render(request, "adm/editar_item.html", {"form": form, "item": item})
 
 
-@login_required
+@superuser_required
 def apagar_item(request, uuid):
     item = get_object_or_404(Item, uuid=uuid)
     identificador = str(item)
@@ -658,7 +685,7 @@ def apagar_item(request, uuid):
     return redirect("lista_itens")
 
 
-@login_required
+@superuser_required
 def lista_reivindicacoes(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
@@ -696,7 +723,7 @@ def lista_reivindicacoes(request):
     return render(request, "adm/reivindicacoes.html", context)
 
 
-@login_required
+@superuser_required
 def detalhes_reivindicacao(request, protocolo):
     reivindicacao = get_object_or_404(
         Reivindicacao.objects.select_related(
@@ -707,7 +734,7 @@ def detalhes_reivindicacao(request, protocolo):
     return render(request, "adm/detalhes_reivindicacao.html", {"reivindicacao": reivindicacao})
 
 
-@login_required
+@superuser_required
 def atualizar_reivindicacao(request, protocolo):
     reivindicacao = get_object_or_404(Reivindicacao, protocolo=protocolo)
 
@@ -743,7 +770,7 @@ def atualizar_reivindicacao(request, protocolo):
     )
 
 
-@login_required
+@superuser_required
 def apagar_reivindicacao(request, protocolo):
     reivindicacao = get_object_or_404(Reivindicacao, protocolo=protocolo)
     num_protocolo = reivindicacao.protocolo
@@ -753,12 +780,12 @@ def apagar_reivindicacao(request, protocolo):
 
 
 
-@login_required
+@superuser_required
 def meu_perfil(request):
     return render(request, "adm/meu_perfil.html", {"usuario": request.user})
 
 
-@login_required
+@superuser_required
 def editar_meu_perfil(request):
     usuario = request.user
     if request.method == "POST":
@@ -781,7 +808,7 @@ def editar_meu_perfil(request):
 
 
 
-@login_required
+@superuser_required
 def trocar_minha_senha(request):
     if request.method == "POST":
         form = TrocarMinhaSenhaForm(user=request.user, data=request.POST)

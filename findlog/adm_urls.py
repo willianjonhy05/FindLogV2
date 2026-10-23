@@ -56,8 +56,8 @@ urlpatterns = [
     path("categorias/<str:codigo>/excluir/", excluir_categoria, name="excluir_categoria"),
 
     path("contatos/", lista_contatos, name="lista_contatos"),
-    path("contatos/<uuid:pk>/", view_contato, name="view_contato"),
-    path("contatos/<uuid:pk>/excluir/", apagar_contato, name="apagar_contato"),
+    path("contatos/<str:uuid>/", view_contato, name="view_contato"),
+    path("contatos/<str:uuid>/excluir/", apagar_contato, name="apagar_contato"),
 
 
     path("usuarios/", lista_usuarios, name="lista_usuarios"),

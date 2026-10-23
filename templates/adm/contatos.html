@@ -77,10 +77,10 @@
                         <td class="text-secondary small">{{ contato.data|date:"d/m/Y H:i" }}</td>
                         <td class="text-end">
                             <div class="action-buttons-group d-inline-flex gap-1 justify-content-end">
-                                <a href="{% url 'view_contato' contato.pk %}" class="btn-action btn-action-view" title="Visualizar mensagem completa">
+                                <a href="{% url 'view_contato' contato.uuid %}" class="btn-action btn-action-view" title="Visualizar mensagem completa">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'apagar_contato' contato.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}" title="Excluir mensagem">
+                                <a href="{% url 'apagar_contato' contato.uuid %}" class="btn-action btn-action-delete btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}" title="Excluir mensagem">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>

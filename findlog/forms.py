@@ -1,6 +1,6 @@
 
 from django import forms
-from findlog.models import Contato, Instituicao, Categoria, Perfil, Sala, Item, Reivindicacao
+from findlog.models import Contato, Instituicao, Categoria, Perfil, Sala, Item, Reivindicacao, VinculoInstituicao
 from .utils import apenas_digitos
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import authenticate
@@ -176,27 +176,36 @@ class LoginForm(forms.Form):
 
         return cleaned_data
 
-
 class NovoUsuarioForm(forms.ModelForm):
     senha = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom"}),
-        min_length=6
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control form-control-custom",
+            "placeholder": "Mínimo de 6 caracteres"
+        }),
+        min_length=6,
+        label="Senha de Acesso"
     )
     confirmar_senha = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom"}),
-        min_length=6
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control form-control-custom",
+            "placeholder": "Repita a senha"
+        }),
+        min_length=6,
+        label="Confirmar Senha"
     )
     instituicao_cnpj = forms.ModelChoiceField(
         queryset=Instituicao.objects.filter(ativo=True),
         to_field_name="cnpj",
         empty_label="Selecione a instituição...",
-        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "instituicao_cnpj"})
+        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "instituicao_cnpj"}),
+        label="Instituição Parceira"
     )
     sala_codigo = forms.ModelChoiceField(
         queryset=Sala.objects.all(),
         required=False,
         empty_label="Selecione a sala vinculada...",
-        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "sala_codigo"})
+        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "sala_codigo"}),
+        label="Sala Responsável"
     )
 
     class Meta:
@@ -210,16 +219,49 @@ class NovoUsuarioForm(forms.ModelForm):
             "tipo",
             "foto",
         ]
+        widgets = {
+            "nome": forms.TextInput(attrs={"class": "form-control form-control-custom", "placeholder": "Nome completo"}),
+            "cpf": forms.TextInput(attrs={"class": "form-control form-control-custom cpf-format", "placeholder": "000.000.000-00"}),
+            "data_nascimento": forms.DateInput(attrs={"class": "form-control form-control-custom", "type": "date"}),
+            "telefone": forms.TextInput(attrs={"class": "form-control form-control-custom telefone-format", "placeholder": "(00) 00000-0000"}),
+            "email": forms.EmailInput(attrs={"class": "form-control form-control-custom", "placeholder": "usuario@exemplo.com"}),
+            "tipo": forms.Select(attrs={"class": "form-select form-select-custom"}),
+            "foto": forms.FileInput(attrs={"class": "form-control form-control-custom", "accept": "image/*"}),
+        }
 
     def clean_cpf(self):
-        cpf = apenas_digitos(self.cleaned_data.get("cpf", ""))
-        if Perfil.objects.filter(cpf=cpf).exists():
+        cpf_bruto = self.cleaned_data.get("cpf", "")
+        # Remove espaços, pontos, traços, símbolos e letras
+        cpf_limpo = re.sub(r"\D", "", str(cpf_bruto))
+
+        if not cpf_limpo:
+            raise forms.ValidationError("O CPF é obrigatório.")
+
+        if len(cpf_limpo) != 11:
+            raise forms.ValidationError("O CPF deve conter exatamente 11 dígitos numéricos.")
+
+        # Impede sequências repetidas óbvias (ex: 111.111.111-11)
+        if cpf_limpo == cpf_limpo[0] * 11:
+            raise forms.ValidationError("Número de CPF inválido.")
+
+        if Perfil.objects.filter(cpf=cpf_limpo).exists():
             raise forms.ValidationError("Já existe um usuário cadastrado com este CPF.")
-        return cpf
+
+        return cpf_limpo
 
     def clean_telefone(self):
-        tel = self.cleaned_data.get("telefone", "")
-        return apenas_digitos(tel) if tel else ""
+        tel_bruto = self.cleaned_data.get("telefone", "")
+        if not tel_bruto:
+            return ""
+
+        # Remove espaços, parênteses, hifens e caracteres especiais
+        tel_limpo = re.sub(r"\D", "", str(tel_bruto))
+
+        # Validação do formato brasileiro com DDD (10 ou 11 dígitos numéricos)
+        if len(tel_limpo) not in (10, 11):
+            raise forms.ValidationError("O telefone deve conter DDD e número válidos (10 ou 11 dígitos).")
+
+        return tel_limpo
 
     def clean(self):
         cleaned_data = super().clean()
@@ -231,7 +273,7 @@ class NovoUsuarioForm(forms.ModelForm):
         if senha and confirmar_senha and senha != confirmar_senha:
             self.add_error("confirmar_senha", "As senhas informadas não coincidem.")
 
-        # Validação obrigatória da sala para Servidores
+        # Validação mandatória da sala para Servidores
         if tipo == Perfil.TipoUsuario.SERVIDOR and not sala:
             self.add_error("sala_codigo", "É obrigatório associar uma sala para usuários do tipo Servidor.")
 
@@ -241,6 +283,7 @@ class NovoUsuarioForm(forms.ModelForm):
         usuario = super().save(commit=False)
         usuario.set_password(self.cleaned_data["senha"])
         
+        # Conecta a sala caso seja do tipo Servidor
         if self.cleaned_data.get("tipo") == Perfil.TipoUsuario.SERVIDOR:
             usuario.sala = self.cleaned_data.get("sala_codigo")
         else:
@@ -248,18 +291,16 @@ class NovoUsuarioForm(forms.ModelForm):
 
         if commit:
             usuario.save()
-            # Vincula a instituição através do modelo intermediário VinculoInstituicao
+            # Vincula a instituição selecionada através do modelo intermediário
             instituicao = self.cleaned_data.get("instituicao_cnpj")
             if instituicao:
-                from findlog.models import VinculoInstituicao
                 VinculoInstituicao.objects.get_or_create(
                     perfil=usuario,
-                    instituicao=instituicao,
-                    defaults={"ativo": True}
+                    instituicao=instituicao
+                    
                 )
 
         return usuario    
-    
 
 
 class SalaForm(forms.ModelForm):

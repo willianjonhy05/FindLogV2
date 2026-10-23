@@ -36,6 +36,19 @@
         </div>
     </div>
 
+
+    <!-- MENSAGENS FLASH -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- TABELA -->
     <div class="card table-card p-3 p-md-4">
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-3 mb-3 border-bottom gap-2">
@@ -89,7 +102,7 @@
                             </div>
                         </td>
                     </tr>
-                    {% else %}
+                    {% empty %}
                     <tr>
                         <td colspan="4" class="text-center py-5">
                             <div class="empty-state">

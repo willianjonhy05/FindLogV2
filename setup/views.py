@@ -5,7 +5,7 @@ from findlog.utils import obter_ip_usuario, redirecionar_por_perfil
 from django.contrib.auth import login, logout
 from findlog.models import Perfil, Instituicao
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+
 
 
 
@@ -35,29 +35,65 @@ def index(request):
 
 
 def login_view(request):
+    # Se já estiver autenticado na sessão atual:
     if request.user.is_authenticated:
+        # Verifica se a conta foi inativada enquanto logada
+        if not getattr(request.user, "ativo", True) or not request.user.is_active:
+            logout(request)
+            return render(
+                request,
+                "erros/403.html",
+                {"mensagem": "Sua conta de usuário está desativada no sistema."},
+                status=403,
+            )
         return redirecionar_por_perfil(request, request.user)
 
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
             usuario = form.user
+
+            # -------------------------------------------------------------
+            # VERIFICAÇÃO DE PERFIL ATIVO (Bloqueio 403)
+            # -------------------------------------------------------------
+            # Checa o campo customizado 'ativo' e o nativo do AbstractUser 'is_active'
+            if not usuario.ativo or not usuario.is_active:
+                return render(
+                    request,
+                    "erros/403.html",
+                    {
+                        "mensagem": "Seu perfil está desativado. Entre em contato com a administração da instituição para reativar o acesso."
+                    },
+                    status=403,
+                )
+
+            # Autentica e inicia a sessão apenas se estiver ativo
             login(request, usuario)
 
             # 1. Armazena dados essenciais do usuário na sessão
             request.session["username"] = usuario.username
             request.session["primeiro_nome"] = usuario.primeiro_nome
-            request.session["foto_url"] = usuario.foto.url if usuario.foto else None
+            request.session["foto_url"] = (
+                usuario.foto.url if usuario.foto else None
+            )
 
-            messages.success(request, f"Bem-vindo(a) de volta, {usuario.primeiro_nome}!")
+            messages.success(
+                request,
+                f"Bem-vindo(a) de volta, {usuario.primeiro_nome or usuario.nome or usuario.username}!",
+            )
 
             # 2. Resolução da Instituição
             instituicoes_usuario = usuario.instituicao.filter(ativo=True)
             total_inst = instituicoes_usuario.count()
 
-            # Administrador: pega a primeira instituição do sistema ou do próprio vínculo
-            if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser:
-                primeira_inst = instituicoes_usuario.first() or Instituicao.objects.filter(ativo=True).first()
+            # Administrador: primeira instituição ativa do sistema ou do próprio vínculo
+            if (
+                usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR
+                or usuario.is_superuser
+            ):
+                primeira_inst = instituicoes_usuario.first() or Instituicao.objects.filter(
+                    ativo=True
+                ).first()
                 if primeira_inst:
                     request.session["instituicao_cnpj"] = primeira_inst.cnpj
                     request.session["instituicao_nome"] = primeira_inst.nome
@@ -65,7 +101,6 @@ def login_view(request):
 
             # Usuário Comum (2) ou Servidor (3)
             if total_inst > 1:
-                # Encaminha para escolher qual instituição acessar
                 return redirect("selecionar_instituicao")
             elif total_inst == 1:
                 unica_inst = instituicoes_usuario.first()
@@ -77,7 +112,9 @@ def login_view(request):
                 request.session["instituicao_nome"] = None
                 return redirecionar_por_perfil(request, usuario)
         else:
-            messages.error(request, "Falha na autenticação. Verifique os dados.")
+            messages.error(
+                request, "Falha na autenticação. Verifique os dados informados."
+            )
     else:
         form = LoginForm()
 
@@ -115,7 +152,7 @@ def selecionar_instituicao(request):
     }
     return render(request, "public/selecionar_instituicao.html", context)
 
-
+@login_required
 def logout_view(request):
     logout(request)
     messages.info(request, "Sua sessão foi encerrada com segurança.")

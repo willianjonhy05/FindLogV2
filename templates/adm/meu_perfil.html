@@ -76,7 +76,7 @@
                         <span class="profile-data-label">CPF</span>
                         <div class="profile-data-value">
                             <i class="bi bi-person-vcard profile-info-icon"></i>
-                            <span class="font-monospace">{{ usuario.cpf|default:"Não informado" }}</span>
+                            <span class="font-monospace">{{ usuario.cpf_formatado|default:"Não informado" }}</span>
                         </div>
                     </div>
 
@@ -92,7 +92,7 @@
                         <span class="profile-data-label">Telefone / Celular</span>
                         <div class="profile-data-value">
                             <i class="bi bi-telephone profile-info-icon"></i>
-                            <span>{{ usuario.telefone|default:"Não informado" }}</span>
+                            <span>{{ usuario.telefone_formatado|default:"Não informado" }}</span>
                         </div>
                     </div>
 

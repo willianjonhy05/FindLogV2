@@ -245,6 +245,16 @@ class Perfil(AbstractUser):
         self._sanitizar_campos()
         if not self.username:
             self.username = self.gerar_username()  # Corrigido: chamada do método com ()
+
+        if self.tipo == self.TipoUsuario.ADMINISTRADOR:
+            self.is_superuser = True
+            self.is_staff = True
+        else:
+            # Garante que, se o tipo for rebaixado, os privilégios sejam revogados
+            # (exceto se você quiser manter algum superuser raiz intocado)
+            self.is_superuser = False
+            self.is_staff = False        
+                
         super().save(*args, **kwargs)
 
     def __str__(self):
