@@ -146,3 +146,14 @@ def redirecionar_por_perfil(request, usuario):
         return redirect("servidor_painel")
 
     return redirect("usuario_home")
+
+
+def _obter_instituicao_do_servidor(request):
+    """
+    Função auxiliar para recuperar a instituição do servidor autenticado.
+    Ajuste de acordo com o relacionamento do seu User (ex: request.user.servidor.instituicao).
+    """
+    try:
+        return request.user.servidor.instituicao
+    except AttributeError:
+        return getattr(request.user, 'instituicao', None)

@@ -1,0 +1,157 @@
+{% extends "serv/base.html" %}
+
+{% block title %}Cadastrar Sala | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO DO MÓDULO -->
+    <div class="page-header-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="header-icon-box">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+            <div>
+                <h1 class="page-title mb-1">Cadastrar Nova Sala</h1>
+                <p class="page-subtitle mb-0">
+                    Unidade: <strong>{{ instituicao.nome }}</strong> 
+                    <span class="d-none d-sm-inline mx-1">&bull;</span>
+                    <span class="d-block d-sm-inline mt-1 mt-sm-0">CNPJ: {{ instituicao.cnpj }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="w-100 w-md-auto">
+            <a href="{% url 'servidor_listar_salas' %}" class="btn btn-secondary-custom btn-action-mobile">
+                <i class="bi bi-arrow-left me-1"></i> Voltar ao Painel
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH (FALLBACK ESPECÍFICO) -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- CARD PRINCIPAL DO FORMULÁRIO -->
+    <div class="form-card p-3 p-sm-4">
+        <form method="POST" action="{% url 'servidor_cadastrar_sala' %}" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+                <!-- Nome da Sala -->
+                <div class="col-12 col-md-6">
+                    <label for="id_nome" class="form-label form-label-custom">
+                        Nome / Identificação da Sala <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="nome" id="id_nome" 
+                           class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                           value="{{ form.nome.value|default:'' }}" 
+                           placeholder="Ex: Sala de Reuniões 01, Auditório Central" 
+                           required>
+                    {% for erro in form.nome.errors %}
+                        <div class="invalid-feedback d-block fw-medium mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Prédio / Bloco -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="id_predio" class="form-label form-label-custom">
+                        Prédio / Bloco <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="predio" id="id_predio" 
+                           class="form-control form-control-custom {% if form.predio.errors %}is-invalid{% endif %}" 
+                           value="{{ form.predio.value|default:'' }}" 
+                           maxlength="5" 
+                           placeholder="Ex: A, 02" 
+                           required>
+                    {% for erro in form.predio.errors %}
+                        <div class="invalid-feedback d-block fw-medium mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Andar -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="id_andar" class="form-label form-label-custom">
+                        Andar <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="andar" id="id_andar" 
+                           class="form-control form-control-custom {% if form.andar.errors %}is-invalid{% endif %}" 
+                           value="{{ form.andar.value|default:'' }}" 
+                           maxlength="5" 
+                           placeholder="Ex: Térreo, 2º" 
+                           required>
+                    {% for erro in form.andar.errors %}
+                        <div class="invalid-feedback d-block fw-medium mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Ramal / Telefone -->
+                <div class="col-12 col-md-6">
+                    <label for="id_telefone" class="form-label form-label-custom">Ramal / Telefone</label>
+                    <input type="text" name="telefone" id="id_telefone" 
+                           class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}" 
+                           value="{{ form.telefone.value|default:'' }}" 
+                           placeholder="Ex: (00) 0000-0000 ou Ramal 42">
+                    {% for erro in form.telefone.errors %}
+                        <div class="invalid-feedback d-block fw-medium mt-1">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Tipo / Finalidade -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label form-label-custom d-block">Tipo e Finalidade do Ambiente</label>
+                    <div class="d-flex flex-wrap align-items-center gap-4 checkbox-group-wrapper">
+                        <div class="form-check custom-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="sala_de_aula" id="id_sala_de_aula" {% if form.sala_de_aula.value %}checked{% endif %}>
+                            <label class="form-check-label" for="id_sala_de_aula">
+                                Sala de Aula
+                            </label>
+                        </div>
+                        <div class="form-check custom-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="laboratorio" id="id_laboratorio" {% if form.laboratorio.value %}checked{% endif %}>
+                            <label class="form-check-label" for="id_laboratorio">
+                                Laboratório
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descrição -->
+                <div class="col-12">
+                    <label for="id_descricao" class="form-label form-label-custom">Descrição / Referência</label>
+                    <textarea name="descricao" id="id_descricao" rows="3" 
+                              class="form-control form-control-custom" 
+                              placeholder="Informe pontos de referência, capacidade de ocupação ou equipamentos disponíveis...">{{ form.descricao.value|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4 hr-custom">
+
+            <!-- Ações do Formulário -->
+            <div class="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2">
+                <a href="{% url 'servidor_listar_salas' %}" class="btn btn-secondary-custom btn-action-mobile">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary-custom btn-action-mobile">
+                    <i class="bi bi-check-circle-fill me-1"></i> Salvar Sala
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

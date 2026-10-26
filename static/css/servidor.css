@@ -366,3 +366,151 @@
             opacity: 1;
         }
     }
+
+
+    .page-header-card {
+        background-color: var(--bege-card);
+        border: 1px solid var(--bege-areia);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
+    }
+
+    .header-icon-box {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+        color: var(--laranja-destaque);
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 0 4px 10px rgba(26, 43, 69, 0.12);
+        flex-shrink: 0;
+    }
+
+    .page-title {
+        color: var(--azul-escuro);
+        font-weight: 800;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+        color: var(--texto-apoio);
+        font-size: 0.88rem;
+    }
+
+    /* Cartão do Formulário */
+    .form-card {
+        background-color: var(--bege-card);
+        border: 1px solid var(--bege-areia);
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
+    }
+
+    /* Campos e Rótulos */
+    .form-label-custom {
+        color: var(--azul-escuro);
+        font-weight: 600;
+        font-size: 0.88rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-control-custom {
+        background-color: #FFFFFF;
+        border: 1px solid var(--bege-areia);
+        border-radius: 10px;
+        color: var(--texto-escuro);
+        font-size: 0.92rem;
+        padding: 0.65rem 0.95rem;
+        min-height: 44px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-control-custom:focus {
+        background-color: #FFFFFF;
+        color: var(--texto-escuro);
+        border-color: var(--laranja-destaque);
+        box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.18);
+        outline: none;
+    }
+
+    textarea.form-control-custom {
+        min-height: auto;
+    }
+
+    /* Container de Checkboxes */
+    .checkbox-group-wrapper {
+        background-color: var(--bege-secao);
+        border: 1px solid var(--bege-areia);
+        border-radius: 10px;
+        min-height: 44px;
+        padding: 0.6rem 1rem;
+    }
+
+    .custom-check .form-check-input {
+        width: 1.15rem;
+        height: 1.15rem;
+        border: 1px solid var(--bege-areia);
+        cursor: pointer;
+    }
+
+    .custom-check .form-check-input:checked {
+        background-color: var(--laranja-destaque);
+        border-color: var(--laranja-destaque);
+    }
+
+    .custom-check .form-check-input:focus {
+        border-color: var(--laranja-destaque);
+        box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.18);
+    }
+
+    .custom-check .form-check-label {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: var(--azul-escuro);
+        user-select: none;
+    }
+
+    /* Divisor */
+    .hr-custom {
+        border-color: var(--bege-areia);
+        opacity: 0.8;
+    }
+
+    /* Botões */
+    .btn-secondary-custom {
+        background-color: transparent;
+        border: 1px solid var(--bege-areia);
+        color: var(--azul-escuro);
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary-custom:hover,
+    .btn-secondary-custom:focus {
+        background-color: var(--bege-secao);
+        border-color: #D6CAB4;
+        color: var(--azul-escuro);
+    }
+
+    .btn-primary-custom {
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .btn-action-mobile {
+            width: 100%;
+        }
+    }

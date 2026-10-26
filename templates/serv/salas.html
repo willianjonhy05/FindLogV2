@@ -1,0 +1,534 @@
+{% extends "serv/base.html" %}
+
+{% block title %}Salas e Ambientes | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Header institucional do módulo */
+  .page-header-card {
+    background-color: var(--bege-card);
+    border: 1px solid var(--bege-areia);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
+  }
+
+  .header-icon-box {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+    color: var(--laranja-destaque);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+    box-shadow: 0 4px 10px rgba(26, 43, 69, 0.12);
+    flex-shrink: 0;
+  }
+
+  .page-title {
+    color: var(--azul-escuro);
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    color: var(--texto-apoio);
+    font-size: 0.88rem;
+  }
+
+  /* Barra de Pesquisa */
+  .search-card {
+    background-color: var(--bege-card);
+    border: 1px solid var(--bege-areia);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
+  }
+
+  .search-group {
+    background-color: #FFFFFF;
+    border: 1px solid var(--bege-areia);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .search-group:focus-within {
+    border-color: var(--laranja-destaque);
+    box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.18);
+  }
+
+  .search-group .input-group-text {
+    background-color: transparent;
+    border: none;
+    color: var(--texto-apoio);
+    padding-left: 1rem;
+  }
+
+  .search-group .form-control-custom {
+    border: none;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.92rem;
+    color: var(--texto-escuro);
+    box-shadow: none !important;
+  }
+
+  /* Cartão da Tabela */
+  .table-card-container {
+    background-color: var(--bege-card);
+    border: 1px solid var(--bege-areia);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
+    overflow: hidden;
+  }
+
+  /* Estilos da Tabela no Desktop */
+  .custom-table {
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  .custom-table thead th {
+    background-color: var(--bege-secao);
+    color: var(--azul-escuro);
+    font-size: 0.80rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1rem 1.15rem;
+    border-bottom: 2px solid var(--bege-areia);
+    white-space: nowrap;
+  }
+
+  .custom-table tbody tr {
+    border-bottom: 1px solid var(--bege-areia);
+    transition: background-color 0.15s ease;
+  }
+
+  .custom-table tbody tr:hover {
+    background-color: rgba(234, 226, 211, 0.35);
+  }
+
+  .custom-table tbody td {
+    padding: 1rem 1.15rem;
+    color: var(--texto-escuro);
+    vertical-align: middle;
+  }
+
+  /* Badges Semânticos Padronizados */
+  .badge-tag {
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .badge-status-ativa {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #065F46;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+  }
+
+  .badge-status-inativa {
+    background-color: rgba(239, 68, 68, 0.10);
+    color: #991B1B;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .badge-tipo-lab {
+    background-color: rgba(36, 59, 94, 0.10);
+    color: var(--azul-escuro);
+    border: 1px solid rgba(36, 59, 94, 0.22);
+  }
+
+  .badge-tipo-aula {
+    background-color: rgba(255, 98, 0, 0.10);
+    color: var(--laranja-hover);
+    border: 1px solid rgba(255, 98, 0, 0.25);
+  }
+
+  .badge-tipo-geral {
+    background-color: var(--bege-secao);
+    color: var(--texto-apoio);
+    border: 1px solid var(--bege-areia);
+  }
+
+  /* Paginação */
+  .pagination-wrapper {
+    background-color: var(--bege-secao);
+    border-top: 1px solid var(--bege-areia);
+    padding: 1rem 1.25rem;
+  }
+
+  .custom-page-btn .page-link {
+    background-color: var(--bege-card);
+    border: 1px solid var(--bege-areia);
+    color: var(--azul-escuro);
+    font-weight: 600;
+    border-radius: 8px !important;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .custom-page-btn .page-link:hover {
+    background-color: var(--bege-areia);
+    color: var(--laranja-destaque);
+    border-color: #D6CAB4;
+  }
+
+  .custom-page-btn.active .page-link {
+    background-color: var(--laranja-destaque) !important;
+    border-color: var(--laranja-destaque) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(255, 98, 0, 0.35);
+  }
+
+  .custom-page-btn.disabled .page-link {
+    background-color: rgba(234, 226, 211, 0.5);
+    color: var(--texto-apoio);
+    opacity: 0.6;
+  }
+
+  .btn-secondary-custom {
+    background-color: transparent;
+    border: 1px solid var(--bege-areia);
+    color: var(--azul-escuro);
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary-custom:hover {
+    background-color: var(--bege-secao);
+    border-color: #D6CAB4;
+    color: var(--azul-escuro);
+  }
+
+  /* ====================================================================
+     ADAPTAÇÃO RESPONSIVA MOBILE-FIRST (< 768px):
+     Transforma a estrutura da tabela em Feed Cards nativos fluidos
+     ==================================================================== */
+  @media (max-width: 767.98px) {
+    .custom-table thead {
+      display: none; /* Oculta cabeçalho tabular tradicional */
+    }
+
+    .custom-table, 
+    .custom-table tbody, 
+    .custom-table tr, 
+    .custom-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .custom-table tbody {
+      padding: 0.85rem;
+    }
+
+    .custom-table tr.sala-card-row {
+      background-color: var(--bege-card);
+      border: 1px solid var(--bege-areia);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      margin-bottom: 0.95rem;
+      box-shadow: 0 2px 8px rgba(26, 43, 69, 0.04);
+    }
+
+    .custom-table tr.sala-card-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .custom-table td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(234, 226, 211, 0.65);
+      text-align: right;
+    }
+
+    .custom-table td:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .custom-table td.cell-nome-sala {
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      padding: 0.55rem 0 0.75rem 0;
+      border-bottom: 1px dashed var(--bege-areia);
+    }
+
+    .mobile-field-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--texto-apoio);
+      text-align: left;
+    }
+
+    .custom-table tr.empty-card-row td {
+      display: block !important;
+      text-align: center !important;
+      padding: 2.5rem 1rem !important;
+      border: none !important;
+    }
+
+    .btn-mobile-full {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- CABEÇALHO DA TELA -->
+    <div class="page-header-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="header-icon-box">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+            <div>
+                <h1 class="page-title mb-1">Salas e Ambientes</h1>
+                <p class="page-subtitle mb-0">Gerenciando dependências de: <strong>{{ instituicao.nome }}</strong></p>
+            </div>
+        </div>
+        <div class="w-100 w-md-auto">
+            <a href="{% url 'servidor_cadastrar_sala' %}" class="btn btn-primary-custom btn-mobile-full">
+                <i class="bi bi-plus-circle-fill me-1"></i> Nova Sala
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAGENS FLASH (FALLBACK ESPECÍFICO) -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- BARRA DE PESQUISA REFINADA -->
+    <div class="search-card p-3 mb-4">
+        <form method="GET" action="{% url 'servidor_listar_salas' %}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-10">
+                <div class="input-group search-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control form-control-custom" 
+                           placeholder="Buscar por nome da sala, bloco/prédio ou código..." 
+                           value="{{ termo_busca }}">
+                </div>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary-custom w-100">
+                    <i class="bi bi-filter me-1"></i> Filtrar
+                </button>
+                {% if termo_busca %}
+                    <a href="{% url 'servidor_listar_salas' %}" class="btn btn-secondary-custom" title="Limpar busca" aria-label="Limpar busca">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- TABELA / FEED RESPONSIVO DE SALAS -->
+    <div class="table-card-container">
+        <div class="table-responsive-md">
+            <table class="table custom-table align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Código</th>
+                        <th>Identificação / Nome</th>
+                        <th>Localização</th>
+                        <th>Tipo</th>
+                        <th>Ramal / Contato</th>
+                        <th class="pe-4 text-end text-md-start">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sala in page_obj %}
+                        <tr class="sala-card-row">
+                            <!-- Código -->
+                            <td class="ps-md-4">
+                                <span class="mobile-field-label d-md-none">Código</span>
+                                <span class="font-monospace fw-bold text-secondary-custom small">
+                                    {{ sala.codigo|default:"---" }}
+                                </span>
+                            </td>
+
+                            <!-- Nome / Identificação -->
+                            <td class="cell-nome-sala">
+                                <strong class="d-block text-dark fs-6">{{ sala.nome }}</strong>
+                                {% if sala.descricao %}
+                                    <small class="text-secondary-custom d-block text-truncate mt-1" style="max-width: 280px;">
+                                        {{ sala.descricao }}
+                                    </small>
+                                {% endif %}
+                            </td>
+
+                            <!-- Localização -->
+                            <td>
+                                <span class="mobile-field-label d-md-none">Localização</span>
+                                <div>
+                                    <div class="fw-semibold">
+                                        <i class="bi bi-building text-muted me-1"></i>Prédio: <strong>{{ sala.predio }}</strong>
+                                    </div>
+                                    <small class="text-secondary-custom d-block">
+                                        <i class="bi bi-layers text-muted me-1"></i>Andar: {{ sala.andar }}
+                                    </small>
+                                </div>
+                            </td>
+
+                            <!-- Tipo -->
+                            <td>
+                                <span class="mobile-field-label d-md-none">Tipo</span>
+                                <div>
+                                    {% if sala.laboratorio %}
+                                        <span class="badge-tag badge-tipo-lab">
+                                            <i class="bi bi-cpu"></i> Laboratório
+                                        </span>
+                                    {% elif sala.sala_de_aula %}
+                                        <span class="badge-tag badge-tipo-aula">
+                                            <i class="bi bi-mortarboard"></i> Sala de Aula
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-tag badge-tipo-geral">
+                                            <i class="bi bi-briefcase"></i> Administrativo/Geral
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Contato -->
+                            <td>
+                                <span class="mobile-field-label d-md-none">Contato</span>
+                                <div>
+                                    {% if sala.telefone %}
+                                        <span class="text-nowrap fw-medium small">
+                                            <i class="bi bi-telephone text-muted me-1"></i>{{ sala.telefone }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">Não cadastrado</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="pe-md-4 text-end text-md-start">
+                                <span class="mobile-field-label d-md-none">Status</span>
+                                <div>
+                                    {% if sala.ativa %}
+                                        <span class="badge-tag badge-status-ativa">
+                                            <i class="bi bi-check-circle-fill"></i> Ativa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-tag badge-status-inativa">
+                                            <i class="bi bi-dash-circle-fill"></i> Inativa
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-card-row">
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-3">
+                                    <i class="bi bi-door-closed fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    {% if termo_busca %}
+                                        <p class="mb-0 text-secondary-custom">
+                                            Nenhuma sala encontrada para o termo "<strong>{{ termo_busca }}</strong>".
+                                        </p>
+                                    {% else %}
+                                        <p class="mb-0 text-secondary-custom">
+                                            Nenhuma sala cadastrada nesta unidade até o momento.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CONTROLE DE PAGINAÇÃO -->
+        {% if page_obj.has_other_pages %}
+            <div class="pagination-wrapper d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+                <span class="text-secondary-custom small text-center text-sm-start">
+                    Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong> de <strong>{{ total_salas }}</strong> ambientes
+                </span>
+                
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination pagination-sm m-0 gap-1">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item custom-page-btn">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Página anterior">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item custom-page-btn disabled">
+                                <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item custom-page-btn active" aria-current="page">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item custom-page-btn">
+                                    <a class="page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item custom-page-btn">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Próxima página">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item custom-page-btn disabled">
+                                <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
