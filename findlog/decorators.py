@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 
 
-def superuser_required(view_func=None, redirect_field_name="next", login_url=None):
+def superuser_required(view_func=None, redirect_field_name="next", login_url="login"):
     """
     Decorador que verifica se o usuário autenticado é superusuário.
     Caso não seja, redireciona para login_url.

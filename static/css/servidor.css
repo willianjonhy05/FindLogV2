@@ -1,0 +1,368 @@
+    :root {
+        --azul-escuro: #1A2B45;
+        --azul-medio: #243B5E;
+        --laranja-destaque: #FF6200;
+        --laranja-hover: #E05500;
+        --bege-principal: #F7F3EB;
+        --bege-areia: #EAE2D3;
+        --bege-secao: #EFE9DC;
+        --bege-card: #FCFBF7;
+        --texto-escuro: #111827;
+        --texto-apoio: #4B5563;
+
+        /* Tokens de Layout */
+        --header-height: 64px;
+        --bottom-nav-height: 62px;
+        --border-radius-base: 14px;
+        --border-radius-lg: 18px;
+        --box-shadow-subtle: 0 2px 10px rgba(26, 43, 69, 0.05);
+        --box-shadow-hover: 0 6px 18px rgba(26, 43, 69, 0.08);
+        --transition-base: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* --- RESET & ESTRUTURA GERAL --- */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bege-principal);
+        color: var(--texto-escuro);
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* Compensação para a bottom nav mobile + notch inferior do iPhone */
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 16px));
+    }
+
+    @media (min-width: 992px) {
+        body {
+            /* No desktop a barra inferior não existe, então zera o padding extra */
+            padding-bottom: 2rem;
+        }
+    }
+
+    /* --- COMPONENTES TIPOGRÁFICOS --- */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--azul-escuro);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .text-secondary-custom {
+        color: var(--texto-apoio) !important;
+    }
+
+    /* --- TOPBAR / HEADER --- */
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        height: var(--header-height);
+        background-color: var(--azul-escuro);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .app-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        text-decoration: none;
+        color: #FFFFFF;
+        font-weight: 800;
+        font-size: 1.15rem;
+        letter-spacing: -0.01em;
+    }
+
+    .app-brand:hover {
+        color: var(--bege-principal);
+    }
+
+    .brand-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--laranja-destaque), var(--laranja-hover));
+        color: #FFFFFF;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 6px rgba(255, 98, 0, 0.35);
+    }
+
+    /* Navegação Desktop no Topbar */
+    .desktop-nav-link {
+        color: rgba(255, 255, 255, 0.82);
+        font-weight: 600;
+        font-size: 0.92rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: var(--transition-base);
+    }
+
+    .desktop-nav-link:hover {
+        color: #FFFFFF;
+        background-color: var(--azul-medio);
+    }
+
+    .desktop-nav-link.active {
+        color: #FFFFFF;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* --- BOTÕES DO SISTEMA --- */
+    .btn-primary-custom {
+        background-color: var(--laranja-destaque);
+        border-color: var(--laranja-destaque);
+        color: #FFFFFF;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.55rem 1.25rem;
+        transition: var(--transition-base);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+    }
+
+    .btn-primary-custom:hover,
+    .btn-primary-custom:focus {
+        background-color: var(--laranja-hover);
+        border-color: var(--laranja-hover);
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(255, 98, 0, 0.28);
+    }
+
+    /* --- CARDS MODERNOS COM ESTILO REDE SOCIAL --- */
+    .card-feed {
+        background-color: var(--bege-card);
+        border: 1px solid var(--bege-areia);
+        border-radius: var(--border-radius-base);
+        box-shadow: var(--box-shadow-subtle);
+        transition: var(--transition-base);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+
+    .card-feed:hover {
+        box-shadow: var(--box-shadow-hover);
+        border-color: #ded3bf;
+    }
+
+    .card-feed-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--bege-areia);
+        background-color: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .card-feed-body {
+        padding: 1.25rem;
+    }
+
+    .card-feed-footer {
+        padding: 0.85rem 1.25rem;
+        background-color: var(--bege-secao);
+        border-top: 1px solid var(--bege-areia);
+    }
+
+    /* --- AVATAR E NOTIFICAÇÕES --- */
+    .user-avatar-btn {
+        position: relative;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        padding: 2px;
+        transition: var(--transition-base);
+        line-height: 0;
+    }
+
+    .user-avatar-btn:hover {
+        border-color: var(--laranja-destaque);
+    }
+
+    .user-avatar-img {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: var(--azul-medio);
+    }
+
+    .notification-btn {
+        position: relative;
+        background-color: var(--azul-medio);
+        border: none;
+        color: #FFFFFF;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        transition: var(--transition-base);
+    }
+
+    .notification-btn:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background-color: var(--laranja-destaque);
+        color: #FFFFFF;
+        font-size: 0.65rem;
+        font-weight: 700;
+        border-radius: 50%;
+        min-width: 17px;
+        height: 17px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--azul-escuro);
+    }
+
+    /* --- BOTTOM NAVIGATION BAR (MOBILE APP FEEL) --- */
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background-color: var(--bege-card);
+        border-top: 1px solid var(--bege-areia);
+        z-index: 1040;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        box-shadow: 0 -4px 16px rgba(26, 43, 69, 0.05);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        min-height: 48px;
+        /* Touch target acessível (mínimo 44x44px) */
+        text-decoration: none;
+        color: var(--texto-apoio);
+        font-size: 0.68rem;
+        font-weight: 600;
+        gap: 3px;
+        transition: var(--transition-base);
+        flex: 1;
+    }
+
+    .bottom-nav-item i {
+        font-size: 1.28rem;
+        line-height: 1;
+        transition: transform 0.2s ease;
+    }
+
+    .bottom-nav-item:hover,
+    .bottom-nav-item.active {
+        color: var(--laranja-destaque);
+    }
+
+    .bottom-nav-item.active i {
+        transform: translateY(-2px);
+    }
+
+    /* Botão Central de Destaque na Barra Mobile ("Criar/Registrar") */
+    .bottom-nav-action {
+        position: relative;
+        top: -12px;
+        background: linear-gradient(135deg, var(--laranja-destaque), var(--laranja-hover));
+        color: #FFFFFF !important;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 4px 12px rgba(255, 98, 0, 0.38);
+        border: 3px solid var(--bege-principal);
+    }
+
+    .bottom-nav-action i {
+        font-size: 1.4rem;
+    }
+
+    /* --- CONTAINER CENTRAL DE FEED / DASHBOARD --- */
+    .app-main-container {
+        max-width: 1140px;
+        /* Largura equilibrada padrão LinkedIn/Twitter feed */
+        margin: 0 auto;
+        padding-top: 1.5rem;
+    }
+
+    /* --- TOASTS / DJANGO MESSAGES --- */
+    .django-messages-container {
+        position: fixed;
+        top: calc(var(--header-height) + 12px);
+        right: 16px;
+        z-index: 1090;
+        max-width: 380px;
+        width: calc(100% - 32px);
+    }
+
+    .custom-alert {
+        background-color: var(--bege-card);
+        border-left: 5px solid var(--azul-medio);
+        border-radius: 10px;
+        box-shadow: 0 6px 20px rgba(26, 43, 69, 0.12);
+        color: var(--texto-escuro);
+        font-size: 0.88rem;
+        margin-bottom: 0.75rem;
+        padding: 0.85rem 1.15rem;
+        border-top: 1px solid var(--bege-areia);
+        border-right: 1px solid var(--bege-areia);
+        border-bottom: 1px solid var(--bege-areia);
+        animation: slideInRight 0.3s ease forwards;
+    }
+
+    .custom-alert.alert-success {
+        border-left-color: #10B981;
+    }
+
+    .custom-alert.alert-warning {
+        border-left-color: var(--laranja-destaque);
+    }
+
+    .custom-alert.alert-danger {
+        border-left-color: #EF4444;
+    }
+
+    .custom-alert.alert-info {
+        border-left-color: var(--azul-medio);
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
