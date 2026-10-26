@@ -554,3 +554,111 @@ class ServidorUpdateSalaForm(forms.ModelForm):
     #     if duplicada:
     #         raise forms.ValidationError('Já existe uma sala cadastrada com este nome nesta unidade.')
     #     return nome
+
+
+class ServidorCadastroColegaForm(forms.ModelForm):
+    senha = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom", "placeholder": "Senha inicial"}),
+        min_length=6,
+        label="Senha Provisória"
+    )
+    confirmar_senha = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom", "placeholder": "Repita a senha"}),
+        min_length=6,
+        label="Confirmar Senha"
+    )
+    sala = forms.ModelChoiceField(
+        queryset=Sala.objects.none(),
+        required=False,
+        empty_label="Selecione a sala de responsabilidade...",
+        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "id_sala"}),
+        label="Sala Responsável"
+    )
+
+    class Meta:
+        model = Perfil
+        fields = [
+            "nome",
+            "username",
+            "cpf",
+            "email",
+            "telefone",
+            "tipo",
+            "sala",
+        ]
+        widgets = {
+            "nome": forms.TextInput(attrs={"class": "form-control form-control-custom", "placeholder": "Nome completo"}),
+            "username": forms.TextInput(attrs={"class": "form-control form-control-custom", "placeholder": "nome.sobrenome"}),
+            "cpf": forms.TextInput(attrs={"class": "form-control form-control-custom cpf-format", "placeholder": "000.000.000-00"}),
+            "email": forms.EmailInput(attrs={"class": "form-control form-control-custom", "placeholder": "usuario@instituicao.edu.br"}),
+            "telefone": forms.TextInput(attrs={"class": "form-control form-control-custom telefone-format", "placeholder": "(00) 00000-0000"}),
+            "tipo": forms.Select(attrs={"class": "form-select form-select-custom", "id": "id_tipo"}),
+        }
+
+    def __init__(self, *args, instituicao=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instituicao = instituicao
+
+        # 1. Limita as opções de tipo: APENAS Servidor (3) ou Usuário (2)
+        tipos_permitidos = [
+            (Perfil.TipoUsuario.USUARIO, "Usuário Comum / Aluno"),
+            (Perfil.TipoUsuario.SERVIDOR, "Servidor"),
+        ]
+        self.fields["tipo"].choices = tipos_permitidos
+
+        # 2. Filtra estritamente as salas da instituição ativa
+        if self.instituicao:
+            self.fields["sala"].queryset = Sala.objects.filter(
+                instituicao=self.instituicao, 
+                ativa=True
+            ).order_by("predio", "nome")
+
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get("cpf", "")
+        cpf_limpo = re.sub(r"\D", "", str(cpf))
+        if len(cpf_limpo) != 11:
+            raise forms.ValidationError("O CPF precisa conter 11 dígitos.")
+        if Perfil.objects.filter(cpf=cpf_limpo).exists():
+            raise forms.ValidationError("Já existe um perfil cadastrado com este CPF.")
+        return cpf_limpo
+
+    def clean_telefone(self):
+        tel = self.cleaned_data.get("telefone", "")
+        return re.sub(r"\D", "", str(tel)) if tel else ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        senha = cleaned_data.get("senha")
+        confirmar_senha = cleaned_data.get("confirmar_senha")
+        tipo = cleaned_data.get("tipo")
+        sala = cleaned_data.get("sala")
+
+        if senha and confirmar_senha and senha != confirmar_senha:
+            self.add_error("confirmar_senha", "As senhas não coincidem.")
+
+        # Obriga a seleção de sala se for cadastrado como Servidor
+        if tipo == Perfil.TipoUsuario.SERVIDOR and not sala:
+            self.add_error("sala", "É obrigatório associar uma sala para perfis do tipo Servidor.")
+
+        # Limpa o campo sala se for usuário comum
+        if tipo == Perfil.TipoUsuario.USUARIO:
+            cleaned_data["sala"] = None
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        usuario = super().save(commit=False)
+        usuario.set_password(self.cleaned_data["senha"])
+        usuario.ativo = True
+        usuario.is_staff = False
+        usuario.is_superuser = False
+
+        if commit:
+            usuario.save()
+            # Vincula automaticamente à mesma instituição do servidor
+            if self.instituicao:
+                VinculoInstituicao.objects.get_or_create(
+                    perfil=usuario,
+                    instituicao=self.instituicao
+                )
+        return usuario    

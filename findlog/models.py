@@ -68,7 +68,7 @@ class Instituicao(models.Model):
 
 
 class Categoria(models.Model):
-    codigo = models.CharField("Código", max_length=4, primary_key=True, editable=False, blank=True)
+    codigo = models.CharField("Código", max_length=6, primary_key=True, editable=False, blank=True)
     nome = models.CharField("Nome", max_length=255)
     descricao = models.TextField("Descrição", blank=True)
     ativa = models.BooleanField(default=True)
