@@ -246,14 +246,20 @@ class Perfil(AbstractUser):
         if not self.username:
             self.username = self.gerar_username()  # Corrigido: chamada do método com ()
 
-        if self.tipo == self.TipoUsuario.ADMINISTRADOR:
+        # 1. Se veio do createsuperuser (is_superuser=True), garante o tipo ADMINISTRADOR
+        if self.is_superuser:
+            self.tipo = self.TipoUsuario.ADMINISTRADOR
+            self.is_staff = True
+
+        # 2. Se foi marcado como ADMINISTRADOR pelo painel/form, garante os privilégios
+        elif self.tipo == self.TipoUsuario.ADMINISTRADOR:
             self.is_superuser = True
             self.is_staff = True
+
+        # 3. Caso contrário (Usuário Comum ou Servidor), remove privilégios elevados
         else:
-            # Garante que, se o tipo for rebaixado, os privilégios sejam revogados
-            # (exceto se você quiser manter algum superuser raiz intocado)
             self.is_superuser = False
-            self.is_staff = False        
+            self.is_staff = False  
                 
         super().save(*args, **kwargs)
 
