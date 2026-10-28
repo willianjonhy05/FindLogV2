@@ -389,3 +389,32 @@ def servidor_cadastrar_usuario(request):
         "instituicao": instituicao,
     }
     return render(request, "serv/cadastrar_usuario.html", context)
+
+
+def servidor_usuarios_instituicao():
+    """
+    Lista de todos os usuários da instituição
+    """
+    pass
+
+
+def servidor_visualizar_usuario():
+    pass
+
+def servidor_ativar_usuario():
+    pass
+
+
+def servidor_desativar_usuario():
+    pass
+
+
+def servidor_cadastra_item():
+    pass
+
+
+def servidor_detalhes_item():
+    pass
+
+def servidor_atualizar_item():
+    pass
