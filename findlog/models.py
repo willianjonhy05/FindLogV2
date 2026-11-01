@@ -1,6 +1,9 @@
 import uuid
 import random
 import string
+import base64
+from io import BytesIO
+import qrcode
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -123,8 +126,8 @@ class Sala(models.Model):
         verbose_name="Instituição",
         related_name="salas"
     )
-    predio = models.CharField("Prédio", max_length=5)
-    andar = models.CharField("Andar", max_length=5)
+    predio = models.CharField("Prédio", max_length=15)
+    andar = models.CharField("Andar", max_length=15)
     nome = models.CharField("Nome do local", max_length=50, default="Sala do IFPI")
     telefone = models.CharField("Telefone do local", max_length=15, blank=True, default="")
     descricao = models.TextField("Descrição do local", blank=True, default="")
@@ -331,6 +334,20 @@ class Item(models.Model):
             self.codigo = codigo
 
         super().save(*args, **kwargs)
+
+
+    @property
+    def qr_code(self):
+        dados = self.uuid
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(dados)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        string_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        return f"data:image/png;base64,{string_b64}"
+
 
     def __str__(self):
         return f"{self.nome} ({self.codigo})" if self.nome else f"Item {self.codigo}"

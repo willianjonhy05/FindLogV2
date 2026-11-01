@@ -1,325 +1,75 @@
 {% extends "serv/base.html" %}
+{% load static %}
 
 {% block title %}Salas e Ambientes | {{ instituicao.nome }}{% endblock %}
 
 {% block extra_head %}
-<style>
-  /* Header institucional do módulo */
-  .page-header-card {
-    background-color: var(--bege-card);
-    border: 1px solid var(--bege-areia);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
-  }
 
-  .header-icon-box {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
-    color: var(--laranja-destaque);
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    font-size: 1.4rem;
-    box-shadow: 0 4px 10px rgba(26, 43, 69, 0.12);
-    flex-shrink: 0;
-  }
-
-  .page-title {
-    color: var(--azul-escuro);
-    font-weight: 800;
-    font-size: 1.35rem;
-    letter-spacing: -0.02em;
-  }
-
-  .page-subtitle {
-    color: var(--texto-apoio);
-    font-size: 0.88rem;
-  }
-
-  /* Barra de Pesquisa */
-  .search-card {
-    background-color: var(--bege-card);
-    border: 1px solid var(--bege-areia);
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
-  }
-
-  .search-group {
-    background-color: #FFFFFF;
-    border: 1px solid var(--bege-areia);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .search-group:focus-within {
-    border-color: var(--laranja-destaque);
-    box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.18);
-  }
-
-  .search-group .input-group-text {
-    background-color: transparent;
-    border: none;
-    color: var(--texto-apoio);
-    padding-left: 1rem;
-  }
-
-  .search-group .form-control-custom {
-    border: none;
-    padding: 0.65rem 0.85rem;
-    font-size: 0.92rem;
-    color: var(--texto-escuro);
-    box-shadow: none !important;
-  }
-
-  /* Cartão da Tabela */
-  .table-card-container {
-    background-color: var(--bege-card);
-    border: 1px solid var(--bege-areia);
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(26, 43, 69, 0.04);
-    overflow: hidden;
-  }
-
-  /* Estilos da Tabela no Desktop */
-  .custom-table {
-    margin-bottom: 0;
-    width: 100%;
-  }
-
-  .custom-table thead th {
-    background-color: var(--bege-secao);
-    color: var(--azul-escuro);
-    font-size: 0.80rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 1rem 1.15rem;
-    border-bottom: 2px solid var(--bege-areia);
-    white-space: nowrap;
-  }
-
-  .custom-table tbody tr {
-    border-bottom: 1px solid var(--bege-areia);
-    transition: background-color 0.15s ease;
-  }
-
-  .custom-table tbody tr:hover {
-    background-color: rgba(234, 226, 211, 0.35);
-  }
-
-  .custom-table tbody td {
-    padding: 1rem 1.15rem;
-    color: var(--texto-escuro);
-    vertical-align: middle;
-  }
-
-  /* Badges Semânticos Padronizados */
-  .badge-tag {
-    font-size: 0.76rem;
-    font-weight: 600;
-    padding: 0.35rem 0.65rem;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
-  .badge-status-ativa {
-    background-color: rgba(16, 185, 129, 0.12);
-    color: #065F46;
-    border: 1px solid rgba(16, 185, 129, 0.28);
-  }
-
-  .badge-status-inativa {
-    background-color: rgba(239, 68, 68, 0.10);
-    color: #991B1B;
-    border: 1px solid rgba(239, 68, 68, 0.25);
-  }
-
-  .badge-tipo-lab {
-    background-color: rgba(36, 59, 94, 0.10);
-    color: var(--azul-escuro);
-    border: 1px solid rgba(36, 59, 94, 0.22);
-  }
-
-  .badge-tipo-aula {
-    background-color: rgba(255, 98, 0, 0.10);
-    color: var(--laranja-hover);
-    border: 1px solid rgba(255, 98, 0, 0.25);
-  }
-
-  .badge-tipo-geral {
-    background-color: var(--bege-secao);
-    color: var(--texto-apoio);
-    border: 1px solid var(--bege-areia);
-  }
-
-  /* Paginação */
-  .pagination-wrapper {
-    background-color: var(--bege-secao);
-    border-top: 1px solid var(--bege-areia);
-    padding: 1rem 1.25rem;
-  }
-
-  .custom-page-btn .page-link {
-    background-color: var(--bege-card);
-    border: 1px solid var(--bege-areia);
-    color: var(--azul-escuro);
-    font-weight: 600;
-    border-radius: 8px !important;
-    min-width: 36px;
-    height: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .custom-page-btn .page-link:hover {
-    background-color: var(--bege-areia);
-    color: var(--laranja-destaque);
-    border-color: #D6CAB4;
-  }
-
-  .custom-page-btn.active .page-link {
-    background-color: var(--laranja-destaque) !important;
-    border-color: var(--laranja-destaque) !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 2px 6px rgba(255, 98, 0, 0.35);
-  }
-
-  .custom-page-btn.disabled .page-link {
-    background-color: rgba(234, 226, 211, 0.5);
-    color: var(--texto-apoio);
-    opacity: 0.6;
-  }
-
-  .btn-secondary-custom {
-    background-color: transparent;
-    border: 1px solid var(--bege-areia);
-    color: var(--azul-escuro);
-    font-weight: 600;
-    font-size: 0.9rem;
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    transition: all 0.2s ease;
-  }
-
-  .btn-secondary-custom:hover {
-    background-color: var(--bege-secao);
-    border-color: #D6CAB4;
-    color: var(--azul-escuro);
-  }
-
-  /* ====================================================================
-     ADAPTAÇÃO RESPONSIVA MOBILE-FIRST (< 768px):
-     Transforma a estrutura da tabela em Feed Cards nativos fluidos
-     ==================================================================== */
-  @media (max-width: 767.98px) {
-    .custom-table thead {
-      display: none; /* Oculta cabeçalho tabular tradicional */
-    }
-
-    .custom-table, 
-    .custom-table tbody, 
-    .custom-table tr, 
-    .custom-table td {
-      display: block;
-      width: 100%;
-    }
-
-    .custom-table tbody {
-      padding: 0.85rem;
-    }
-
-    .custom-table tr.sala-card-row {
-      background-color: var(--bege-card);
-      border: 1px solid var(--bege-areia);
-      border-radius: 14px;
-      padding: 0.95rem 1rem;
-      margin-bottom: 0.95rem;
-      box-shadow: 0 2px 8px rgba(26, 43, 69, 0.04);
-    }
-
-    .custom-table tr.sala-card-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .custom-table td {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.45rem 0;
-      border-bottom: 1px solid rgba(234, 226, 211, 0.65);
-      text-align: right;
-    }
-
-    .custom-table td:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .custom-table td.cell-nome-sala {
-      flex-direction: column;
-      align-items: flex-start;
-      text-align: left;
-      padding: 0.55rem 0 0.75rem 0;
-      border-bottom: 1px dashed var(--bege-areia);
-    }
-
-    .mobile-field-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: var(--texto-apoio);
-      text-align: left;
-    }
-
-    .custom-table tr.empty-card-row td {
-      display: block !important;
-      text-align: center !important;
-      padding: 2.5rem 1rem !important;
-      border: none !important;
-    }
-
-    .btn-mobile-full {
-      width: 100%;
-    }
-  }
-</style>
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid px-0">
 
-    <!-- CABEÇALHO DA TELA -->
-    <div class="page-header-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+    <!-- ====================================================================
+         1. CABEÇALHO DO MÓDULO (Header Institucional)
+         ==================================================================== -->
+    <!-- <div class="sala-header-card mb-3 mb-md-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
-            <div class="header-icon-box">
+            <div class="sala-header-icon">
                 <i class="bi bi-door-open-fill"></i>
             </div>
             <div>
-                <h1 class="page-title mb-1">Salas e Ambientes</h1>
-                <p class="page-subtitle mb-0">Gerenciando dependências de: <strong>{{ instituicao.nome }}</strong></p>
+                <h1 class="sala-page-title mb-1">Salas e Ambientes</h1>
+                <p class="sala-page-subtitle mb-0">
+                    Gerenciando dependências de: <strong>{{ instituicao.nome }}</strong>
+                </p>
             </div>
         </div>
-        <div class="w-100 w-md-auto">
-            <a href="{% url 'servidor_cadastrar_sala' %}" class="btn btn-primary-custom btn-mobile-full">
+        <div class="w-100 w-md-auto text-end">
+            <a href="{% url 'servidor_cadastrar_sala' %}" class="btn btn-primary-custom w-100 w-md-auto">
                 <i class="bi bi-plus-circle-fill me-1"></i> Nova Sala
             </a>
         </div>
-    </div>
+    </div> -->
 
-    <!-- MENSAGENS FLASH (FALLBACK ESPECÍFICO) -->
+
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-door-open-fill"></i>
+                    </div>
+                    <div>
+                        <h1 class="dash-hero-title">
+                            Salas e Ambientes
+                        </h1>
+                        <p class="dash-hero-subtitle">
+                            Gestão operacional de <strong>{{ request.session.instituicao_nome }}</strong>
+                           
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de Ação Rápida no Hero -->
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <!-- <a href="#" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-door-open"></i> Reivindicações
+                    </a> -->
+                    <a href="{% url 'servidor_cadastrar_sala' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-plus-circle-fill"></i> Nova Sala
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH (FALLBACK DE COMPATIBILIDADE)
+         ==================================================================== -->
     {% if messages %}
         <div class="mb-3">
             {% for message in messages %}
@@ -334,25 +84,28 @@
         </div>
     {% endif %}
 
-    <!-- BARRA DE PESQUISA REFINADA -->
-    <div class="search-card p-3 mb-4">
-        <form method="GET" action="{% url 'servidor_listar_salas' %}" class="row g-2 align-items-center">
-            <div class="col-12 col-md-10">
-                <div class="input-group search-group">
-                    <span class="input-group-text">
+    <!-- ====================================================================
+         3. BARRA DE PESQUISA COMPACTA E SUTIL
+         ==================================================================== -->
+    <div class="sala-search-container mb-3 mb-md-4">
+        <form method="GET" action="{% url 'servidor_listar_salas' %}" class="row g-2 align-items-center m-0">
+            <div class="col px-0">
+                <div class="input-group sala-search-input-group align-items-center">
+                    <span class="sala-search-icon-addon">
                         <i class="bi bi-search"></i>
                     </span>
-                    <input type="text" name="q" class="form-control form-control-custom" 
-                           placeholder="Buscar por nome da sala, bloco/prédio ou código..." 
+                    <input type="text" name="q" class="form-control sala-search-field" 
+                           placeholder="Buscar por nome, bloco/prédio ou código..." 
                            value="{{ termo_busca }}">
                 </div>
             </div>
-            <div class="col-12 col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary-custom w-100">
-                    <i class="bi bi-filter me-1"></i> Filtrar
+            <div class="col-auto ps-2 pe-0 d-flex gap-1">
+                <button type="submit" class="sala-btn-search" title="Filtrar">
+                    <i class="bi bi-filter"></i>
+                    <span class="d-none d-sm-inline">Filtrar</span>
                 </button>
                 {% if termo_busca %}
-                    <a href="{% url 'servidor_listar_salas' %}" class="btn btn-secondary-custom" title="Limpar busca" aria-label="Limpar busca">
+                    <a href="{% url 'servidor_listar_salas' %}" class="sala-btn-clear" title="Limpar busca" aria-label="Limpar busca">
                         <i class="bi bi-x-lg"></i>
                     </a>
                 {% endif %}
@@ -360,36 +113,143 @@
         </form>
     </div>
 
-    <!-- TABELA / FEED RESPONSIVO DE SALAS -->
-    <div class="table-card-container">
-        <div class="table-responsive-md">
-            <table class="table custom-table align-middle">
+    <!-- ====================================================================
+         4. VISUALIZAÇÃO 1: FEED CARDS NO MOBILE (< 768px)
+         Estilo Social Media Corporativo com Metadados em Chips
+         ==================================================================== -->
+    <div class="d-md-none">
+        {% for sala in page_obj %}
+            <article class="sala-feed-card">
+                <!-- Topo: Título e Status Badge -->
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                    <h2 class="sala-feed-card-title">{{ sala.nome }}</h2>
+                    {% if sala.ativa %}
+                        <span class="sala-badge sala-badge-active">
+                            <i class="bi bi-check-circle-fill"></i> Ativa
+                        </span>
+                    {% else %}
+                        <span class="sala-badge sala-badge-inactive">
+                            <i class="bi bi-dash-circle-fill"></i> Inativa
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Código da Sala -->
+                <div class="mb-2">
+                    <span class="sala-badge-code">
+                        <i class="bi bi-tag-fill me-1 text-muted"></i>{{ sala.codigo|default:"S/ CÓDIGO" }}
+                    </span>
+                </div>
+
+                <!-- Descrição (se houver) -->
+                {% if sala.descricao %}
+                    <p class="sala-feed-card-desc">{{ sala.descricao }}</p>
+                {% endif %}
+
+                <!-- Bloco de Metadados em Chips -->
+                <div class="sala-meta-grid">
+                    <span class="sala-meta-chip">
+                        <i class="bi bi-building"></i>
+                        <span>Prédio: <strong>{{ sala.predio }}</strong></span>
+                    </span>
+                    <span class="sala-meta-chip">
+                        <i class="bi bi-layers"></i>
+                        <span>Andar: <strong>{{ sala.andar }}</strong></span>
+                    </span>
+                    <span class="sala-meta-chip">
+                        <i class="bi bi-telephone"></i>
+                        <span>{{ sala.telefone|default:"Sem ramal" }}</span>
+                    </span>
+                </div>
+
+                <!-- Rodapé: Ações Rápidas Padronizadas -->
+                <div class="sala-feed-card-footer">
+                    <span class="text-secondary-custom small fw-semibold">Ações</span>
+                    <div class="sala-actions-group">
+                        <!-- Visualizar -->
+                        <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
+                            <i class="bi bi-eye"></i>
+                        </a>
+
+                        <!-- Editar -->
+                        <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar sala" aria-label="Editar sala {{ sala.nome }}">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <!-- Alternar Status (POST) -->
+                        {% if sala.ativa %}
+                            <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
+                                {% csrf_token %}
+                                <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
+                                {% csrf_token %}
+                                <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <!-- Excluir (POST) -->
+                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div class="sala-feed-card text-center py-5">
+                <i class="bi bi-door-closed fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                {% if termo_busca %}
+                    <p class="mb-0 text-secondary-custom">
+                        Nenhuma sala encontrada para o termo "<strong>{{ termo_busca }}</strong>".
+                    </p>
+                {% else %}
+                    <p class="mb-0 text-secondary-custom">
+                        Nenhuma sala cadastrada nesta unidade até o momento.
+                    </p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ====================================================================
+         5. VISUALIZAÇÃO 2: TABELA NO DESKTOP (>= 768px)
+         ==================================================================== -->
+    <div class="sala-table-container d-none d-md-block">
+        <div class="table-responsive">
+            <table class="table sala-table align-middle">
                 <thead>
                     <tr>
                         <th class="ps-4">Código</th>
                         <th>Identificação / Nome</th>
                         <th>Localização</th>
-                        <th>Tipo</th>
                         <th>Ramal / Contato</th>
-                        <th class="pe-4 text-end text-md-start">Status</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for sala in page_obj %}
-                        <tr class="sala-card-row">
+                        <tr>
                             <!-- Código -->
-                            <td class="ps-md-4">
-                                <span class="mobile-field-label d-md-none">Código</span>
-                                <span class="font-monospace fw-bold text-secondary-custom small">
+                            <td class="ps-4">
+                                <span class="sala-badge-code">
                                     {{ sala.codigo|default:"---" }}
                                 </span>
                             </td>
 
                             <!-- Nome / Identificação -->
-                            <td class="cell-nome-sala">
-                                <strong class="d-block text-dark fs-6">{{ sala.nome }}</strong>
+                            <td>
+                                <strong class="d-block text-dark">{{ sala.nome }}</strong>
                                 {% if sala.descricao %}
-                                    <small class="text-secondary-custom d-block text-truncate mt-1" style="max-width: 280px;">
+                                    <small class="text-secondary-custom d-block text-truncate mt-1" style="max-width: 260px;">
                                         {{ sala.descricao }}
                                     </small>
                                 {% endif %}
@@ -397,69 +257,76 @@
 
                             <!-- Localização -->
                             <td>
-                                <span class="mobile-field-label d-md-none">Localização</span>
                                 <div>
-                                    <div class="fw-semibold">
-                                        <i class="bi bi-building text-muted me-1"></i>Prédio: <strong>{{ sala.predio }}</strong>
-                                    </div>
-                                    <small class="text-secondary-custom d-block">
-                                        <i class="bi bi-layers text-muted me-1"></i>Andar: {{ sala.andar }}
-                                    </small>
+                                    <i class="bi bi-building text-muted me-1"></i>Prédio: <strong>{{ sala.predio }}</strong>
                                 </div>
-                            </td>
-
-                            <!-- Tipo -->
-                            <td>
-                                <span class="mobile-field-label d-md-none">Tipo</span>
-                                <div>
-                                    {% if sala.laboratorio %}
-                                        <span class="badge-tag badge-tipo-lab">
-                                            <i class="bi bi-cpu"></i> Laboratório
-                                        </span>
-                                    {% elif sala.sala_de_aula %}
-                                        <span class="badge-tag badge-tipo-aula">
-                                            <i class="bi bi-mortarboard"></i> Sala de Aula
-                                        </span>
-                                    {% else %}
-                                        <span class="badge-tag badge-tipo-geral">
-                                            <i class="bi bi-briefcase"></i> Administrativo/Geral
-                                        </span>
-                                    {% endif %}
-                                </div>
+                                <small class="text-secondary-custom d-block">
+                                    <i class="bi bi-layers text-muted me-1"></i>Andar: {{ sala.andar }}
+                                </small>
                             </td>
 
                             <!-- Contato -->
                             <td>
-                                <span class="mobile-field-label d-md-none">Contato</span>
-                                <div>
-                                    {% if sala.telefone %}
-                                        <span class="text-nowrap fw-medium small">
-                                            <i class="bi bi-telephone text-muted me-1"></i>{{ sala.telefone }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted small">Não cadastrado</span>
-                                    {% endif %}
-                                </div>
+                                {% if sala.telefone %}
+                                    <span class="text-nowrap small fw-medium">
+                                        <i class="bi bi-telephone text-muted me-1"></i>{{ sala.telefone }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">Não informado</span>
+                                {% endif %}
                             </td>
 
                             <!-- Status -->
-                            <td class="pe-md-4 text-end text-md-start">
-                                <span class="mobile-field-label d-md-none">Status</span>
-                                <div>
+                            <td>
+                                {% if sala.ativa %}
+                                    <span class="sala-badge sala-badge-active">
+                                        <i class="bi bi-check-circle-fill"></i> Ativa
+                                    </span>
+                                {% else %}
+                                    <span class="sala-badge sala-badge-inactive">
+                                        <i class="bi bi-dash-circle-fill"></i> Inativa
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Ações -->
+                            <td class="pe-4 text-end">
+                                <div class="sala-actions-group">
+                                    <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar sala" aria-label="Editar sala {{ sala.nome }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
                                     {% if sala.ativa %}
-                                        <span class="badge-tag badge-status-ativa">
-                                            <i class="bi bi-check-circle-fill"></i> Ativa
-                                        </span>
+                                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
+                                                <i class="bi bi-slash-circle"></i>
+                                            </button>
+                                        </form>
                                     {% else %}
-                                        <span class="badge-tag badge-status-inativa">
-                                            <i class="bi bi-dash-circle-fill"></i> Inativa
-                                        </span>
+                                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
                                     {% endif %}
+
+                                    <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-card-row">
+                        <tr>
                             <td colspan="6" class="text-center py-5">
                                 <div class="py-3">
                                     <i class="bi bi-door-closed fs-1 d-block mb-2 text-secondary opacity-50"></i>
@@ -479,56 +346,58 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- CONTROLE DE PAGINAÇÃO -->
-        {% if page_obj.has_other_pages %}
-            <div class="pagination-wrapper d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
-                <span class="text-secondary-custom small text-center text-sm-start">
-                    Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong> de <strong>{{ total_salas }}</strong> ambientes
-                </span>
-                
-                <nav aria-label="Navegação de páginas">
-                    <ul class="pagination pagination-sm m-0 gap-1">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item custom-page-btn">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Página anterior">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item custom-page-btn disabled">
-                                <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item custom-page-btn active" aria-current="page">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <li class="page-item custom-page-btn">
-                                    <a class="page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item custom-page-btn">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Próxima página">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item custom-page-btn disabled">
-                                <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            </div>
-        {% endif %}
     </div>
+
+    <!-- ====================================================================
+         6. PAGINAÇÃO (Compartilhada e Fluida no Mobile e Desktop)
+         ==================================================================== -->
+    {% if page_obj.has_other_pages %}
+        <div class="sala-pagination-bar mt-3 mt-md-0 rounded-bottom-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+            <span class="text-secondary-custom small text-center text-sm-start">
+                Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong> de <strong>{{ total_salas }}</strong> ambientes
+            </span>
+            
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination pagination-sm m-0 gap-1">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item sala-page-item">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Página anterior">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item sala-page-item disabled">
+                            <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item sala-page-item active" aria-current="page">
+                                <span class="page-link sala-page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item sala-page-item">
+                                <a class="page-link sala-page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item sala-page-item">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}" aria-label="Próxima página">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item sala-page-item disabled">
+                            <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
 
 </div>
 {% endblock %}

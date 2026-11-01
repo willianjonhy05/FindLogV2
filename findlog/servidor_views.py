@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm
-from .models import Perfil, Sala, Categoria, Item
+from .models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
 from .decorators import servidor_required
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
@@ -10,8 +10,44 @@ from .utils import _obter_instituicao_do_servidor
 from django.db.models import Q
 import re
 
+@servidor_required
 def servidor_painel(request):
-    return render(request, "servidor/index.html")
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
+        return redirect("login")
+
+    # Contagens métricas para os cards do dashboard
+    qtde_reivindicacoes = Reivindicacao.objects.filter(instituicao=instituicao).count()
+    qtde_itens = Item.objects.filter(instituicao=instituicao).count()
+    qtde_usuarios = Perfil.objects.filter(
+        instituicao=instituicao,
+        tipo=Perfil.TipoUsuario.USUARIO
+        ).count()
+    qtde_servidores = Perfil.objects.filter(
+        instituicao=instituicao, 
+        tipo=Perfil.TipoUsuario.SERVIDOR
+    ).count()
+    qtde_salas = Sala.objects.filter(instituicao=instituicao).count()
+
+    # Opcional: últimos itens registrados para exibição rápida no painel
+    ultimos_itens = Item.objects.filter(instituicao=instituicao).select_related(
+        "categoria", "local"
+    ).order_by("-data_registro")[:5]
+
+    context = {
+        "instituicao": instituicao,
+        "qtde_reivindicacoes": qtde_reivindicacoes,
+        "qtde_itens": qtde_itens,
+        "qtde_usuarios": qtde_usuarios,
+        "qtde_servidores": qtde_servidores,
+        "qtde_salas": qtde_salas,
+        "ultimos_itens": ultimos_itens,
+    }
+
+    return render(request, "serv/index.html", context)
 
 @servidor_required
 def servidor_cadastrar_sala(request):
@@ -105,7 +141,9 @@ def servidor_listar_salas(request):
 
 @login_required
 def servidor_editar_sala(request, codigo):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+
     if not instituicao:
         messages.error(request, "Vínculo institucional não encontrado para este usuário.")
         return redirect('servidor_painel')
@@ -151,7 +189,8 @@ def servidor_alternar_status_sala(request, codigo):
 @login_required
 @require_POST
 def servidor_ativar_sala(request, codigo):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect('servidor_painel')
@@ -171,7 +210,9 @@ def servidor_ativar_sala(request, codigo):
 
 @servidor_required
 def servidor_detalhar_sala(request, codigo):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect('servidor_painel')
@@ -188,7 +229,8 @@ def servidor_detalhar_sala(request, codigo):
 @login_required
 @require_POST
 def servidor_desativar_sala(request, codigo):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect('servidor_painel')
@@ -208,7 +250,8 @@ def servidor_desativar_sala(request, codigo):
 
 @servidor_required
 def servidor_listar_itens(request):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
@@ -254,7 +297,9 @@ def servidor_listar_itens(request):
 # ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_sala(request, sala_codigo):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
@@ -300,7 +345,9 @@ def servidor_itens_por_sala(request, sala_codigo):
 # ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_categoria(request, categoria_id):
-    instituicao = _obter_instituicao_do_servidor(request)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")

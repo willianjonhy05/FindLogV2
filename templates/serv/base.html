@@ -20,6 +20,46 @@
   <link rel="stylesheet" href="{% static 'css/servidor.css' %}">
 
 
+  <meta name="description" content="FindLog: sistema inteligente para cadastro, busca e gerenciamento de achados e perdidos. Localize seus pertences ou registre itens encontrados com rapidez.">
+
+    <!-- Meta Keywords (focadas nos termos principais e variações sem acento) -->
+    <meta name="keywords" content="FindLog, achados e perdidos, sistema de achados e perdidos, objetos perdidos, cadastrar item perdido, recuperar pertences, gestao de achados e perdidos, localizar documentos">
+
+    <meta name="author" content="Primeira Classe Team Dev">
+
+    <meta name="theme-color" content="#1A2B45">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="{% static 'img/findlog_32x32.jpg' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/findlog_180x180.jpg' %}" />
+    <link rel="icon" href="{% static 'img/findlog_32x32.jpg' %}" sizes="32x32" />
+    <link rel="icon" href="{% static 'img/findlog_192x192.jpg' %}" sizes="192x192" />
+
+    <!-- Open Graph (Redes Sociais) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="FindLog">
+    <meta property="og:title" content="FindLog - Gerenciamento de Achados e Perdidos">
+    <meta property="og:description" content="Sistema para gerenciamento de objetos achados e perdidos; facilitando a devolução dos itens a seus proprietários.">
+    <meta property="og:image" content="https://missaemteresina.com.br/static/img/logo/logo_1200x630.png">
+    <meta property="og:url" content="https://findlog.com.br/">
+    <meta property="og:locale" content="pt_BR">
+
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FindLog - Gerenciamento de Achados e Perdidos">
+    <meta name="twitter:description" content="Sistema para gerenciamento de objetos achados e perdidos; facilitando a devolução dos itens a seus proprietários.">
+    <meta name="twitter:image" content="https://missaemteresina.com.br/static/img/logo/logo_1200x630.png">
+    <meta property="twitter:domain" content="https://findlog.com.br/">
+    <meta property="twitter:url" content="https://findlog.com.br/">
+    <meta name="twitter:site" content="@findlog">
+
+
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+  
+
   <!-- Bloco para inclusão de CSS ou Meta tags adicionais de páginas filhas -->
   {% block extra_head %}{% endblock %}
 </head>
@@ -48,11 +88,11 @@
 
         <!-- Links de Navegação Primária (Exibidos apenas em Telas Desktop >= 992px) -->
         <nav class="d-none d-lg-flex align-items-center gap-1">
-          <a href="/" class="desktop-nav-link active">
-            <i class="bi bi-grid-1x2-fill"></i> Início
+          <a href="{% url 'servidor_painel'  %}" class="desktop-nav-link active">
+            <i class="bi bi-grid-1x2-fill"></i> Painel
           </a>
           <a href="#" class="desktop-nav-link">
-            <i class="bi bi-folder-check"></i> Meus Processos
+            <i class="bi bi-folder-check"></i> Reivindicações
           </a>
           <a href="#" class="desktop-nav-link">
             <i class="bi bi-calendar4-week"></i> Escalas & Frequência
@@ -100,6 +140,13 @@
                 <span class="d-block text-muted" style="font-size: 0.72rem;">{{ request.session.username }}</span>
               </li>
               <li><a class="dropdown-item py-2 small" href="#"><i class="bi bi-person-gear me-2"></i>Meu Perfil</a></li>
+              {% if request.session.total_instituicoes > 1 or request.user.instituicao.count > 1 %}
+              <li>
+                  <a class="dropdown-item py-2 small" href="{% url 'selecionar_instituicao' %}">
+                      <i class="bi bi-building me-2"></i>Trocar Instituição
+                  </a>
+              </li>
+              {% endif %}
               <li><a class="dropdown-item py-2 small" href="#"><i class="bi bi-shield-check me-2"></i>Segurança e Senha</a></li>
               <li><hr class="dropdown-divider my-1"></li>
               <li><a class="dropdown-item py-2 small text-danger fw-semibold" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Encerrar Sessão</a></li>
@@ -247,16 +294,16 @@
        ==================================================================== -->
   <nav class="mobile-bottom-nav d-lg-none" aria-label="Navegação Inferior">
     
-    <!-- Item: Início / Feed -->
-    <a href="/" class="bottom-nav-item active">
+    <!-- Item: Painel / Feed -->
+    <a href="{% url 'servidor_painel'  %}" class="bottom-nav-item active">
       <i class="bi bi-house-door-fill"></i>
-      <span>Início</span>
+      <span>Painel</span>
     </a>
 
     <!-- Item: Processos -->
     <a href="#" class="bottom-nav-item">
       <i class="bi bi-folder2-open"></i>
-      <span>Processos</span>
+      <span>Reivindicações</span>
     </a>
 
     <!-- Ação Central: Registro / Ação Rápida -->

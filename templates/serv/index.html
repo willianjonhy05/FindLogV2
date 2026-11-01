@@ -1,0 +1,332 @@
+{% extends "serv/base.html" %}
+
+{% block title %}Painel Institucional | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. MENSAGENS FLASH (FALLBACK DE COMPATIBILIDADE)
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- ====================================================================
+         2. CABEÇALHO HERO / BOAS-VINDAS INSTITUCIONAL
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-building-gear"></i>
+                    </div>
+                    <div>
+                        <h1 class="dash-hero-title">
+                            Olá, {{ request.session.primeiro_nome|default:request.user.primeiro_nome|default:"Servidor Conectado" }}!
+                        </h1>
+                        <p class="dash-hero-subtitle">
+                            Gestão operacional de <strong>{{ request.session.instituicao_nome }}</strong>
+                           
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de Ação Rápida no Hero -->
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="#" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-door-open"></i> Reivindicações
+                    </a>
+                    <a href="#" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-plus-circle-fill"></i> Item Encontrado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         3. GRID DE CARDS ESTATÍSTICOS (STAT CARDS)
+         2 colunas no Mobile (col-6) | 5 colunas no Desktop (col-lg)
+         ==================================================================== -->
+    <section class="mb-4" aria-label="Métricas Principais">
+        <div class="row g-2 g-sm-3 g-xl-4 row-cols-2 row-cols-md-3 row-cols-lg-5">
+            
+            <!-- Reivindicações -->
+            <div class="col">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-icon-wrapper dash-stat-icon-orange">
+                            <i class="bi bi-clipboard-check-fill"></i>
+                        </span>
+                        <span class="badge bg-light text-dark border small fw-normal">Total</span>
+                    </div>
+                    <div>
+                        <div class="dash-stat-value">{{ qtde_reivindicacoes|default:0 }}</div>
+                        <p class="dash-stat-label">Reivindicações</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Itens Cadastrados -->
+            <div class="col">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-icon-wrapper dash-stat-icon-blue">
+                            <i class="bi bi-box-seam-fill"></i>
+                        </span>
+                        <span class="badge bg-light text-dark border small fw-normal">Itens</span>
+                    </div>
+                    <div>
+                        <div class="dash-stat-value">{{ qtde_itens|default:0 }}</div>
+                        <p class="dash-stat-label">Itens Registrados</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salas e Ambientes -->
+            <div class="col">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-icon-wrapper dash-stat-icon-sand">
+                            <i class="bi bi-door-open-fill"></i>
+                        </span>
+                        <span class="badge bg-light text-dark border small fw-normal">Locais</span>
+                    </div>
+                    <div>
+                        <div class="dash-stat-value">{{ qtde_salas }}</div>
+                        <p class="dash-stat-label">Salas & Ambientes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuários Comuns -->
+            <div class="col">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-icon-wrapper dash-stat-icon-teal">
+                            <i class="bi bi-people-fill"></i>
+                        </span>
+                        <span class="badge bg-light text-dark border small fw-normal">Cidadãos</span>
+                    </div>
+                    <div>
+                        <div class="dash-stat-value">{{ qtde_usuarios|default:0 }}</div>
+                        <p class="dash-stat-label">Usuários Ativos</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Servidores Públicos -->
+            <div class="col col-12 col-md-4 col-lg">
+                <div class="dash-stat-card">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-icon-wrapper dash-stat-icon-blue">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </span>
+                        <span class="badge bg-light text-dark border small fw-normal">Equipe</span>
+                    </div>
+                    <div>
+                        <div class="dash-stat-value">{{ qtde_servidores|default:0 }}</div>
+                        <p class="dash-stat-label">Servidores</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         4. CORPO PRINCIPAL DO DASHBOARD (FEED + PAINEL LATERAL)
+         ==================================================================== -->
+    <div class="row g-3 g-lg-4">
+        
+        <!-- Coluna da Esquerda: Feed de Últimos Itens -->
+        <div class="col-12 col-lg-8">
+            <div class="dash-section-card">
+                <div class="dash-section-header">
+                    <h2 class="dash-section-title">
+                        <i class="bi bi-clock-history text-secondary-custom"></i>
+                        Últimos Itens Registrados
+                    </h2>
+                    <span class="badge bg-light text-secondary border small">Últimos 5</span>
+                </div>
+
+                <div class="table-responsive-md">
+                    <table class="table dash-table align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Item / Identificação</th>
+                                <th>Categoria</th>
+                                <th>Localização</th>
+                                <th>Data</th>
+                                <th class="pe-4 text-end text-md-start">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ultimos_itens %}
+                                <tr class="dash-feed-row">
+                                    
+                                    <!-- Nome / Identificação -->
+                                    <td class="ps-md-4 dash-feed-cell-main">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-light border d-none d-md-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                                                <i class="bi bi-box-seam text-secondary-custom"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="d-block text-dark">{{ item.nome }}</strong>
+                                                <small class="text-secondary-custom d-md-none">
+                                                    {{ item.categoria.nome|default:"Geral" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Categoria (Visível como coluna no Desktop) -->
+                                    <td class="d-none d-md-table-cell">
+                                        <span class="text-secondary-custom fw-medium">
+                                            {{ item.categoria.nome|default:"---" }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Localização (Sala/Local) -->
+                                    <td>
+                                        <span class="dash-mobile-label d-md-none">Localização</span>
+                                        <div>
+                                            <span class="dash-tag dash-tag-location">
+                                                <i class="bi bi-geo-alt-fill"></i>
+                                                {{ item.local.nome|default:item.local|default:"Não especificado" }}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Data de Registro -->
+                                    <td>
+                                        <span class="dash-mobile-label d-md-none">Registro</span>
+                                        <div class="text-nowrap small text-secondary-custom">
+                                            <i class="bi bi-calendar3 me-1 d-none d-md-inline"></i>
+                                            {{ item.data_registro|date:"d/m/Y H:i" }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Status -->
+                                    <td class="pe-md-4 text-end text-md-start">
+                                        <span class="dash-mobile-label d-md-none">Status</span>
+                                        <div>
+                                            <span class="dash-tag dash-tag-status">
+                                                <i class="bi bi-check2-circle"></i>
+                                                {{ item.status|default:"Cadastrado" }}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            {% empty %}
+                                <tr class="dash-feed-empty-row">
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="py-4">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                            <p class="mb-1 fw-bold text-dark">Nenhum item registrado recentemente</p>
+                                            <p class="mb-0 text-secondary-custom small">
+                                                Novas ocorrências ou achados cadastrados na unidade aparecerão aqui.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if ultimos_itens %}
+                    <div class="p-3 border-top border-1 border-secondary-subtle bg-light bg-opacity-50 text-center">
+                        <a href="{% url 'servidor_painel' %}" class="btn btn-sm text-secondary-custom fw-semibold text-decoration-none">
+                            Ver todos os itens no painel <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Coluna da Direita: Ações Rápidas & Informações do Servidor -->
+        <div class="col-12 col-lg-4">
+            
+            <!-- Card de Ações Rápidas -->
+            <div class="dash-section-card p-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-1 border-secondary-subtle">
+                    <h3 class="dash-section-title fs-6">
+                        <i class="bi bi-lightning-charge-fill text-warning"></i>
+                        Ações Rápidas
+                    </h3>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'servidor_listar_salas' %}" class="dash-quick-link-item">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-door-open text-primary fs-5"></i>
+                            Gerenciar Ambientes & Salas
+                        </span>
+                        <i class="bi bi-chevron-right dash-nav-arrow"></i>
+                    </a>
+
+                    <a href="{% url 'servidor_cadastrar_sala' %}" class="dash-quick-link-item">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-plus-square text-success fs-5"></i>
+                            Cadastrar Nova Sala
+                        </span>
+                        <i class="bi bi-chevron-right dash-nav-arrow"></i>
+                    </a>
+
+                    <a href="#" class="dash-quick-link-item">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus-fill text-info fs-5"></i>
+                            Novo Usuário
+                        </span>
+                        <i class="bi bi-chevron-right dash-nav-arrow"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card de Atendimento Institucional -->
+            <div class="dash-section-card p-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-shield-check text-success fs-5"></i>
+                    <h3 class="dash-section-title fs-6">Unidade Operacional</h3>
+                </div>
+                <p class="text-secondary-custom small mb-3">
+                    Você está operando como servidor vinculado à infraestrutura oficial desta instituição.
+                </p>
+                <div class="p-2 rounded-3 bg-light border small text-secondary-custom">
+                    <div class="d-flex justify-content-between py-1 border-bottom border-1 border-secondary-subtle">
+                        <span>Status:</span>
+                        <strong class="text-success">Conectado / Homologado</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span>Acesso:</span>
+                        <strong>Painel Administrativo</strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,409 @@
+/* ====================================================================
+   MÓDULO: SALAS E AMBIENTES (Namespace: .sala-*)
+   Compatível com as variáveis definidas no :root de serv/base.html
+   ==================================================================== */
+
+/* --- CABEÇALHO DO MÓDULO --- */
+.sala-header-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 10px rgba(26, 43, 69, 0.04);
+}
+
+.sala-header-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+  color: var(--laranja-destaque);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  box-shadow: 0 4px 10px rgba(26, 43, 69, 0.12);
+  flex-shrink: 0;
+}
+
+.sala-page-title {
+  color: var(--azul-escuro);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.sala-page-subtitle {
+  color: var(--texto-apoio);
+  font-size: 0.88rem;
+}
+
+/* --- BARRA DE BUSCA COMPACTA E SUTIL --- */
+.sala-search-container {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: 14px;
+  padding: 0.5rem 0.65rem;
+  box-shadow: 0 2px 6px rgba(26, 43, 69, 0.02);
+}
+
+@media (min-width: 768px) {
+  .sala-search-container {
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+  }
+}
+
+.sala-search-input-group {
+  background-color: #FFFFFF;
+  border: 1px solid var(--bege-areia);
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.sala-search-input-group:focus-within {
+  border-color: var(--laranja-destaque);
+  box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.14);
+}
+
+.sala-search-icon-addon {
+  background: transparent;
+  border: none;
+  color: var(--texto-apoio);
+  padding-left: 0.85rem;
+  padding-right: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.sala-search-field {
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 0.88rem;
+  color: var(--texto-escuro);
+  padding: 0.55rem 0.5rem;
+  min-height: 40px;
+  background-color: transparent;
+}
+
+.sala-search-field::placeholder {
+  color: #9CA3AF;
+  font-size: 0.85rem;
+}
+
+.sala-btn-search {
+  background-color: var(--azul-escuro);
+  border: 1px solid var(--azul-escuro);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 9px;
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.sala-btn-search:hover,
+.sala-btn-search:focus {
+  background-color: var(--azul-medio);
+  border-color: var(--azul-medio);
+  color: #FFFFFF;
+}
+
+.sala-btn-clear {
+  background-color: transparent;
+  border: 1px solid var(--bege-areia);
+  color: var(--texto-apoio);
+  border-radius: 9px;
+  min-height: 40px;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sala-btn-clear:hover {
+  background-color: var(--bege-secao);
+  color: var(--texto-escuro);
+  border-color: #D6CAB4;
+}
+
+/* --- CARDS MOBILE (FEED CORPORATIVO) --- */
+.sala-feed-card {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: 14px;
+  padding: 1.05rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 2px 8px rgba(26, 43, 69, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sala-feed-card:hover {
+  border-color: #D6CAB4;
+  box-shadow: 0 4px 12px rgba(26, 43, 69, 0.06);
+}
+
+.sala-feed-card-title {
+  color: var(--texto-escuro);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 0.2rem;
+}
+
+.sala-feed-card-desc {
+  color: var(--texto-apoio);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin-top: 0.35rem;
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Metadados / Chips de Informação */
+.sala-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.sala-meta-chip {
+  background-color: var(--bege-secao);
+  border: 1px solid var(--bege-areia);
+  color: var(--texto-apoio);
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.25rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sala-meta-chip strong {
+  color: var(--azul-escuro);
+}
+
+.sala-meta-chip i {
+  color: var(--azul-medio);
+}
+
+/* Rodapé do Card Mobile */
+.sala-feed-card-footer {
+  border-top: 1px dashed var(--bege-areia);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* --- TABELA DESKTOP ELEGANTE --- */
+.sala-table-container {
+  background-color: var(--bege-card);
+  border: 1px solid var(--bege-areia);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(26, 43, 69, 0.04);
+  overflow: hidden;
+}
+
+.sala-table {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.sala-table thead th {
+  background-color: var(--bege-secao);
+  color: var(--azul-escuro);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.95rem 1.15rem;
+  border-bottom: 2px solid var(--bege-areia);
+  white-space: nowrap;
+}
+
+.sala-table tbody tr {
+  border-bottom: 1px solid var(--bege-areia);
+  transition: background-color 0.15s ease;
+}
+
+.sala-table tbody tr:hover {
+  background-color: rgba(234, 226, 211, 0.35);
+}
+
+.sala-table tbody td {
+  padding: 0.95rem 1.15rem;
+  color: var(--texto-escuro);
+  vertical-align: middle;
+}
+
+/* --- BADGES INSTITUCIONAIS --- */
+.sala-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1;
+}
+
+.sala-badge-active {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #065F46;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.sala-badge-inactive {
+  background-color: rgba(239, 68, 68, 0.10);
+  color: #991B1B;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.sala-badge-code {
+  background-color: var(--bege-secao);
+  border: 1px solid var(--bege-areia);
+  color: var(--azul-escuro);
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+/* --- BOTÕES DE AÇÃO (.sala-action-icon) --- */
+.sala-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sala-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--bege-areia);
+  background-color: #FFFFFF;
+  color: var(--texto-apoio);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 767.98px) {
+  /* Ergonomia Mobile: touch-target acessível de 42px */
+  .sala-action-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+  }
+}
+
+.sala-action-icon-view:hover,
+.sala-action-icon-view:focus {
+  background-color: rgba(26, 43, 69, 0.08);
+  border-color: var(--azul-medio);
+  color: var(--azul-escuro);
+  transform: translateY(-2px);
+}
+
+.sala-action-icon-edit:hover,
+.sala-action-icon-edit:focus {
+  background-color: rgba(255, 98, 0, 0.1);
+  border-color: var(--laranja-destaque);
+  color: var(--laranja-destaque);
+  transform: translateY(-2px);
+}
+
+.sala-action-icon-deact {
+  color: #9A6700;
+}
+.sala-action-icon-deact:hover,
+.sala-action-icon-deact:focus {
+  background-color: rgba(217, 119, 6, 0.12);
+  border-color: #D97706;
+  color: #B45309;
+  transform: translateY(-2px);
+}
+
+.sala-action-icon-act {
+  color: #065F46;
+}
+.sala-action-icon-act:hover,
+.sala-action-icon-act:focus {
+  background-color: rgba(16, 185, 129, 0.14);
+  border-color: #10B981;
+  color: #047857;
+  transform: translateY(-2px);
+}
+
+.sala-action-icon-del {
+  color: #DC2626;
+}
+.sala-action-icon-del:hover,
+.sala-action-icon-del:focus {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: #EF4444;
+  color: #B91C1C;
+  transform: translateY(-2px);
+}
+
+/* --- PAGINAÇÃO MODULAR --- */
+.sala-pagination-bar {
+  background-color: var(--bege-secao);
+  border-top: 1px solid var(--bege-areia);
+  padding: 0.95rem 1.25rem;
+}
+
+.sala-page-link {
+  background-color: var(--bege-card) !important;
+  border: 1px solid var(--bege-areia) !important;
+  color: var(--azul-escuro) !important;
+  font-weight: 600;
+  border-radius: 8px !important;
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin: 0 2px;
+}
+
+.sala-page-link:hover {
+  background-color: var(--bege-areia) !important;
+  color: var(--laranja-destaque) !important;
+  border-color: #D6CAB4 !important;
+}
+
+.sala-page-item.active .sala-page-link {
+  background-color: var(--laranja-destaque) !important;
+  border-color: var(--laranja-destaque) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(255, 98, 0, 0.35);
+}
+
+.sala-page-item.disabled .sala-page-link {
+  background-color: rgba(234, 226, 211, 0.45) !important;
+  color: var(--texto-apoio) !important;
+  opacity: 0.55;
+}

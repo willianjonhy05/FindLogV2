@@ -519,7 +519,7 @@ def nova_sala(request):
         form = SalaForm(request.POST)
         if form.is_valid():
             sala = form.save()
-            messages.success(request, f"Sala {sala.numero} ({sala.predio}) cadastrada com sucesso!")
+            messages.success(request, f"Sala {sala.nome} ({sala.predio}) cadastrada com sucesso!")
             return redirect("lista_salas")
         messages.error(request, "Erro ao cadastrar sala. Verifique os dados informados.")
     else:
@@ -554,7 +554,7 @@ def editar_sala(request, codigo):
         form = SalaForm(request.POST, instance=sala)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Sala {sala.numero} atualizada com sucesso!")
+            messages.success(request, f"Sala {sala.nome} atualizada com sucesso!")
             return redirect("lista_salas")
         messages.error(request, "Não foi possível atualizar a sala. Verifique os campos.")
     else:
@@ -581,7 +581,7 @@ def alternar_status_sala(request, codigo):
     sala.save(update_fields=[campo_status])
 
     novo_status_str = "ativada" if getattr(sala, campo_status) else "desativada"
-    messages.success(request, f"A Sala {sala.numero} foi {novo_status_str} com sucesso.")
+    messages.success(request, f"A Sala {sala.nome} foi {novo_status_str} com sucesso.")
     return redirect("lista_salas")
 
 
@@ -592,7 +592,7 @@ def excluir_sala(request, codigo):
         return redirect("usuario_home")
 
     sala = get_object_or_404(Sala, pk=codigo)
-    nome_sala = f"Sala {sala.numero} - {sala.predio}"
+    nome_sala = f"Sala {sala.nome} - {sala.predio}"
 
     try:
         sala.delete()

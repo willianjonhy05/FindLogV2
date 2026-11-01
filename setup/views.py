@@ -33,16 +33,13 @@ def index(request):
 
     return render(request,"public/index.html", {"form_contato": form_contato})
 
-
 def login_view(request):
-    # Se já estiver autenticado na sessão atual:
     if request.user.is_authenticated:
-        # Verifica se a conta foi inativada enquanto logada
         if not getattr(request.user, "ativo", True) or not request.user.is_active:
             logout(request)
             return render(
                 request,
-                "erros/403.html",
+                "403.html",
                 {"mensagem": "Sua conta de usuário está desativada no sistema."},
                 status=403,
             )
@@ -53,61 +50,55 @@ def login_view(request):
         if form.is_valid():
             usuario = form.user
 
-            # -------------------------------------------------------------
-            # VERIFICAÇÃO DE PERFIL ATIVO (Bloqueio 403)
-            # -------------------------------------------------------------
-            # Checa o campo customizado 'ativo' e o nativo do AbstractUser 'is_active'
+            # Verificação de Perfil Ativo
             if not usuario.ativo or not usuario.is_active:
                 return render(
                     request,
-                    "erros/403.html",
+                    "403.html",
                     {
-                        "mensagem": "Seu perfil está desativado. Entre em contato com a administração da instituição para reativar o acesso."
+                        "mensagem": "Seu perfil está desativado. Entre em contato com a administração para reativar o acesso."
                     },
                     status=403,
                 )
 
-            # Autentica e inicia a sessão apenas se estiver ativo
             login(request, usuario)
 
-            # 1. Armazena dados essenciais do usuário na sessão
+            # 1. Dados essenciais do usuário na sessão
             request.session["username"] = usuario.username
             request.session["primeiro_nome"] = usuario.primeiro_nome
-            request.session["foto_url"] = (
-                usuario.foto.url if usuario.foto else None
-            )
+            request.session["foto_url"] = usuario.foto.url if usuario.foto else None
 
             messages.success(
                 request,
                 f"Bem-vindo(a) de volta, {usuario.primeiro_nome or usuario.nome or usuario.username}!",
             )
 
-            # 2. Resolução da Instituição
-            instituicoes_usuario = usuario.instituicao.filter(ativo=True)
-            total_inst = instituicoes_usuario.count()
+            # 2. Resolução das Instituições
+            is_admin = (
+                usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser
+            )
 
-            # Administrador: primeira instituição ativa do sistema ou do próprio vínculo
-            if (
-                usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR
-                or usuario.is_superuser
-            ):
-                primeira_inst = instituicoes_usuario.first() or Instituicao.objects.filter(
-                    ativo=True
-                ).first()
-                if primeira_inst:
-                    request.session["instituicao_cnpj"] = primeira_inst.cnpj
-                    request.session["instituicao_nome"] = primeira_inst.nome
-                return redirecionar_por_perfil(request, usuario)
+            if is_admin:
+                instituicoes_disponiveis = Instituicao.objects.filter(ativo=True)
+            else:
+                instituicoes_disponiveis = usuario.instituicao.filter(ativo=True)
 
-            # Usuário Comum (2) ou Servidor (3)
+            total_inst = instituicoes_disponiveis.count()
+            # Salva na sessão para controle do dropdown no template
+            request.session["total_instituicoes"] = total_inst
+
+            # 3. Regra de Redirecionamento
             if total_inst > 1:
+                # Mais de uma: sempre escolhe primeiro
                 return redirect("selecionar_instituicao")
             elif total_inst == 1:
-                unica_inst = instituicoes_usuario.first()
+                # Exatamente uma: fixa na sessão e entra direto
+                unica_inst = instituicoes_disponiveis.first()
                 request.session["instituicao_cnpj"] = unica_inst.cnpj
                 request.session["instituicao_nome"] = unica_inst.nome
                 return redirecionar_por_perfil(request, usuario)
             else:
+                # Nenhuma instituição vinculada
                 request.session["instituicao_cnpj"] = None
                 request.session["instituicao_nome"] = None
                 return redirecionar_por_perfil(request, usuario)
@@ -123,23 +114,27 @@ def login_view(request):
 
 @login_required
 def selecionar_instituicao(request):
-    """
-    Permite escolher a instituição no login (quando houver mais de uma)
-    ou trocar de instituição a qualquer momento.
-    """
     usuario = request.user
 
-    # Administrador pode escolher qualquer instituição ativa; demais apenas as que possuem vínculo
     if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser:
         instituicoes = Instituicao.objects.filter(ativo=True)
     else:
         instituicoes = usuario.instituicao.filter(ativo=True)
 
+    total_inst = instituicoes.count()
+    request.session["total_instituicoes"] = total_inst
+
+    # Se por acaso só tiver 1 instituição, fixa e já redireciona
+    if total_inst == 1:
+        inst = instituicoes.first()
+        request.session["instituicao_cnpj"] = inst.cnpj
+        request.session["instituicao_nome"] = inst.nome
+        return redirecionar_por_perfil(request, usuario)
+
     if request.method == "POST":
         cnpj_escolhido = request.POST.get("instituicao_cnpj")
         inst = get_object_or_404(instituicoes, cnpj=cnpj_escolhido)
 
-        # Atualiza a instituição ativa na sessão
         request.session["instituicao_cnpj"] = inst.cnpj
         request.session["instituicao_nome"] = inst.nome
         messages.success(request, f"Instituição ativa alterada para: {inst.nome}")
