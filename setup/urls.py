@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('adm/', include('findlog.adm_urls')),
     path('painel/', include('findlog.servidor_urls')),
+    path('findlog/', include('findlog.usuario_urls')),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("selecionar-instituicao/", selecionar_instituicao, name="selecionar_instituicao"),
