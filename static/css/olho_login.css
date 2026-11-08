@@ -1,0 +1,96 @@
+/* Container do campo de senha */
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Ícone de cadeado */
+.password-icon {
+    position: absolute;
+    left: 14px;
+    z-index: 2;
+    color: #64748b;
+}
+
+/* Campo de senha */
+.password-container input {
+    width: 100%;
+    padding-left: 42px !important;
+    padding-right: 45px !important;
+
+    /* Bordas arredondadas em todos os lados */
+    border-radius: 10px !important;
+    border-top-left-radius: 10px !important;
+    border-bottom-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+}
+
+/* Botão do olho */
+.toggle-senha {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50%;
+
+    color: #ff8c00;
+    cursor: pointer;
+    z-index: 5;
+    padding: 5px;
+}
+
+/* Tamanho do ícone */
+.toggle-senha i {
+    font-size: 19px;
+}
+
+/* Efeito ao passar o mouse */
+.toggle-senha:hover {
+    color: #e67700;
+}
+
+/* Remove efeitos padrão do botão */
+.toggle-senha:focus,
+.toggle-senha:active {
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.password-container {
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    border-radius: 10px !important;
+}
+
+.password-container input,
+.password-container input.form-control,
+.password-container input.form-control-custom {
+    width: 100% !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+}
+
+.toggle-senha {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 50% !important;
+    z-index: 5 !important;
+}
+
+/* Borda do campo de senha ao selecionar */
+.password-container:focus-within .form-control-custom {
+    border-color: #ff8c00 !important;
+    box-shadow: 0 0 0 0.20rem rgba(255, 140, 0, 0.20) !important;
+}
