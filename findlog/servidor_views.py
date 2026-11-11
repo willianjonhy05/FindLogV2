@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm
+from .forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm, ServidorItemForm
 from .models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
 from .decorators import servidor_required
 from django.core.paginator import Paginator
@@ -456,8 +456,53 @@ def servidor_desativar_usuario():
     pass
 
 
-def servidor_cadastra_item():
-    pass
+@servidor_required
+def servidor_cadastra_item(request):
+    usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    # Resolução da instituição ativa
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
+        return redirect("login")
+
+    if request.method == "POST":
+        form = ServidorItemForm(request.POST, request.FILES, instituicao=instituicao)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.instituicao = instituicao               # Garante o vínculo com a instituição ativa
+            item.usuario_registro = usuario              # Servidor responsável pelo cadastro
+            item.save()
+
+            messages.success(
+                request,
+                f"Item '{item.nome or item.codigo}' cadastrado com sucesso! Código gerado: {item.codigo}"
+            )
+            return redirect("servidor_listar_itens")
+
+        messages.error(request, "Por favor, corrija os erros apontados no formulário.")
+    else:
+        # Sugere por padrão o status ENCONTRADO (2) e a própria sala do servidor como local guardado
+        dados_iniciais = {
+            "status": Item.StatusItem.ENCONTRADO,
+        }
+        if usuario.sala and usuario.sala.instituicao == instituicao:
+            dados_iniciais["local_guardado"] = usuario.sala
+
+        form = ServidorItemForm(initial=dados_iniciais, instituicao=instituicao)
+
+    context = {
+        "form": form,
+        "instituicao": instituicao,
+    }
+    return render(request, "serv/cadastrar_item.html", context)
 
 
 def servidor_detalhes_item():

@@ -95,7 +95,7 @@
             <i class="bi bi-folder-check"></i> Reivindicações
           </a>
           <a href="#" class="desktop-nav-link">
-            <i class="bi bi-calendar4-week"></i> Escalas & Frequência
+            <i class="bi bi-people"></i> Usuários
           </a>
           <a href="#" class="desktop-nav-link">
             <i class="bi bi-megaphone"></i> Comunicados
@@ -106,13 +106,13 @@
         <div class="d-flex align-items-center gap-2 gap-sm-3">
           
           <!-- Notificações -->
-          <button type="button" class="notification-btn" aria-label="Notificações" data-bs-toggle="dropdown" aria-expanded="false">
+          <!-- <button type="button" class="notification-btn" aria-label="Notificações" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-bell-fill"></i>
             <span class="notification-badge">3</span>
-          </button>
+          </button> -->
           
           <!-- Dropdown Notificações -->
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="width: 290px; border-radius: 12px; background: var(--bege-card); border: 1px solid var(--bege-areia);">
+          <!-- <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="width: 290px; border-radius: 12px; background: var(--bege-card); border: 1px solid var(--bege-areia);">
             <li class="p-2 border-bottom border-secondary-subtle">
               <span class="fw-bold small text-dark">Atualizações do Setor</span>
             </li>
@@ -120,7 +120,7 @@
             <li><a class="dropdown-item py-2 small" href="#"><i class="bi bi-clock-history text-warning me-2"></i>Envio de frequência pendente</a></li>
             <li><hr class="dropdown-divider my-1"></li>
             <li><a class="dropdown-item text-center small text-primary fw-bold" href="#">Ver todas</a></li>
-          </ul>
+          </ul> -->
 
           <!-- Avatar e Dropdown de Perfil -->
           <div class="dropdown">
@@ -191,99 +191,7 @@
     <div class="container-fluid app-main-container px-3 px-sm-4">
       
       {% block content %}
-      <!-- 
-        EXEMPLO GUIA DE ESTRUTURAÇÃO DO CONTEÚDO FILHO:
-        O código abaixo serve como demonstração visual de conformidade com o layout.
-        Ao herdar este base.html, sobrescreva este bloco inteiramente.
-      -->
-      <div class="row g-3 g-lg-4">
-        
-        <!-- Coluna da Esquerda / Feed Principal -->
-        <div class="col-12 col-lg-8">
-          
-          <!-- Card de Interação / Criação Rápida -->
-          <div class="card card-feed p-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="user-avatar-img d-grid place-items-center text-white" style="line-height: 36px; text-align: center;">
-                <i class="bi bi-person-fill fs-5"></i>
-              </div>
-              <button class="btn w-100 text-start text-muted py-2 px-3 border border-secondary-subtle rounded-pill bg-white" style="font-size: 0.88rem;">
-                Publicar comunicado interno ou atualização...
-              </button>
-            </div>
-          </div>
-
-          <!-- Feed Card Exemplo -->
-          <article class="card card-feed">
-            <header class="card-feed-header">
-              <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 700;">
-                  RH
-                </div>
-                <div>
-                  <h6 class="mb-0 fs-6">Recursos Humanos Institucional</h6>
-                  <small class="text-secondary-custom">Publicado há 2 horas &bull; Setor Central</small>
-                </div>
-              </div>
-              <button class="btn btn-sm btn-link text-secondary-custom p-0" aria-label="Mais opções">
-                <i class="bi bi-three-dots-vertical"></i>
-              </button>
-            </header>
-            
-            <div class="card-feed-body">
-              <p class="mb-2">
-                Aviso a todos os servidores ativos: Encontra-se aberto o período para cadastramento e homologação da escala de plantão para o próximo mês.
-              </p>
-              <div class="p-3 rounded-3" style="background-color: var(--bege-secao); border: 1px solid var(--bege-areia);">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-pdf-fill fs-3 text-danger"></i>
-                    <div>
-                      <div class="fw-bold small">Instrucao_Normativa_04_2026.pdf</div>
-                      <div class="text-muted" style="font-size: 0.72rem;">1.4 MB &bull; Documento Oficial</div>
-                    </div>
-                  </div>
-                  <a href="#" class="btn btn-sm btn-outline-dark rounded-pill">Baixar</a>
-                </div>
-              </div>
-            </div>
-
-            <footer class="card-feed-footer d-flex align-items-center justify-content-between">
-              <button class="btn btn-sm text-secondary-custom d-flex align-items-center gap-1">
-                <i class="bi bi-hand-thumbs-up"></i> Ciente (42)
-              </button>
-              <button class="btn-primary-custom btn-sm">
-                Registrar Escala <i class="bi bi-arrow-right"></i>
-              </button>
-            </footer>
-          </article>
-
-        </div>
-
-        <!-- Coluna da Direita / Widgets Institucionais (Oculta ou adaptada em Mobile) -->
-        <div class="col-12 col-lg-4 d-none d-lg-block">
-          <div class="card card-feed p-3">
-            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
-              <i class="bi bi-info-circle text-primary"></i> Acesso Rápido
-            </h6>
-            <div class="list-group list-group-flush small">
-              <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0 py-2 bg-transparent">
-                <span><i class="bi bi-file-text me-2"></i>Holerite Digital</span>
-                <i class="bi bi-chevron-right text-muted"></i>
-              </a>
-              <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0 py-2 bg-transparent">
-                <span><i class="bi bi-calendar2-check me-2"></i>Marcação de Férias</span>
-                <i class="bi bi-chevron-right text-muted"></i>
-              </a>
-              <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0 py-2 bg-transparent">
-                <span><i class="bi bi-journal-medical me-2"></i>Atestados & Licenças</span>
-                <i class="bi bi-chevron-right text-muted"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      
       {% endblock %}
 
     </div>
@@ -307,7 +215,7 @@
     </a>
 
     <!-- Ação Central: Registro / Ação Rápida -->
-    <a href="#" class="bottom-nav-action" aria-label="Nova Solicitação">
+    <a href="{% url 'servidor_cadastra_item' %}" class="bottom-nav-action" aria-label="Nova Solicitação">
       <i class="bi bi-plus-lg"></i>
     </a>
 
