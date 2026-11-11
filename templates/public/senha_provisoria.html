@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperação de Acesso - FindLog</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 24px; color: #333333;">
+    <div style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 32px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #0c2036; margin-top: 0;">Recuperação de Acesso</h2>
+        <p>Olá, <strong>{{ usuario.primeiro_nome|default:usuario.nome|default:"Usuário" }}</strong>,</p>
+        <p>Recebemos uma solicitação para redefinir o acesso à sua conta no sistema <strong>FindLog</strong>.</p>
+        
+        <p>Sua senha provisória gerada é:</p>
+        <div style="background-color: #f1f5f9; border-left: 4px solid #0c2036; padding: 12px 16px; font-family: monospace; font-size: 18px; font-weight: bold; letter-spacing: 2px; margin: 16px 0; color: #1e293b;">
+            {{ senha_provisoria }}
+        </div>
+
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 12px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px; color: #92400e;">
+                ⚠️ <strong>Atenção:</strong> Por motivos de segurança, entre no sistema e <strong>troque esta senha imediatamente</strong> no menu de configurações do seu perfil.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 28px;">
+            <a href="{{ url_login }}" style="background-color: #0c2036; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">
+                Acessar Tela de Login
+            </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 0;">
+            Se você não solicitou a redefinição desta credencial, avise imediatamente a equipe de suporte ou a administração da sua unidade.
+        </p>
+    </div>
+</body>
+</html>

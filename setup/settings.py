@@ -144,10 +144,25 @@ MAILERS = {
     },
 }
 
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
-EMAIL_USE_TLS = os.getenv('DEBUG') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') 
-# DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL ')
+# EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+# EMAIL_HOST = os.getenv('EMAIL_HOST')
+# EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
+# EMAIL_USE_TLS = os.getenv('DEBUG') == 'True'
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') 
+# DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+
+
+MAILERS = {
+    'default': {
+        'BACKEND': os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend'),
+        'HOST': os.getenv('EMAIL_HOST', 'smtp.gmail.com'),
+        'PORT': int(os.getenv('EMAIL_PORT', 587)),
+        'USE_TLS': os.getenv('EMAIL_USE_TLS', 'True') == 'True',
+        'USERNAME': os.getenv('EMAIL_HOST_USER'),
+        'PASSWORD': os.getenv('EMAIL_HOST_PASSWORD'),
+    }
+}
+
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
+SERVER_EMAIL = os.getenv('EMAIL_HOST_USER')

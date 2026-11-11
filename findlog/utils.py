@@ -1,6 +1,7 @@
 import re
 import string
 import random
+import secrets                         
 import unicodedata
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
@@ -157,3 +158,9 @@ def _obter_instituicao_do_servidor(request):
         return request.user.servidor.instituicao
     except AttributeError:
         return getattr(request.user, 'instituicao', None)
+
+
+def gerar_senha_provisoria(tamanho=10):
+    """Gera uma senha segura com letras maiúsculas, minúsculas e dígitos."""
+    caracteres = string.ascii_letters + string.digits + "@#$%"
+    return "".join(secrets.choice(caracteres) for _ in range(tamanho))

@@ -1,12 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from findlog.forms import ContatoForm, LoginForm
-from findlog.utils import obter_ip_usuario, redirecionar_por_perfil
+from findlog.forms import ContatoForm, LoginForm, EsqueciSenhaForm
+from findlog.utils import obter_ip_usuario, redirecionar_por_perfil, gerar_senha_provisoria
 from django.contrib.auth import login, logout
 from findlog.models import Perfil, Instituicao
 from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
+from django.core.mail import send_mail
 
+from django.conf import settings
+
+import string
+import secrets
 
 
 def index(request):
@@ -152,3 +159,76 @@ def logout_view(request):
     logout(request)
     messages.info(request, "Sua sessão foi encerrada com segurança.")
     return redirect("login")
+
+
+
+def esqueci_senha_view(request):
+    if request.user.is_authenticated:
+        return redirect("login")
+
+    if request.method == "POST":
+        form = EsqueciSenhaForm(request.POST)
+        if form.is_valid():
+            identificador = form.cleaned_data["identificador"]
+
+            # Busca por e-mail ou por CPF
+            usuario = (
+                Perfil.objects.filter(email__iexact=identificador).first()
+                or Perfil.objects.filter(cpf=identificador).first()
+            )
+
+            # Só processa se o usuário existir e estiver ativo
+            if (
+                usuario
+                and getattr(usuario, "ativo", True)
+                and usuario.is_active
+            ):
+                # 1. Gera e grava a senha temporária
+                nova_senha = gerar_senha_provisoria()
+                usuario.set_password(nova_senha)
+                usuario.save()
+
+                # 2. Renderiza o conteúdo do e-mail
+                url_login = request.build_absolute_uri(
+                    settings.LOGIN_URL if hasattr(settings, "LOGIN_URL") else "/login/"
+                )
+                contexto_email = {
+                    "usuario": usuario,
+                    "senha_provisoria": nova_senha,
+                    "url_login": url_login,
+                }
+
+                corpo_html = render_to_string(
+                    "public/senha_provisoria.html", contexto_email
+                )
+                corpo_texto = strip_tags(corpo_html)
+
+                # 3. Disparo do e-mail
+                try:
+                    send_mail(
+                        subject="[FindLog] Sua Senha Provisória de Acesso",
+                        message=corpo_texto,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[usuario.email],
+                        html_message=corpo_html,
+                        fail_silently=False,
+                    )
+                except Exception:
+                    messages.error(
+                        request,
+                        "Houve um problema temporário ao enviar o e-mail. Tente novamente em instantes.",
+                    )
+                    return render(
+                        request, "public/esqueci_senha.html", {"form": form}
+                    )
+
+            # Resposta genérica contra enumeração de contas
+            messages.success(
+                request,
+                "Se os dados informados estiverem corretos e ativos, uma nova senha provisória foi enviada para o seu e-mail.",
+            )
+            return redirect("login")
+    else:
+        form = EsqueciSenhaForm()
+
+    return render(request, "public/esqueci_senha.html", {"form": form})

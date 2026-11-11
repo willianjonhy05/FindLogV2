@@ -736,3 +736,25 @@ class ServidorItemForm(forms.ModelForm):
 
         self.fields["local"].empty_label = "Onde foi encontrado? (Opcional)"
         self.fields["local_guardado"].empty_label = "Onde está guardado? (Opcional)"        
+
+
+class EsqueciSenhaForm(forms.Form):
+    identificador = forms.CharField(
+        label="E-mail ou CPF",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "Digite seu e-mail cadastrado ou CPF",
+                "autocomplete": "username",
+                "required": True,
+            }
+        ),
+    )
+
+    def clean_identificador(self):
+        dado = self.cleaned_data.get("identificador", "").strip()
+        # Se contiver apenas dígitos ou máscara de CPF, limpa pontuações
+        apenas_num = re.sub(r"\D", "", dado)
+        if len(apenas_num) == 11 and "@" not in dado:
+            return apenas_num
+        return dado.lower()        

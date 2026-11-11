@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import index, login_view, logout_view, selecionar_instituicao
+from .views import index, login_view, logout_view, selecionar_instituicao, esqueci_senha_view
 
 
 urlpatterns = [
@@ -29,6 +29,7 @@ urlpatterns = [
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("selecionar-instituicao/", selecionar_instituicao, name="selecionar_instituicao"),
+    path("esqueci-senha/", esqueci_senha_view, name="recuperar_senha"),
     path('', index, name='home')
 ]
 
