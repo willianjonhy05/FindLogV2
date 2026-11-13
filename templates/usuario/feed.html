@@ -1,0 +1,265 @@
+{% extends "usuario/base.html" %}
+{% load static %}
+
+{% block title %}Feed{% endblock %}
+
+{% block css %}{% endblock %}
+
+{% block conteudo %}
+          <section class="usr-mobile-hero" aria-label="Resumo da conta">
+            <div class="usr-avatar usr-avatar-md">
+              {% if request.session.foto_url %}
+                <img src="{{ request.session.foto_url }}" alt="{{ request.session.primeiro_nome|default:'Seu perfil' }}">
+              {% elif request.user.foto %}
+                <img src="{{ request.user.foto.url }}" alt="{{ request.session.primeiro_nome|default:'Seu perfil' }}">
+              {% else %}
+                {{ request.session.primeiro_nome|default:"Usuário"|slice:":1" }}
+              {% endif %}
+            </div>
+            <div class="usr-mobile-hero-text">
+              <span>Achados e perdidos</span>
+              <strong>Olá, {{ request.session.primeiro_nome|default:"Usuário" }}</strong>
+              <small><i class="bi bi-building"></i> {{ instituicao_nome }}</small>
+            </div>
+            <div class="usr-mobile-hero-icon" aria-hidden="true">
+              <i class="bi bi-search"></i>
+            </div>
+          </section>
+
+          <!-- Busca e filtros -->
+          <section class="usr-composer" aria-label="Buscar e filtrar itens">
+            <div class="usr-composer-row">
+              <div class="usr-avatar usr-avatar-md">
+                {% if request.session.foto_url %}
+                  <img src="{{ request.session.foto_url }}" alt="{{ request.session.primeiro_nome|default:'Seu perfil' }}">
+                {% elif request.user.foto %}
+                  <img src="{{ request.user.foto.url }}" alt="{{ request.session.primeiro_nome|default:'Seu perfil' }}">
+                {% else %}
+                  {{ request.session.primeiro_nome|default:"Usuário"|slice:":1" }}
+                {% endif %}
+              </div>
+
+              <div class="usr-search-box">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <label for="feedSearch" class="visually-hidden">Buscar itens</label>
+                <input type="search" id="feedSearch" placeholder="Buscar item, código ou local..."
+                       autocomplete="off">
+                <button type="button" class="usr-search-clear usr-hidden" id="feedSearchClear"
+                        aria-label="Limpar busca">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="usr-composer-tools">
+              <div class="usr-chips" id="statusChips" role="group" aria-label="Filtrar por status"></div>
+
+              <label for="feedSort" class="visually-hidden">Ordenar publicações</label>
+              <select id="feedSort" class="usr-sort-select">
+                <option value="recent">Mais recentes</option>
+                <option value="old">Mais antigos</option>
+              </select>
+            </div>
+
+            <div class="usr-mobile-cats">
+              <span class="usr-mobile-cats-label">Categorias</span>
+              <div class="usr-chips" id="mobileCategoryChips" role="group" aria-label="Filtrar por categoria"></div>
+            </div>
+          </section>
+
+          <!-- Aviso de itens salvos -->
+          <div class="usr-saved-banner usr-hidden" id="savedBanner" role="status">
+            <i class="bi bi-bookmark-fill"></i>
+            <span>Mostrando apenas os itens que você salvou.</span>
+            <button type="button" data-view="feed">Ver todos</button>
+          </div>
+
+          <!-- Cabeçalho do feed -->
+          <div class="usr-feed-head">
+            <div>
+              <h1 class="usr-feed-title">
+                <i class="bi bi-compass-fill"></i>
+                Achados e perdidos
+              </h1>
+              <p class="usr-feed-subtitle">
+                Itens registrados em <strong>{{ instituicao_nome }}</strong>
+              </p>
+            </div>
+            <span class="usr-count-pill" id="feedCount" aria-live="polite">
+              <i class="bi bi-collection"></i>
+              {{ itens|length }} {% if itens|length == 1 %}item{% else %}itens{% endif %}
+            </span>
+          </div>
+
+          <!-- Publicações -->
+          <section class="usr-feed" id="feedGrid" aria-label="Publicações de itens da instituição">
+            {% for item in itens %}
+              <article class="usr-post{% if request.session.instituicao_cnpj and item.instituicao.cnpj != request.session.instituicao_cnpj %} usr-hidden{% endif %}"
+                       id="item-{{ item.codigo }}"
+                       data-instituicao="{{ item.instituicao.cnpj }}"
+                       data-status="{{ item.status }}"
+                       data-categoria="{{ item.categoria.nome|default:'Sem categoria' }}"
+                       data-codigo="{{ item.codigo }}"
+                       data-nome="{{ item.nome|default:'Item sem identificação' }}"
+                       data-local="{{ item.local.nome|default:'Local não informado' }}"
+                       data-timestamp="{{ item.data_registro|date:'U' }}"
+                       data-search="{{ item.nome|default:''|striptags }} {{ item.codigo|default:'' }} {{ item.categoria.nome|default:''|striptags }} {{ item.local.nome|default:''|striptags }} {{ item.marca_ou_modelo|default:''|striptags }} {{ item.cor|default:''|striptags }} {{ item.material|default:''|striptags }} {{ item.descricao|default:''|striptags }} {{ item.instituicao.nome|default:''|striptags }}">
+
+                <!-- Autor da publicação -->
+                <header class="usr-post-head">
+                  <div class="usr-post-avatar" aria-hidden="true">
+                    {{ item.instituicao.nome|default:"I"|slice:":1" }}
+                  </div>
+                  <div class="usr-post-author">
+                    <span class="usr-post-inst">{{ item.instituicao.nome|default:"Instituição" }}</span>
+                    <span class="usr-post-sub">
+                      <i class="bi bi-clock" aria-hidden="true"></i>
+                      <span>{{ item.data_registro|timesince }} atrás</span>
+                      <span class="usr-post-sub-place">
+                        <span aria-hidden="true">·</span>
+                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                        <span>{{ item.local.nome|default:"Local não informado" }}</span>
+                      </span>
+                    </span>
+                  </div>
+
+                  {% if item.status == 1 %}
+                    <span class="usr-post-status usr-st-lost">
+                      <i class="bi bi-exclamation-circle-fill"></i> Perdido
+                    </span>
+                  {% elif item.status == 2 %}
+                    <span class="usr-post-status usr-st-found">
+                      <i class="bi bi-box-arrow-in-down"></i> Encontrado
+                    </span>
+                  {% elif item.status == 3 %}
+                    <span class="usr-post-status usr-st-returned">
+                      <i class="bi bi-check-circle-fill"></i> Devolvido
+                    </span>
+                  {% else %}
+                    <span class="usr-post-status usr-st-other">
+                      <i class="bi bi-question-circle"></i> Outro
+                    </span>
+                  {% endif %}
+                </header>
+
+                <!-- Texto da publicação -->
+                <div class="usr-post-content">
+                  <div class="usr-post-kicker">
+                    <span class="usr-post-cat">
+                      <i class="bi bi-tag-fill"></i>
+                      <span>{{ item.categoria.nome|default:"Sem categoria" }}</span>
+                    </span>
+                    <span class="usr-post-code">#{{ item.codigo|default:item.uuid|stringformat:".8s" }}</span>
+                  </div>
+
+                  <h2 class="usr-post-title">{{ item.nome|default:"Item sem identificação" }}</h2>
+
+                  {% if item.descricao %}
+                    <p class="usr-post-desc">{{ item.descricao }}</p>
+                  {% endif %}
+                </div>
+
+                <!-- Foto do item (o placeholder fica atrás e cobre falhas de carregamento) -->
+                <div class="usr-post-media">
+                  <div class="usr-post-media-placeholder" aria-hidden="true">
+                    <i class="bi bi-image"></i>
+                    <span>Sem foto do item</span>
+                  </div>
+                  {% if item.foto %}
+                    <img src="{{ item.foto.url }}" alt="Foto de {{ item.nome|default:'item encontrado' }}"
+                         loading="lazy" decoding="async"
+                         onerror="this.classList.add('usr-hidden');">
+                  {% endif %}
+                </div>
+
+                <!-- Características -->
+                <div class="usr-post-facts">
+                  <span class="usr-fact" title="{{ item.local.nome|default:'Local não informado' }}">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span>{{ item.local.nome|default:"Local não informado" }}</span>
+                  </span>
+                  <span class="usr-fact" title="Data de registro">
+                    <i class="bi bi-calendar3"></i>
+                    <span>{{ item.data_registro|date:"d/m/Y" }}</span>
+                  </span>
+                  {% if item.marca_ou_modelo %}
+                    <span class="usr-fact" title="{{ item.marca_ou_modelo }}">
+                      <i class="bi bi-upc-scan"></i>
+                      <span>{{ item.marca_ou_modelo }}</span>
+                    </span>
+                  {% endif %}
+                  {% if item.cor %}
+                    <span class="usr-fact" title="Cor do item">
+                      <i class="bi bi-palette"></i>
+                      <span>{{ item.cor }}</span>
+                    </span>
+                  {% endif %}
+                  {% if item.material %}
+                    <span class="usr-fact" title="Material do item">
+                      <i class="bi bi-layers"></i>
+                      <span>{{ item.material }}</span>
+                    </span>
+                  {% endif %}
+                  {% if item.tamanho %}
+                    <span class="usr-fact" title="Tamanho do item">
+                      <i class="bi bi-rulers"></i>
+                      <span>{{ item.tamanho }}</span>
+                    </span>
+                  {% endif %}
+                  {% if item.local_guardado %}
+                    <span class="usr-fact" title="Local onde está guardado">
+                      <i class="bi bi-box-seam"></i>
+                      <span>Guardado em {{ item.local_guardado.nome }}</span>
+                    </span>
+                  {% endif %}
+                </div>
+
+                <!-- Ações do post -->
+                <footer class="usr-post-actions">
+                  <button type="button" class="usr-action usr-action-primary" data-claim
+                          data-bs-toggle="modal" data-bs-target="#claimModal"
+                          data-nome="{{ item.nome|default:'Item sem identificação' }}"
+                          data-codigo="{{ item.codigo }}"
+                          data-local="{{ item.local.nome|default:'Local não informado' }}"
+                          data-instituicao="{{ item.instituicao.nome|default:'Instituição' }}"
+                          data-categoria="{{ item.categoria.nome|default:'Sem categoria' }}">
+                    <i class="bi bi-person-raised-hand"></i>
+                    <span>É meu, quero reivindicar</span>
+                  </button>
+
+                  <button type="button" class="usr-action usr-action-save" data-save
+                          data-codigo="{{ item.codigo }}" aria-pressed="false"
+                          aria-label="Salvar {{ item.nome|default:'este item' }}">
+                    <i class="bi bi-bookmark"></i>
+                    <span>Salvar</span>
+                  </button>
+
+                  <button type="button" class="usr-action usr-action-icon" data-share
+                          data-codigo="{{ item.codigo }}"
+                          aria-label="Compartilhar {{ item.nome|default:'este item' }}">
+                    <i class="bi bi-share"></i>
+                  </button>
+                </footer>
+              </article>
+            {% empty %}
+              <div class="usr-empty">
+                <i class="bi bi-inbox" aria-hidden="true"></i>
+                <h2>Nenhum item publicado ainda</h2>
+                <p>Quando a instituição registrar itens de achados e perdidos, eles aparecerão neste feed.</p>
+              </div>
+            {% endfor %}
+
+            <!-- Estado vazio para filtros sem resultado -->
+            <div class="usr-empty usr-hidden" id="feedEmpty" role="status">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <h2 id="feedEmptyTitle">Nenhum item encontrado</h2>
+              <p id="feedEmptyText">Nenhum item corresponde aos filtros selecionados. Tente outros termos.</p>
+              <button type="button" id="emptyClear">Limpar filtros</button>
+            </div>
+          </section>
+
+        
+        {% endblock %} 
+
+
+      {% block js %}{% endblock %}

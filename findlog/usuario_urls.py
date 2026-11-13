@@ -5,4 +5,5 @@ from django.urls import path
 urlpatterns = [
     path("", usuario_feed, name="usuario_feed"),
 
+
 ]
