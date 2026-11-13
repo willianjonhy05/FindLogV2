@@ -6,7 +6,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 
-from .models import Item, Reivindicacao, Categoria
+from .models import Item, Reivindicacao, Categoria, Instituicao
 
 @login_required
 def usuario_feed(request):
@@ -16,16 +16,14 @@ def usuario_feed(request):
     que estão disponíveis para reivindicação.
     """
     
-    instituicoes = request.user.instituicao.filter(ativo=True)
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
 
-    itens = Item.objects.filter(
-        instituicao__in=instituicoes,
-        status=Item.StatusItem.ENCONTRADO
-    ).select_related(
-        'categoria',
-        'instituicao',
-        'local'
-    ).order_by('-data_registro')
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
+        return redirect("login")
+
+    itens = Item.objects.filter(instituicao=instituicao).order_by("-data_registro")
 
     contexto = {
         'itens': itens,
@@ -33,6 +31,23 @@ def usuario_feed(request):
 
     return render(request, 'usuario/feed.html', contexto)
 
+
+
+def detalhar_item(request, uuid):
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect('servidor_painel')
+
+    item = get_object_or_404(Item, instituicao=instituicao, uuid=uuid)
+
+    context = {
+        "item": item
+    }    
+
+    return render(request, "usuario/item.html", context)
 
 @login_required
 def reivindicar_item(request, codigo_item):
