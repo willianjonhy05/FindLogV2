@@ -116,7 +116,7 @@
                             {% endif %}
                             {% if not sala.laboratorio and not sala.sala_de_aula %}
                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
-                                    <i class="bi bi-building me-1"></i> Setor Administrativo / Geral
+                                    <i class="bi bi-building me-1"></i> Sem classificação específica
                                 </span>
                             {% endif %}
                         </div>
@@ -199,44 +199,144 @@
                     </a>
 
                     <!-- 2. Atualizar / Editar Sala -->
-                    <a href="#" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                    <a href="{% url 'servidor_editar_sala' codigo=sala.codigo %}" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
                         <i class="bi bi-pencil-square"></i>
                         <span>Atualizar Dados da Sala</span>
                     </a>
 
                     <hr class="my-2 opacity-25">
 
-                    <!-- 3. Ativar / Desativar Sala (POST) -->
+                    <!-- 3. Ativar / Desativar Sala (Aciona Modal) -->
                     {% if sala.ativa %}
-                        <form method="POST" action="#" class="d-grid m-0" onsubmit="return confirm('Deseja realmente desativar a sala {{ sala.nome }}? Ela deixará de aparecer para novos registros.');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-warning text-dark d-flex align-items-center justify-content-center gap-2 py-2">
-                                <i class="bi bi-slash-circle"></i>
-                                <span>Desativar Sala</span>
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-outline-warning text-dark d-flex align-items-center justify-content-center gap-2 py-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalDesativarSala">
+                            <i class="bi bi-slash-circle"></i>
+                            <span>Desativar Sala</span>
+                        </button>
                     {% else %}
-                        <form method="POST" action="#" class="d-grid m-0" onsubmit="return confirm('Deseja reativar a sala {{ sala.nome }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2">
-                                <i class="bi bi-check-circle"></i>
-                                <span>Ativar Sala</span>
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalAtivarSala">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Ativar Sala</span>
+                        </button>
                     {% endif %}
 
-                    <!-- 4. Excluir Sala (POST) -->
-                    <form method="POST" action="#" class="d-grid m-0 mt-1" onsubmit="return confirm('ATENÇÃO: Esta ação é irreversível. Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2">
-                            <i class="bi bi-trash3"></i>
-                            <span>Excluir Sala</span>
-                        </button>
-                    </form>
+                    <!-- 4. Excluir Sala (Aciona Modal) -->
+                    <button type="button"
+                            class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2 mt-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalExcluirSala">
+                        <i class="bi bi-trash3"></i>
+                        <span>Excluir Sala</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
 </div>
+
+
+<!-- ====================================================================
+         MODAIS DE CONFIRMAÇÃO (BOOTSTRAP 5.3)
+         ==================================================================== -->
+
+    {% if sala.ativa %}
+        <!-- MODAL: DESATIVAR SALA -->
+        <div class="modal fade" id="modalDesativarSala" tabindex="-1" aria-labelledby="modalDesativarSalaLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-slash-circle-fill fs-5"></i>
+                            </div>
+                            <h5 class="modal-title fw-bold text-dark" id="modalDesativarSalaLabel">Desativar Sala</h5>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body py-3 text-secondary-custom">
+                        Deseja realmente desativar a sala <strong class="text-dark">{{ sala.nome }}</strong> ({{ sala.codigo }})?
+                        <div class="alert alert-warning border-0 small mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Enquanto estiver inativa, esta sala não aparecerá como opção para novos registros de itens ou usuários.
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="POST" action="{% url 'servidor_desativar_sala' sala.codigo %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning fw-semibold text-dark">
+                                <i class="bi bi-slash-circle me-1"></i> Confirmar Desativação
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- MODAL: ATIVAR SALA -->
+        <div class="modal fade" id="modalAtivarSala" tabindex="-1" aria-labelledby="modalAtivarSalaLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-check-circle-fill fs-5"></i>
+                            </div>
+                            <h5 class="modal-title fw-bold text-dark" id="modalAtivarSalaLabel">Reativar Sala</h5>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body py-3 text-secondary-custom">
+                        Deseja reativar a sala <strong class="text-dark">{{ sala.nome }}</strong> ({{ sala.codigo }})? Ela voltará a ficar disponível para operação na unidade.
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="POST" action="{% url 'servidor_ativar_sala' sala.codigo %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i> Confirmar Ativação
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- MODAL: EXCLUIR SALA -->
+    <div class="modal fade" id="modalExcluirSala" tabindex="-1" aria-labelledby="modalExcluirSalaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold text-dark" id="modalExcluirSalaLabel">Excluir Sala Permanentemente</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body py-3 text-secondary-custom">
+                    Você está prestes a excluir permanentemente a sala <strong class="text-dark">{{ sala.nome }}</strong> ({{ sala.codigo }}).
+                    <div class="alert alert-danger border-0 small mt-3 mb-0">
+                        <strong>Atenção:</strong> Esta ação não poderá ser desfeita. Itens vinculados a esta sala terão o local desassociado.
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="POST" action="{% url 'servidor_excluir_sala' sala.codigo %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger fw-semibold">
+                            <i class="bi bi-trash3 me-1"></i> Sim, Excluir Sala
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

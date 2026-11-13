@@ -209,6 +209,44 @@ def servidor_ativar_sala(request, codigo):
 
 
 @servidor_required
+@require_POST
+def servidor_desativar_sala(request, codigo):
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.filter(cnpj=cnpj_sessao).first()
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
+
+    if sala.ativa:
+        sala.ativa = False
+        sala.save(update_fields=["ativa"])
+        messages.success(request, f'A sala "{sala.nome}" foi desativada com sucesso.')
+    else:
+        messages.info(request, f'A sala "{sala.nome}" já está inativa.')
+
+    return redirect("servidor_detalhar_sala", codigo=sala.codigo)
+
+
+@servidor_required
+@require_POST
+def servidor_excluir_sala(request, codigo):
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.filter(cnpj=cnpj_sessao).first()
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
+    nome_sala = sala.nome
+    sala.delete()
+
+    messages.success(request, f'A sala "{nome_sala}" foi excluída permanentemente.')
+    return redirect("servidor_listar_salas")
+
+
+@servidor_required
 def servidor_detalhar_sala(request, codigo):
     cnpj_sessao = request.session.get("instituicao_cnpj")
     instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
@@ -225,27 +263,6 @@ def servidor_detalhar_sala(request, codigo):
 
     return render(request, "serv/detalhar_sala.html", context)
 
-
-@login_required
-@require_POST
-def servidor_desativar_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
-    if not instituicao:
-        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
-        return redirect('servidor_painel')
-
-    # Só altera se a sala pertencer à mesma unidade
-    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
-    
-    if sala.ativa:
-        sala.ativa = False
-        sala.save(update_fields=['ativa'])
-        messages.warning(request, f'A sala "{sala.nome}" foi desativada.')
-    else:
-        messages.info(request, f'A sala "{sala.nome}" já se encontra inativa.')
-
-    return redirect('servidor_listar_salas')
 
 
 @servidor_required

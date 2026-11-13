@@ -17,7 +17,8 @@ from .servidor_views import (
     servidor_ativar_usuario,
     servidor_cadastra_item,
     servidor_detalhes_item,
-    servidor_atualizar_item
+    servidor_atualizar_item,
+    servidor_excluir_sala
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path("salas/cadastrar/", servidor_cadastrar_sala, name="servidor_cadastrar_sala"),
     path("salas/<str:codigo>/", servidor_detalhar_sala, name="servidor_detalhar_sala"),
     path('salas/<str:codigo>/editar/', servidor_editar_sala, name='servidor_editar_sala'),
+    path('salas/<str:codigo>/excluir/', servidor_excluir_sala, name='servidor_excluir_sala'),
     path('salas/<str:codigo>/ativar/', servidor_ativar_sala, name='servidor_ativar_sala'),
     path('salas/<str:codigo>/desativar/', servidor_desativar_sala, name='servidor_desativar_sala'),    
     path("salas/<str:sala_codigo>/itens/", servidor_itens_por_sala, name="servidor_itens_por_sala"),
