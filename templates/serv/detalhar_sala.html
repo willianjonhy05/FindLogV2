@@ -1,11 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body>
-</html>
+{% extends "serv/base.html" %}
+{% load static %}
+
+{% block title %}Sala {{ sala.codigo }} | {{ sala.instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO MÓDULO (Cabeçalho e Navegação)
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-door-open-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="sala-badge-code">
+                                <i class="bi bi-tag-fill me-1 text-muted"></i>{{ sala.codigo }}
+                            </span>
+                            {% if sala.ativa %}
+                                <span class="sala-badge sala-badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Ativa
+                                </span>
+                            {% else %}
+                                <span class="sala-badge sala-badge-inactive">
+                                    <i class="bi bi-dash-circle-fill"></i> Inativa
+                                </span>
+                            {% endif %}
+                        </div>
+                        <h1 class="dash-hero-title mb-1">
+                            {{ sala.nome }}
+                        </h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            Unidade: <strong>{{ sala.instituicao.nome|default:request.session.instituicao_nome }}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões Principais no Hero -->
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_listar_salas' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{% url 'servidor_itens_por_sala' sala.codigo %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-box-seam-fill"></i> Ver Itens nesta Sala
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. COLUNA ESQUERDA: INFORMAÇÕES DETALHADAS DA SALA
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-info-square me-2 text-primary"></i>Dados e Localização do Ambiente
+                    </h2>
+                    <span class="text-muted small font-monospace">ID: {{ sala.codigo }}</span>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Nome -->
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Identificação / Nome
+                        </span>
+                        <p class="fw-semibold text-dark fs-6 mb-0">{{ sala.nome }}</p>
+                    </div>
+
+                    <!-- Tipo de Ambiente -->
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Classificação do Espaço
+                        </span>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if sala.laboratorio %}
+                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                    <i class="bi bi-pc-display me-1"></i> Laboratório
+                                </span>
+                            {% endif %}
+                            {% if sala.sala_de_aula %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                    <i class="bi bi-easel me-1"></i> Sala de Aula
+                                </span>
+                            {% endif %}
+                            {% if not sala.laboratorio and not sala.sala_de_aula %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                    <i class="bi bi-building me-1"></i> Setor Administrativo / Geral
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Prédio / Bloco -->
+                    <div class="col-6 col-md-4">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Prédio / Bloco
+                        </span>
+                        <p class="text-dark fw-medium mb-0">
+                            <i class="bi bi-building text-muted me-1"></i>{{ sala.predio }}
+                        </p>
+                    </div>
+
+                    <!-- Andar -->
+                    <div class="col-6 col-md-4">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Andar / Pavimento
+                        </span>
+                        <p class="text-dark fw-medium mb-0">
+                            <i class="bi bi-layers text-muted me-1"></i>{{ sala.andar }}
+                        </p>
+                    </div>
+
+                    <!-- Telefone / Ramal -->
+                    <div class="col-12 col-md-4">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Ramal / Telefone
+                        </span>
+                        <p class="text-dark fw-medium mb-0">
+                            {% if sala.telefone %}
+                                <i class="bi bi-telephone text-muted me-1"></i>{{ sala.telefone_formatado }}
+                            {% else %}
+                                <span class="text-muted small">Não informado</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="col-12">
+                        <hr class="my-1 opacity-25">
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            Descrição e Pontos de Referência
+                        </span>
+                        {% if sala.descricao %}
+                            <div class="p-3 rounded-3 bg-light border text-secondary-custom" style="font-size: 0.925rem;">
+                                {{ sala.descricao|linebreaksbr }}
+                            </div>
+                        {% else %}
+                            <p class="text-muted small fst-italic mb-0">
+                                Nenhuma observação ou ponto de referência cadastrado para este local.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. COLUNA DIREITA: PAINEL DE GERENCIAMENTO E AÇÕES
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h5 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-sliders me-2 text-primary"></i>Gerenciar Sala
+                </h2>
+                <p class="text-secondary-custom small mb-4">
+                    Ações operacionais disponíveis para este ambiente na unidade <strong>{{ sala.instituicao.nome }}</strong>.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <!-- 1. Ver Itens nesta Sala -->
+                    <a href="{% url 'servidor_itens_por_sala' sala.codigo %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Ver Itens nesta Sala</span>
+                    </a>
+
+                    <!-- 2. Atualizar / Editar Sala -->
+                    <a href="#" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Atualizar Dados da Sala</span>
+                    </a>
+
+                    <hr class="my-2 opacity-25">
+
+                    <!-- 3. Ativar / Desativar Sala (POST) -->
+                    {% if sala.ativa %}
+                        <form method="POST" action="#" class="d-grid m-0" onsubmit="return confirm('Deseja realmente desativar a sala {{ sala.nome }}? Ela deixará de aparecer para novos registros.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-warning text-dark d-flex align-items-center justify-content-center gap-2 py-2">
+                                <i class="bi bi-slash-circle"></i>
+                                <span>Desativar Sala</span>
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="#" class="d-grid m-0" onsubmit="return confirm('Deseja reativar a sala {{ sala.nome }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2">
+                                <i class="bi bi-check-circle"></i>
+                                <span>Ativar Sala</span>
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <!-- 4. Excluir Sala (POST) -->
+                    <form method="POST" action="#" class="d-grid m-0 mt-1" onsubmit="return confirm('ATENÇÃO: Esta ação é irreversível. Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2">
+                            <i class="bi bi-trash3"></i>
+                            <span>Excluir Sala</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

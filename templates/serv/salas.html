@@ -292,7 +292,7 @@
                             <!-- Ações -->
                             <td class="pe-4 text-end">
                                 <div class="sala-actions-group">
-                                    <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
+                                    <a href="{% url 'servidor_detalhar_sala' codigo=sala.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
 
