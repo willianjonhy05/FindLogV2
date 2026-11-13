@@ -87,20 +87,39 @@
         </div>
 
         <!-- Links de Navegação Primária (Exibidos apenas em Telas Desktop >= 992px) -->
-        <nav class="d-none d-lg-flex align-items-center gap-1">
-          <a href="{% url 'servidor_painel'  %}" class="desktop-nav-link active">
-            <i class="bi bi-grid-1x2-fill"></i> Painel
-          </a>
-          <a href="#" class="desktop-nav-link">
-            <i class="bi bi-folder-check"></i> Reivindicações
-          </a>
-          <a href="#" class="desktop-nav-link">
-            <i class="bi bi-people"></i> Usuários
-          </a>
-          <a href="#" class="desktop-nav-link">
-            <i class="bi bi-megaphone"></i> Comunicados
-          </a>
-        </nav>
+{% with url_name=request.resolver_match.url_name %}
+<nav class="d-none d-lg-flex align-items-center gap-1">
+    <!-- 1. Painel (Exato) -->
+    <a href="{% url 'servidor_painel' %}" 
+       class="desktop-nav-link {% if url_name == 'servidor_painel' %}active{% endif %}">
+        <i class="bi bi-grid-1x2-fill"></i> Painel
+    </a>
+
+    <!-- 2. Reivindicações -->
+    <a href="#" 
+       class="desktop-nav-link {% if 'reivindicacoes' in url_name %}active{% endif %}">
+        <i class="bi bi-folder-check"></i> Reivindicações
+    </a>
+
+    <!-- 3. Itens (Lista, Cadastro, Detalhes, Edição) -->
+    <a href="{% url 'servidor_listar_itens' %}" 
+       class="desktop-nav-link {% if 'item' in url_name or 'itens' in url_name %}active{% endif %}">
+        <i class="bi bi-box-seam-fill"></i> Itens
+    </a>
+
+    <!-- 4. Usuários (Lista, Novo, Visualizar) -->
+    <a href="#" 
+       class="desktop-nav-link {% if 'usuario' in url_name %}active{% endif %}">
+        <i class="bi bi-people-fill"></i> Usuários
+    </a>
+
+    <!-- 5. Salas (Lista, Cadastrar, Detalhar, Editar) -->
+    <a href="{% url 'servidor_listar_salas' %}" 
+       class="desktop-nav-link {% if 'sala' in url_name and url_name != 'servidor_itens_por_sala' %}active{% endif %}">
+        <i class="bi bi-door-open-fill"></i> Salas
+    </a>
+</nav>
+{% endwith %}
 
         <!-- Ações do Servidor: Notificações e Perfil (Mobile + Desktop) -->
         <div class="d-flex align-items-center gap-2 gap-sm-3">

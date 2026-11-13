@@ -455,7 +455,7 @@ def servidor_cadastrar_usuario(request):
     return render(request, "serv/cadastrar_usuario.html", context)
 
 
-def servidor_usuarios_instituicao():
+def servidor_usuarios_instituicao(request):
     """
     Lista de todos os usuários da instituição
     """
