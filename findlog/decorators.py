@@ -49,3 +49,25 @@ def servidor_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return _wrapped_view
+
+
+def usuario_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        usuario = request.user
+
+        if not getattr(usuario, "ativo", True) or not usuario.is_active:
+            raise PermissionDenied("Sua conta de usuário está inativa.")
+
+        is_usuario = usuario.tipo == Perfil.TipoUsuario.USUARIO
+
+        if not is_usuario:
+            raise PermissionDenied("Acesso restrito ao perfil de usuário.")  
+
+        return view_func(request, *args, **kwargs)      
+
+    return _wrapped_view

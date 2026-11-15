@@ -12,10 +12,6 @@ from django.core.mail import send_mail
 
 from django.conf import settings
 
-import string
-import secrets
-
-
 def index(request):
     if request.method == "POST":
         form_contato = ContatoForm(request.POST)

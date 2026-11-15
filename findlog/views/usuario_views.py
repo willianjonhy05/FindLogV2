@@ -8,7 +8,9 @@ from django.db import transaction
 
 from ..models import Item, Reivindicacao, Categoria, Instituicao
 
-@login_required
+from ..decorators import usuario_required
+
+@usuario_required
 def usuario_feed(request):
     """"
     Essa é a função principal que o usuário vai acessar assim que logar no sistema. 
@@ -32,7 +34,7 @@ def usuario_feed(request):
     return render(request, 'usuario/feed.html', contexto)
 
 
-
+@usuario_required
 def detalhar_item(request, uuid):
     cnpj_sessao = request.session.get("instituicao_cnpj")
     instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
@@ -49,7 +51,7 @@ def detalhar_item(request, uuid):
 
     return render(request, "usuario/item.html", context)
 
-@login_required
+@usuario_required
 def reivindicar_item(request, codigo_item):
 
     if request.method == 'POST':
@@ -341,25 +343,22 @@ def minhas_reivindicacoes(request):
     """"
     Essa é a função que o usuário vai acessar para ver as reivindicações que ele fez. 
     """     
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    usuario = request.user
 
-    reivindicacoes = Reivindicacao.objects.filter(
-        autor=request.user
-    ).select_related(
-        'item',
-        'instituicao',
-        'responsavel_admin'
-    ).order_by('-data')
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
+        return redirect("login")
+
+    reivindicacoes = Reivindicacao.objects.filter(autor=usuario, instituicao=instituicao).order_by("-data")
 
     contexto = {
         'reivindicacoes': reivindicacoes,
-        'quantidade': reivindicacoes.count()
     }
 
-    return render(
-        request,
-        'usuario/minhas_reivindicacoes.html',
-        contexto
-    )
+    return render(request, 'usuario/minhas_reivindicacoes.html', contexto)
+
 
 
 

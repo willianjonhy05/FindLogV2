@@ -4,9 +4,7 @@ from ..forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroCo
 from ..models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
 from ..decorators import servidor_required
 from django.core.paginator import Paginator
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from ..utils import _obter_instituicao_do_servidor
 from django.db.models import Q
 import re
 
@@ -139,7 +137,7 @@ def servidor_listar_salas(request):
     }
     return render(request, "serv/salas.html", context)
 
-@login_required
+@servidor_required
 def servidor_editar_sala(request, codigo):
     cnpj_sessao = request.session.get("instituicao_cnpj")
     instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
@@ -168,7 +166,7 @@ def servidor_editar_sala(request, codigo):
     return render(request, 'serv/editar_sala.html', context)
 
 
-@login_required
+@servidor_required
 @require_POST
 def servidor_alternar_status_sala(request, codigo):
     """
@@ -186,7 +184,7 @@ def servidor_alternar_status_sala(request, codigo):
     # Redireciona de volta para a listagem ou para a página anterior
     return redirect(request.META.get('HTTP_REFERER', 'servidor_listar_salas'))
 
-@login_required
+@servidor_required
 @require_POST
 def servidor_ativar_sala(request, codigo):
     cnpj_sessao = request.session.get("instituicao_cnpj")
