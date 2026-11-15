@@ -147,12 +147,12 @@
 
             <!-- CPF (Com máscara) -->
             <div class="col-12 col-md-6">
-              <label for="id_cpf" class="form-label form-label-custom">
+              <label for="cpf" class="form-label form-label-custom">
                 CPF <span class="text-danger">*</span>
               </label>
               <input type="text" 
                      name="cpf" 
-                     id="id_cpf" 
+                     id="cpf" 
                      class="form-control form-control-custom cpf-format {% if form.cpf.errors %}is-invalid{% endif %}" 
                      value="{{ form.cpf.value|default:'' }}" 
                      placeholder="000.000.000-00" 
@@ -165,10 +165,10 @@
 
             <!-- Telefone / WhatsApp (Com máscara) -->
             <div class="col-12 col-md-6">
-              <label for="id_telefone" class="form-label form-label-custom">Telefone / WhatsApp</label>
+              <label for="telefone" class="form-label form-label-custom">Telefone / WhatsApp</label>
               <input type="text" 
                      name="telefone" 
-                     id="id_telefone" 
+                     id="telefone" 
                      class="form-control form-control-custom telefone-format {% if form.telefone.errors %}is-invalid{% endif %}" 
                      value="{{ form.telefone.value|default:'' }}" 
                      placeholder="(00) 00000-0000"

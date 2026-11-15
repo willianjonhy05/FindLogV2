@@ -1,7 +1,7 @@
 {% extends "adm/base.html" %}
 {% load static %}
 
-{% block title %}Editar Sala | Sala {{ sala.numero }}{% endblock %}
+{% block title %}Editar Sala | Sala {{ sala.codigo }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-0">
@@ -109,9 +109,10 @@
                     <label for="telefone" class="form-label form-label-custom">
                         Ramal / Telefone da Sala
                     </label>
-                    <input type="text" id="telefone" name="telefone" class="form-control form-control-custom {% if form.telefone.errors %}is-invalid{% endif %}" 
-                           placeholder="(00) 0000-0000" 
-                           value="{{ form.telefone.value|default:sala.telefone|default:'' }}">
+                    <input type="text" id="telefone" name="telefone" 
+                        class="form-control form-control-custom telefone-format {% if form.telefone.errors %}is-invalid{% endif %}" 
+                        placeholder="(00) 0000-0000" 
+                        value="{{ form.telefone.value|default:'' }}">
                     {% for erro in form.telefone.errors %}
                         <div class="invalid-feedback d-block">{{ erro }}</div>
                     {% endfor %}

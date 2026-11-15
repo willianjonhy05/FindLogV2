@@ -1,7 +1,7 @@
 {% extends "adm/base.html" %}
 {% load static %}
 
-{% block title %}Detalhes da Sala | Sala {{ sala.numero }}{% endblock %}
+{% block title %}Detalhes da Sala | Sala {{ sala.codigo }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-0">
@@ -47,7 +47,7 @@
                             <i class="bi bi-door-closed-fill"></i>
                         </div>
                         <div>
-                            <h4 class="fw-bold mb-1 text-dark">Sala {{ sala.numero }}</h4>
+                            <h4 class="fw-bold mb-1 text-dark">Sala {{ sala.codigo }}</h4>
                             <span class="text-muted small">Prédio / Bloco: <strong class="text-secondary">{{ sala.predio }}</strong></span>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                         <span class="profile-data-label">Número da Sala</span>
                         <div class="profile-data-value">
                             <i class="bi bi-hash profile-info-icon"></i>
-                            <span>{{ sala.numero }}</span>
+                            <span>{{ sala.codigo }}</span>
                         </div>
                     </div>
 
@@ -170,7 +170,7 @@
                     <!-- Botão Excluir -->
                     <a href="{% url 'excluir_sala' sala.pk %}" 
                        class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" 
-                       data-nome="a Sala {{ sala.numero }} ({{ sala.predio }})">
+                       data-nome="a Sala {{ sala.codigo }} ({{ sala.predio }})">
                         <i class="bi bi-trash"></i>
                         <span>Excluir Sala</span>
                     </a>
@@ -215,7 +215,7 @@
             <div class="modal-body py-4">
                 <p class="text-secondary mb-2">Tem certeza de que deseja excluir permanentemente esta sala?</p>
                 <div class="modal-highlight-box p-3 rounded">
-                    <strong class="d-block text-dark text-break" id="modalItemNome">Sala {{ sala.numero }}</strong>
+                    <strong class="d-block text-dark text-break" id="modalItemNome">Sala {{ sala.codigo }}</strong>
                 </div>
                 <small class="text-danger mt-2 d-inline-block">
                     <i class="bi bi-info-circle me-1"></i> Certifique-se de que não haja itens ou gestores vinculados a este espaço físico.

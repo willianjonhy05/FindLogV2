@@ -77,9 +77,9 @@ urlpatterns = [
     path("salas/<str:codigo>/excluir/", excluir_sala, name="excluir_sala"),
 
     path("itens/", lista_itens, name="lista_itens"),
-    path("itens/<str:codigo>/", detalhes_item, name="detalhes_item"),
-    path("itens/<str:codigo>/editar/", atualizar_item, name="atualizar_item"),
-    path("itens/<str:codigo>/excluir/", apagar_item, name="apagar_item"),
+    path("itens/<str:uuid>/", detalhes_item, name="detalhes_item"),
+    path("itens/<str:uuid>/editar/", atualizar_item, name="atualizar_item"),
+    path("itens/<str:uuid>/excluir/", apagar_item, name="apagar_item"),
 
     path("reivindicacoes/", lista_reivindicacoes, name="lista_reivindicacoes"),
     path("reivindicacoes/<int:protocolo>/", detalhes_reivindicacao, name="detalhes_reivindicacao"),

@@ -25,8 +25,8 @@ from findlog.views.adm_views import novo_usuario_instituicao, novo_servidor_inst
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('adm/', include('findlog.urls.adm_urls')),
-    path('painel/', include('findlog.servidor_urls')),
-    path('findlog/', include('findlog.usuario_urls')),
+    path('painel/', include('findlog.urls.servidor_urls')),
+    path('findlog/', include('findlog.urls.usuario_urls')),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("selecionar-instituicao/", selecionar_instituicao, name="selecionar_instituicao"),

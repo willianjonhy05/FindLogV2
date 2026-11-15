@@ -76,23 +76,24 @@ def login_view(request):
                 f"Bem-vindo(a) de volta, {usuario.primeiro_nome or usuario.nome or usuario.username}!",
             )
 
-            # 2. Resolução das Instituições
+            # 2. Fluxo direto para Superusuário / Administrador (sem vínculo fixo na sessão)
             is_admin = (
-                usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser
+                usuario.is_superuser
+                or usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR
             )
-
             if is_admin:
-                instituicoes_disponiveis = Instituicao.objects.filter(ativo=True)
-            else:
-                instituicoes_disponiveis = usuario.instituicao.filter(ativo=True)
+                request.session.pop("instituicao_cnpj", None)
+                request.session.pop("instituicao_nome", None)
+                request.session["total_instituicoes"] = Instituicao.objects.filter(ativo=True).count()
+                return redirecionar_por_perfil(request, usuario)
 
+            # 3. Resolução das Instituições para Usuários e Servidores
+            instituicoes_disponiveis = usuario.instituicao.filter(ativo=True)
             total_inst = instituicoes_disponiveis.count()
-            # Salva na sessão para controle do dropdown no template
             request.session["total_instituicoes"] = total_inst
 
-            # 3. Regra de Redirecionamento
             if total_inst > 1:
-                # Mais de uma: sempre escolhe primeiro
+                # Mais de uma instituição vinculada: escolhe primeiro
                 return redirect("selecionar_instituicao")
             elif total_inst == 1:
                 # Exatamente uma: fixa na sessão e entra direto
@@ -113,7 +114,6 @@ def login_view(request):
         form = LoginForm()
 
     return render(request, "public/login.html", {"form": form})
-
 
 @login_required
 def selecionar_instituicao(request):

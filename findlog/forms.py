@@ -316,6 +316,8 @@ class SalaForm(forms.ModelForm):
             "nome",
             "predio",
             "andar",
+            "telefone",
+            "descricao",
             "laboratorio",
             "sala_de_aula",
             "instituicao",
@@ -337,12 +339,27 @@ class SalaForm(forms.ModelForm):
                 "placeholder": "Ex: Térreo, 1º Andar",
                 "id": "andar",
             }),
+            "telefone": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "(00) 0000-0000",
+                "id": "telefone",
+            }),
+            "descricao": forms.Textarea(attrs={
+                "class": "form-control form-control-custom",
+                "rows": 3,
+                "placeholder": "Detalhes adicionais sobre a sala...",
+                "id": "descricao",
+            }),
             "laboratorio": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "laboratorio"}),
             "sala_de_aula": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "sala_de_aula"}),
             "ativa": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "ativa"}),
-        }    
+        }
 
+    def clean_telefone(self):
+        telefone = self.cleaned_data.get("telefone", "")
+        return apenas_digitos(telefone) if telefone else ""
 
+    
 
 class ItemUpdateForm(forms.ModelForm):
     class Meta:

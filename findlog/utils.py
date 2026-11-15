@@ -5,8 +5,7 @@ import secrets
 import unicodedata
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-from .models import Instituicao
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.http import Http404
 
 
@@ -147,7 +146,7 @@ def redirecionar_por_perfil(request, usuario):
     elif usuario.tipo == Perfil.TipoUsuario.SERVIDOR:
         return redirect("servidor_painel")
 
-    return redirect("usuario_home")
+    return redirect("usuario_feed")
 
 
 def _obter_instituicao_do_servidor(request):
@@ -168,6 +167,7 @@ def gerar_senha_provisoria(tamanho=10):
 
 
 def _obter_instituicao_por_token(token):
+    from .models import Instituicao
     """Decodifica e valida o token assinado da instituição."""
     # Se quiser que o link expire em 30 dias, passe: max_age=60 * 60 * 24 * 30
     instituicao = Instituicao.obter_por_token(token, max_age=None)

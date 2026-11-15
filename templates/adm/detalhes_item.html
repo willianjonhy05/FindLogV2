@@ -1,6 +1,6 @@
 {% extends "adm/base.html" %}
 {% load static %}
-{% block title %}Detalhes do Item | {{ item.nome|default:item.codigo }}{% endblock %}
+{% block title %}Detalhes do Item | {{ item.nome|default:item.uuid }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-0">
@@ -44,7 +44,7 @@
                         <div>
                             <h4 class="fw-bold mb-1 text-dark">{{ item.nome|default:"Item sem identificação formal" }}</h4>
                             <span class="text-muted small">
-                                Código de Rastreamento: <strong class="text-secondary font-monospace">#{{ item.codigo }}</strong>
+                                Código de Rastreamento: <strong class="text-secondary font-monospace">#{{ item.uuid }}</strong>
                             </span>
                         </div>
                     </div>
@@ -266,7 +266,7 @@
                     </a>
 
                     <a href="{% url 'apagar_item' item.uuid %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" 
-                       data-nome="{{ item.nome|default:item.codigo }}">
+                       data-nome="{{ item.nome|default:item.uuid }}">
                         <i class="bi bi-trash"></i>
                         <span>Excluir Item</span>
                     </a>
@@ -307,7 +307,7 @@
             <div class="modal-body py-4">
                 <p class="text-secondary mb-2">Tem certeza de que deseja remover permanentemente este item?</p>
                 <div class="modal-highlight-box p-3 rounded">
-                    <strong class="d-block text-dark text-break" id="modalItemNome">{{ item.nome|default:item.codigo }}</strong>
+                    <strong class="d-block text-dark text-break" id="modalItemNome">{{ item.nome|default:item.uuid }}</strong>
                 </div>
                 <small class="text-danger mt-2 d-inline-block">
                     <i class="bi bi-info-circle me-1"></i> Esta ação é irreversível.
