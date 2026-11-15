@@ -1,11 +1,284 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#1A2B45">
+  <meta name="description" content="Autocadastro de Usuário - FindLog: Gestão Inteligente de Achados e Perdidos">
+
+  <title>Cadastro de Usuário | {{ instituicao.nome }} - FindLog</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Icons & Bootstrap 5.3.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Estilo Global FindLog -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/auto_cadastro_usuario.css' %}">
+
+
 </head>
+
 <body>
-    
+
+  <!-- Topbar com Identidade Visual FindLog -->
+  <header class="auth-topbar">
+    <div class="container d-flex align-items-center justify-content-between px-3 px-md-4">
+      <a href="{% url 'home' %}" class="d-inline-flex align-items-center gap-2 text-decoration-none">
+        <span class="logo-icon-wrapper" style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--laranja-destaque), var(--laranja-hover)); border-radius: 9px; display: grid; place-items: center; color: #fff; font-size: 1.1rem;">
+          <i class="bi bi-search-heart"></i>
+        </span>
+        <span class="logo-text text-white fw-bold fs-5">
+          Find<span class="logo-accent" style="color: var(--laranja-destaque);">Log</span>
+        </span>
+      </a>
+
+      <a href="{% url 'login' %}" class="auth-login-link">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span>Já tenho conta</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Área Principal de Conteúdo -->
+  <main class="auth-main-wrapper">
+    <div class="auth-card">
+      <div class="auth-card-body">
+
+        <!-- Banner Institucional de Vinculação -->
+        <div class="auth-inst-banner">
+          <div class="auth-inst-icon">
+            <i class="bi bi-building-check"></i>
+          </div>
+          <div>
+            <div class="auth-inst-title">Vínculo Institucional</div>
+            <h2 class="auth-inst-name">{{ instituicao.nome }}</h2>
+            {% if instituicao.cnpj %}
+              <div class="text-secondary small" style="font-size: 0.75rem;">CNPJ: {{ instituicao.cnpj }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Título da Tela -->
+        <div class="mb-3">
+          <span class="section-tag badge mb-2" style="background-color: var(--bege-secao); color: var(--azul-escuro); border: 1px solid var(--bege-areia); font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+            <i class="bi bi-person-plus me-1"></i> Cadastro de Aluno / Visitante
+          </span>
+          <h1 class="h4 fw-bold" style="color: var(--azul-escuro); letter-spacing: -0.02em;">Criar Nova Conta</h1>
+          <p class="text-secondary small mb-0">Preencha seus dados para consultar itens perdidos e registrar reivindicações de achados.</p>
+        </div>
+
+        <!-- Mensagens Django (Toasts/Alerts) -->
+        {% if messages %}
+          <div class="mb-3">
+            {% for message in messages %}
+              <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-info-circle-fill"></i>
+                  <span>{{ message }}</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Erros Globais do Formulário -->
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger shadow-sm py-2 px-3 mb-3 small" role="alert">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+              <div>
+                {% for error in form.non_field_errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Formulário de Autocadastro de Usuário -->
+        <form method="POST" action="{% url 'novo_usuario_instituicao' token %}" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            
+            <!-- Nome Completo -->
+            <div class="col-12">
+              <label for="id_nome" class="form-label form-label-custom">
+                Nome Completo <span class="text-danger">*</span>
+              </label>
+              <input type="text" 
+                     name="nome" 
+                     id="id_nome" 
+                     class="form-control form-control-custom {% if form.nome.errors %}is-invalid{% endif %}" 
+                     value="{{ form.nome.value|default:'' }}" 
+                     placeholder="Ex: Maria Eduarda da Silva"
+                     required>
+              {% for erro in form.nome.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- E-mail -->
+            <div class="col-12">
+              <label for="id_email" class="form-label form-label-custom">
+                E-mail Institucional ou Pessoal <span class="text-danger">*</span>
+              </label>
+              <input type="email" 
+                     name="email" 
+                     id="id_email" 
+                     class="form-control form-control-custom {% if form.email.errors %}is-invalid{% endif %}" 
+                     value="{{ form.email.value|default:'' }}" 
+                     placeholder="seuemail@exemplo.com"
+                     required>
+              {% for erro in form.email.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+              <div class="auth-field-help">Utilizado para confirmações e notificações sobre seus itens.</div>
+            </div>
+
+            <!-- CPF (Com máscara) -->
+            <div class="col-12 col-md-6">
+              <label for="id_cpf" class="form-label form-label-custom">
+                CPF <span class="text-danger">*</span>
+              </label>
+              <input type="text" 
+                     name="cpf" 
+                     id="id_cpf" 
+                     class="form-control form-control-custom cpf-format {% if form.cpf.errors %}is-invalid{% endif %}" 
+                     value="{{ form.cpf.value|default:'' }}" 
+                     placeholder="000.000.000-00" 
+                     inputmode="numeric"
+                     required>
+              {% for erro in form.cpf.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Telefone / WhatsApp (Com máscara) -->
+            <div class="col-12 col-md-6">
+              <label for="id_telefone" class="form-label form-label-custom">Telefone / WhatsApp</label>
+              <input type="text" 
+                     name="telefone" 
+                     id="id_telefone" 
+                     class="form-control form-control-custom telefone-format {% if form.telefone.errors %}is-invalid{% endif %}" 
+                     value="{{ form.telefone.value|default:'' }}" 
+                     placeholder="(00) 00000-0000"
+                     inputmode="tel">
+              {% for erro in form.telefone.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Matrícula / Código -->
+            <div class="col-12 col-md-6">
+              <label for="id_codigo" class="form-label form-label-custom">Matrícula / Código do Aluno</label>
+              <input type="text" 
+                     name="codigo" 
+                     id="id_codigo" 
+                     class="form-control form-control-custom {% if form.codigo.errors %}is-invalid{% endif %}" 
+                     value="{{ form.codigo.value|default:'' }}" 
+                     placeholder="Ex: 202410293">
+              {% for erro in form.codigo.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Data de Nascimento -->
+            <div class="col-12 col-md-6">
+              <label for="id_data_nascimento" class="form-label form-label-custom">Data de Nascimento</label>
+              <input type="date" 
+                     name="data_nascimento" 
+                     id="id_data_nascimento" 
+                     class="form-control form-control-custom {% if form.data_nascimento.errors %}is-invalid{% endif %}" 
+                     value="{{ form.data_nascimento.value|default:'' }}">
+              {% for erro in form.data_nascimento.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Senha -->
+            <div class="col-12 col-md-6">
+              <label for="id_senha" class="form-label form-label-custom">
+                Crie uma Senha <span class="text-danger">*</span>
+              </label>
+              <div class="auth-input-group">
+                <input type="password" 
+                       name="senha" 
+                       id="id_senha" 
+                       class="form-control form-control-custom auth-password-input {% if form.senha.errors %}is-invalid{% endif %}" 
+                       placeholder="Mínimo de 8 caracteres"
+                       required>
+                <button type="button" class="auth-password-toggle" data-target="id_senha" aria-label="Alternar visibilidade da senha">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              {% for erro in form.senha.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Confirmar Senha -->
+            <div class="col-12 col-md-6">
+              <label for="id_confirmar_senha" class="form-label form-label-custom">
+                Confirme sua Senha <span class="text-danger">*</span>
+              </label>
+              <div class="auth-input-group">
+                <input type="password" 
+                       name="confirmar_senha" 
+                       id="id_confirmar_senha" 
+                       class="form-control form-control-custom auth-password-input {% if form.confirmar_senha.errors %}is-invalid{% endif %}" 
+                       placeholder="Repita a senha criada"
+                       required>
+                <button type="button" class="auth-password-toggle" data-target="id_confirmar_senha" aria-label="Alternar visibilidade da senha">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              {% for erro in form.confirmar_senha.errors %}
+                <div class="invalid-feedback d-block fw-medium">{{ erro }}</div>
+              {% endfor %}
+            </div>
+
+          </div>
+
+          <!-- Botão de Ação -->
+          <div class="mt-4 pt-2">
+            <button type="submit" class="btn btn-primary-custom w-100 shadow-sm" style="min-height: 46px; font-size: 1rem;">
+              <i class="bi bi-check2-circle me-1"></i> Concluir Meu Cadastro
+            </button>
+          </div>
+
+          <!-- Termos e Privacidade -->
+          <p class="text-center text-secondary small mt-3 mb-0" style="font-size: 0.78rem;">
+            Ao cadastrar-se, você concorda com o uso de seus dados para fins exclusivos de identificação e recuperação de achados e perdidos na instituição.
+          </p>
+
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Rodapé Institucional -->
+  <footer class="auth-footer">
+    <div class="container px-3">
+      <div><strong>FindLog</strong> &bull; Gestão Inteligente de Achados e Perdidos</div>
+      <div class="mt-1 small text-muted">Desenvolvido pela Equipe Primeira Classe de Desenvolvimento</div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Bootstrap, Máscaras e Alternador de Senha -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/mascara.js' %}"></script>
+  <script src="{% static 'js/auth-password-toggle.js' %}"></script>
+
 </body>
 </html>

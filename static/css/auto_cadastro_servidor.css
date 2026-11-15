@@ -1,0 +1,191 @@
+body {
+    background-color: var(--bege-principal);
+    color: var(--texto-escuro);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+/* Topbar Pública */
+.auth-topbar {
+    background-color: var(--azul-escuro);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.85rem 0;
+}
+
+.auth-login-link {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+    border-radius: var(--border-radius-base);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    min-height: 40px;
+}
+
+.auth-login-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Container e Cartão de Formulário */
+.auth-main-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem 3rem 1rem;
+}
+
+.auth-card {
+    background-color: var(--bege-card);
+    border: 1px solid var(--bege-areia);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 4px 16px rgba(26, 43, 69, 0.05);
+    width: 100%;
+    max-width: 680px;
+    overflow: hidden;
+}
+
+.auth-card-body {
+    padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .auth-card-body {
+        padding: 2.25rem;
+    }
+}
+
+/* Banner Institucional de Vínculo */
+.auth-inst-banner {
+    background: linear-gradient(135deg, var(--bege-secao), var(--bege-principal));
+    border: 1px solid var(--bege-areia);
+    border-radius: var(--border-radius-base);
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.auth-inst-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+    color: var(--laranja-destaque);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(26, 43, 69, 0.12);
+}
+
+.auth-inst-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--texto-apoio);
+    margin-bottom: 0.15rem;
+}
+
+.auth-inst-name {
+    color: var(--azul-escuro);
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* Banner Informativo de Aprovação de Servidor */
+.auth-approval-notice {
+    background-color: rgba(255, 98, 0, 0.08);
+    border: 1px solid rgba(255, 98, 0, 0.25);
+    border-left: 4px solid var(--laranja-destaque);
+    border-radius: var(--border-radius-base);
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.auth-approval-icon {
+    color: var(--laranja-destaque);
+    font-size: 1.25rem;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.auth-approval-text {
+    font-size: 0.82rem;
+    color: var(--texto-escuro);
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* Campos e Senha Toggle */
+.auth-input-group {
+    position: relative;
+}
+
+.auth-password-toggle {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    border: none;
+    background: transparent;
+    color: var(--texto-apoio);
+    padding: 0 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    border-radius: 0 var(--border-radius-base) var(--border-radius-base) 0;
+    transition: color 0.2s ease;
+    z-index: 5;
+}
+
+.auth-password-toggle:hover {
+    color: var(--laranja-destaque);
+}
+
+.form-control-custom,
+.form-select-custom {
+    min-height: 44px;
+    /* Touch target ergonômico */
+}
+
+.auth-password-input {
+    padding-right: 2.75rem !important;
+}
+
+.auth-field-help {
+    font-size: 0.76rem;
+    color: var(--texto-apoio);
+    margin-top: 0.25rem;
+}
+
+/* Rodapé Minimalista */
+.auth-footer {
+    border-top: 1px solid var(--bege-areia);
+    padding: 1.25rem 0;
+    background-color: var(--bege-secao);
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--texto-apoio);
+}
