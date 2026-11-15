@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from findlog.forms import ContatoForm, LoginForm, EsqueciSenhaForm
+from findlog.forms.auth import LoginForm, EsqueciSenhaForm
+from findlog.forms.contato import ContatoForm
 from findlog.utils import obter_ip_usuario, redirecionar_por_perfil, gerar_senha_provisoria
 from django.contrib.auth import login, logout
 from findlog.models import Perfil, Instituicao
@@ -12,6 +13,7 @@ from django.core.mail import send_mail
 
 from django.conf import settings
 
+
 def index(request):
     if request.method == "POST":
         form_contato = ContatoForm(request.POST)
@@ -21,20 +23,17 @@ def index(request):
             contato.ip_contato = obter_ip_usuario(request)
             contato.save()
 
-            messages.success(
-                request,
-                "Mensagem enviada com sucesso! Agradecemos pelo contato."
-            )
+            messages.success(request, "Mensagem enviada com sucesso! Agradecemos pelo contato.")
             return redirect("home")
 
         messages.error(
-            request,
-            "Não foi possível enviar a mensagem. Verifique os campos e tente novamente."
+            request, "Não foi possível enviar a mensagem. Verifique os campos e tente novamente."
         )
     else:
         form_contato = ContatoForm()
 
-    return render(request,"public/index.html", {"form_contato": form_contato})
+    return render(request, "public/index.html", {"form_contato": form_contato})
+
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -77,14 +76,13 @@ def login_view(request):
             )
 
             # 2. Fluxo direto para Superusuário / Administrador (sem vínculo fixo na sessão)
-            is_admin = (
-                usuario.is_superuser
-                or usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR
-            )
+            is_admin = usuario.is_superuser or usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR
             if is_admin:
                 request.session.pop("instituicao_cnpj", None)
                 request.session.pop("instituicao_nome", None)
-                request.session["total_instituicoes"] = Instituicao.objects.filter(ativo=True).count()
+                request.session["total_instituicoes"] = Instituicao.objects.filter(
+                    ativo=True
+                ).count()
                 return redirecionar_por_perfil(request, usuario)
 
             # 3. Resolução das Instituições para Usuários e Servidores
@@ -107,13 +105,12 @@ def login_view(request):
                 request.session["instituicao_nome"] = None
                 return redirecionar_por_perfil(request, usuario)
         else:
-            messages.error(
-                request, "Falha na autenticação. Verifique os dados informados."
-            )
+            messages.error(request, "Falha na autenticação. Verifique os dados informados.")
     else:
         form = LoginForm()
 
     return render(request, "public/login.html", {"form": form})
+
 
 @login_required
 def selecionar_instituicao(request):
@@ -150,12 +147,12 @@ def selecionar_instituicao(request):
     }
     return render(request, "public/selecionar_instituicao.html", context)
 
+
 @login_required
 def logout_view(request):
     logout(request)
     messages.info(request, "Sua sessão foi encerrada com segurança.")
     return redirect("login")
-
 
 
 def esqueci_senha_view(request):
@@ -174,11 +171,7 @@ def esqueci_senha_view(request):
             )
 
             # Só processa se o usuário existir e estiver ativo
-            if (
-                usuario
-                and getattr(usuario, "ativo", True)
-                and usuario.is_active
-            ):
+            if usuario and getattr(usuario, "ativo", True) and usuario.is_active:
                 # 1. Gera e grava a senha temporária
                 nova_senha = gerar_senha_provisoria()
                 usuario.set_password(nova_senha)
@@ -194,9 +187,7 @@ def esqueci_senha_view(request):
                     "url_login": url_login,
                 }
 
-                corpo_html = render_to_string(
-                    "public/senha_provisoria.html", contexto_email
-                )
+                corpo_html = render_to_string("public/senha_provisoria.html", contexto_email)
                 corpo_texto = strip_tags(corpo_html)
 
                 # 3. Disparo do e-mail
@@ -214,9 +205,7 @@ def esqueci_senha_view(request):
                         request,
                         "Houve um problema temporário ao enviar o e-mail. Tente novamente em instantes.",
                     )
-                    return render(
-                        request, "public/esqueci_senha.html", {"form": form}
-                    )
+                    return render(request, "public/esqueci_senha.html", {"form": form})
 
             # Resposta genérica contra enumeração de contas
             messages.success(

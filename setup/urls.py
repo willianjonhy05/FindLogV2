@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
@@ -21,24 +22,28 @@ from django.conf import settings
 from .views import index, login_view, logout_view, selecionar_instituicao, esqueci_senha_view
 from findlog.views.adm_views import novo_usuario_instituicao, novo_servidor_instituicao
 
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('adm/', include('findlog.urls.adm_urls')),
-    path('painel/', include('findlog.urls.servidor_urls')),
-    path('findlog/', include('findlog.urls.usuario_urls')),
+    path("admin/", admin.site.urls),
+    path("adm/", include("findlog.urls.adm_urls")),
+    path("painel/", include("findlog.urls.servidor_urls")),
+    path("findlog/", include("findlog.urls.usuario_urls")),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("selecionar-instituicao/", selecionar_instituicao, name="selecionar_instituicao"),
-    path("convite/<str:token>/novo-usuario/", novo_usuario_instituicao, name="novo_usuario_instituicao"),
-    path("convite/<str:token>/novo-servidor/", novo_servidor_instituicao, name="novo_servidor_instituicao"),
+    path(
+        "convite/<str:token>/novo-usuario/",
+        novo_usuario_instituicao,
+        name="novo_usuario_instituicao",
+    ),
+    path(
+        "convite/<str:token>/novo-servidor/",
+        novo_servidor_instituicao,
+        name="novo_servidor_instituicao",
+    ),
     path("esqueci-senha/", esqueci_senha_view, name="recuperar_senha"),
-    path('', index, name='home')
+    path("", index, name="home"),
 ]
-
-
 
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

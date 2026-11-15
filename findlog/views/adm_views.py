@@ -3,25 +3,32 @@ from ..models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivin
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, ProtectedError
-from ..forms import (
-    InstituicaoForm,
-    CategoriaForm,
+from ..forms.instituicao import InstituicaoUpdateForm, InstituicaoForm
+from ..forms.categoria import CategoriaForm
+from ..forms.perfil import (
     NovoUsuarioForm,
-    SalaForm,
-    ItemUpdateForm,
-    ReivindicacaoUpdateForm,
+    AutoCadastroUsuarioForm,
+    AutoCadastroServidorForm,
     EditarMeuPerfilForm,
     TrocarMinhaSenhaForm,
-    InstituicaoUpdateForm,
-    AutoCadastroUsuarioForm,
-    AutoCadastroServidorForm
 )
-from ..utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil, _obter_instituicao_por_token
+from ..forms.sala import SalaForm
+from ..forms.reivindicacao import ReivindicacaoUpdateForm
+from ..forms.item import ItemUpdateForm
+
+
+from ..utils import (
+    apenas_digitos,
+    gerar_slug_unico,
+    redirecionar_por_perfil,
+    _obter_instituicao_por_token,
+)
 from django.contrib.auth import update_session_auth_hash
 import re
 from ..decorators import superuser_required
 
 # Create your views here.
+
 
 @superuser_required
 def dashboard_adm(request):
@@ -36,12 +43,13 @@ def dashboard_adm(request):
         "total_instituicoes": total_instituicoes,
         "total_categorias": total_categorias,
         "total_usuarios": total_usuarios,
-        "total_salas": total_salas,  
+        "total_salas": total_salas,
         "total_itens": total_itens,
-        "total_contatos": total_contatos   
+        "total_contatos": total_contatos,
     }
 
     return render(request, "adm/dashboard.html", context)
+
 
 @superuser_required
 def nova_instituicao(request):
@@ -50,10 +58,10 @@ def nova_instituicao(request):
         dados_post = request.POST.copy()
 
         # Remove caracteres não numéricos
-        if 'cnpj' in dados_post:
-            dados_post['cnpj'] = apenas_digitos(dados_post['cnpj'])
-        if 'telefone' in dados_post:
-            dados_post['telefone'] = apenas_digitos(dados_post['telefone'])
+        if "cnpj" in dados_post:
+            dados_post["cnpj"] = apenas_digitos(dados_post["cnpj"])
+        if "telefone" in dados_post:
+            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
 
         # Instancia o formulário com os dados higienizados
         form = InstituicaoForm(dados_post)
@@ -62,10 +70,7 @@ def nova_instituicao(request):
             instituicao = form.save(commit=False)
             instituicao.ativo = True
             instituicao = form.save()
-            messages.success(
-                request,
-                f"Instituição '{instituicao.nome}' cadastrada com sucesso!"
-            )
+            messages.success(request, f"Instituição '{instituicao.nome}' cadastrada com sucesso!")
             return redirect("lista_instituicoes")
 
         messages.error(request, "Por favor, corrija os erros abaixo.")
@@ -74,6 +79,7 @@ def nova_instituicao(request):
         form = InstituicaoForm()
 
     return render(request, "adm/nova_instituicao.html", {"form": form})
+
 
 @superuser_required
 def lista_instituicoes(request):
@@ -86,7 +92,7 @@ def lista_instituicoes(request):
         filtro = Q(nome__icontains=termo_busca) | Q(endereco__icontains=termo_busca)
         if digitos_busca:
             filtro |= Q(cnpj__icontains=digitos_busca)
-        
+
         instituicoes_query = instituicoes_query.filter(filtro)
 
     # Paginação: 10 instituições por página
@@ -108,13 +114,13 @@ def lista_instituicoes(request):
     }
     return render(request, "adm/instituicoes.html", context)
 
+
 @superuser_required
 def detalhes_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
-    context = {
-        "instituicao": instituicao
-    }
-    return render(request, "adm/detalhes_instituicao.html",context)
+    context = {"instituicao": instituicao}
+    return render(request, "adm/detalhes_instituicao.html", context)
+
 
 @superuser_required
 def editar_instituicao(request, cnpj):
@@ -123,7 +129,6 @@ def editar_instituicao(request, cnpj):
     if request.method == "POST":
         # Bloqueia alteração manual de CNPJ se for PK
 
-        
         form = InstituicaoUpdateForm(request.POST, instance=instituicao)
         if form.is_valid():
             form.save()
@@ -137,10 +142,9 @@ def editar_instituicao(request, cnpj):
         form = InstituicaoUpdateForm(instance=instituicao)
 
     return render(
-        request,
-        "adm/editar_instituicao.html",
-        {"form": form, "instituicao": instituicao}
+        request, "adm/editar_instituicao.html", {"form": form, "instituicao": instituicao}
     )
+
 
 @superuser_required
 def excluir_instituicao(request, cnpj):
@@ -158,9 +162,9 @@ def lista_categorias(request):
 
     if termo_busca:
         categorias_query = categorias_query.filter(
-            Q(nome__icontains=termo_busca) |
-            Q(codigo__iexact=termo_busca) |
-            Q(descricao__icontains=termo_busca)
+            Q(nome__icontains=termo_busca)
+            | Q(codigo__iexact=termo_busca)
+            | Q(descricao__icontains=termo_busca)
         )
 
     # Paginação: 10 categorias por página
@@ -179,7 +183,8 @@ def lista_categorias(request):
         "q": termo_busca,
     }
 
-    return render(request, "adm/categorias.html", context)    
+    return render(request, "adm/categorias.html", context)
+
 
 @superuser_required
 def nova_categoria(request):
@@ -187,10 +192,7 @@ def nova_categoria(request):
         form = CategoriaForm(request.POST)
         if form.is_valid():
             categoria = form.save()
-            messages.success(
-                request,
-                f"Categoria '{categoria.nome}' cadastrada com sucesso!"
-            )
+            messages.success(request, f"Categoria '{categoria.nome}' cadastrada com sucesso!")
             return redirect("lista_categorias")
 
         # Repassa os erros de validação via toast / alert messages
@@ -202,6 +204,7 @@ def nova_categoria(request):
 
     return render(request, "adm/nova_categoria.html", {"form": form})
 
+
 @superuser_required
 def atualizar_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
@@ -211,24 +214,16 @@ def atualizar_categoria(request, codigo):
 
         if form.is_valid():
             cat = form.save(commit=False)
-            
+
             # Mapeia o select name="ativo" (valores "1" ou "0") para o campo booleano 'ativa'
-            cat.ativa = (request.POST.get("ativo") == "1")
+            cat.ativa = request.POST.get("ativo") == "1"
 
             # Atualiza o slug se o nome tiver sido alterado
-            cat.slug = gerar_slug_unico(
-                Categoria,
-                cat,
-                campo_origem="nome",
-                campo_slug="slug"
-            )
+            cat.slug = gerar_slug_unico(Categoria, cat, campo_origem="nome", campo_slug="slug")
 
             cat.save()
 
-            messages.success(
-                request,
-                f"Categoria '{cat.nome}' atualizada com sucesso!"
-            )
+            messages.success(request, f"Categoria '{cat.nome}' atualizada com sucesso!")
             return redirect("lista_categorias")
 
         # Exibe mensagens com erros de validação
@@ -252,23 +247,22 @@ def excluir_categoria(request, codigo):
 
     try:
         categoria.delete()
-        messages.success(
-            request,
-            f"A categoria '{nome}' foi excluída com sucesso."
-        )
+        messages.success(request, f"A categoria '{nome}' foi excluída com sucesso.")
     except ProtectedError:
         messages.error(
             request,
             f"Não é possível excluir a categoria '{nome}', pois existem itens vinculados a ela. "
-            "Realoque ou remova os itens antes de tentar novamente, ou desative a categoria."
+            "Realoque ou remova os itens antes de tentar novamente, ou desative a categoria.",
         )
 
     return redirect("lista_categorias")
+
 
 @superuser_required
 def view_categoria(request, codigo):
     categoria = get_object_or_404(Categoria, pk=codigo)
     return render(request, "adm/detalhes_categoria.html", {"categoria": categoria})
+
 
 @superuser_required
 def lista_contatos(request):
@@ -277,10 +271,10 @@ def lista_contatos(request):
 
     if termo_busca:
         contatos_query = contatos_query.filter(
-            Q(nome__icontains=termo_busca) |
-            Q(email__icontains=termo_busca) |
-            Q(assunto__icontains=termo_busca) |
-            Q(mensagem__icontains=termo_busca)
+            Q(nome__icontains=termo_busca)
+            | Q(email__icontains=termo_busca)
+            | Q(assunto__icontains=termo_busca)
+            | Q(mensagem__icontains=termo_busca)
         )
 
     # Paginação: 10 mensagens por página
@@ -306,6 +300,7 @@ def view_contato(request, uuid):
     contato = get_object_or_404(Contato, uuid=uuid)
     return render(request, "adm/detalhes_contato.html", {"contato": contato})
 
+
 @superuser_required
 def apagar_contato(request, pk):
     contato = get_object_or_404(Contato, pk=pk)
@@ -313,6 +308,7 @@ def apagar_contato(request, pk):
     contato.delete()
     messages.success(request, f"Mensagem de '{nome}' excluída com sucesso.")
     return redirect("lista_contatos")
+
 
 @superuser_required
 def novo_usuario(request):
@@ -335,12 +331,13 @@ def novo_usuario(request):
         if form.is_valid():
             usuario = form.save()
             messages.success(
-                request,
-                f"Usuário '{usuario.nome or usuario.email}' cadastrado com sucesso!"
+                request, f"Usuário '{usuario.nome or usuario.email}' cadastrado com sucesso!"
             )
             return redirect("lista_usuarios")
         else:
-            messages.error(request, "Não foi possível cadastrar o usuário. Corrija os erros apontados.")
+            messages.error(
+                request, "Não foi possível cadastrar o usuário. Corrija os erros apontados."
+            )
     else:
         form = NovoUsuarioForm()
 
@@ -351,6 +348,7 @@ def novo_usuario(request):
         "tipos_usuario": Perfil.TipoUsuario.choices,
     }
     return render(request, "adm/novo_usuario.html", context)
+
 
 @superuser_required
 def lista_usuarios(request):
@@ -364,13 +362,13 @@ def lista_usuarios(request):
     if termo_busca:
         digitos_cpf = apenas_digitos(termo_busca)
         filtro = (
-            Q(nome__icontains=termo_busca) |
-            Q(email__icontains=termo_busca) |
-            Q(username__icontains=termo_busca)
+            Q(nome__icontains=termo_busca)
+            | Q(email__icontains=termo_busca)
+            | Q(username__icontains=termo_busca)
         )
         if digitos_cpf:
             filtro |= Q(cpf__icontains=digitos_cpf)
-        
+
         usuarios_query = usuarios_query.filter(filtro)
 
     # 10 usuários por página
@@ -414,7 +412,9 @@ def alternar_status_usuario(request, pk):
     usuario.save(update_fields=["ativo", "is_active"])
 
     status_str = "ativado" if novo_status else "desativado"
-    messages.success(request, f"O usuário '{usuario.nome or usuario.email}' foi {status_str} com sucesso.")
+    messages.success(
+        request, f"O usuário '{usuario.nome or usuario.email}' foi {status_str} com sucesso."
+    )
     return redirect("lista_usuarios")
 
 
@@ -484,9 +484,9 @@ def lista_salas(request):
 
     if termo_busca:
         filtro = (
-            Q(numero__icontains=termo_busca) |
-            Q(predio__icontains=termo_busca) |
-            Q(andar__icontains=termo_busca)
+            Q(numero__icontains=termo_busca)
+            | Q(predio__icontains=termo_busca)
+            | Q(andar__icontains=termo_busca)
         )
         # Se Sala tiver o campo 'codigo'
         if hasattr(Sala, "codigo"):
@@ -534,14 +534,18 @@ def nova_sala(request):
 def detalhes_sala(request, codigo):
     # Se a PK de Sala for 'codigo', usa-se pk=codigo; caso contrário, use id=codigo
     sala = get_object_or_404(Sala, pk=codigo)
-    
+
     # Servidores vinculados a esta sala
     servidores = Perfil.objects.filter(sala=sala, tipo=Perfil.TipoUsuario.SERVIDOR)
 
-    return render(request, "adm/detalhes_sala.html", {
-        "sala": sala,
-        "servidores": servidores,
-    })
+    return render(
+        request,
+        "adm/detalhes_sala.html",
+        {
+            "sala": sala,
+            "servidores": servidores,
+        },
+    )
 
 
 @superuser_required
@@ -562,11 +566,15 @@ def editar_sala(request, codigo):
     else:
         form = SalaForm(instance=sala)
 
-    return render(request, "adm/editar_sala.html", {
-        "form": form,
-        "sala": sala,
-        "acao": "Editar Sala",
-    })
+    return render(
+        request,
+        "adm/editar_sala.html",
+        {
+            "form": form,
+            "sala": sala,
+            "acao": "Editar Sala",
+        },
+    )
 
 
 @superuser_required
@@ -603,7 +611,7 @@ def excluir_sala(request, codigo):
         messages.error(
             request,
             f"Não é possível excluir a {nome_sala}, pois existem itens ou servidores vinculados a ela. "
-            "Remova ou transfira os vínculos antes de excluir, ou apenas desative a sala."
+            "Remova ou transfira os vínculos antes de excluir, ou apenas desative a sala.",
         )
 
     return redirect("lista_salas")
@@ -613,15 +621,17 @@ def excluir_sala(request, codigo):
 def lista_itens(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
-    itens_query = Item.objects.select_related("categoria", "instituicao", "local").order_by("-data_registro")
+    itens_query = Item.objects.select_related("categoria", "instituicao", "local").order_by(
+        "-data_registro"
+    )
 
     if termo_busca:
         itens_query = itens_query.filter(
-            Q(nome__icontains=termo_busca) |
-            Q(codigo__iexact=termo_busca) |
-            Q(marca_ou_modelo__icontains=termo_busca) |
-            Q(descricao__icontains=termo_busca) |
-            Q(cor__icontains=termo_busca)
+            Q(nome__icontains=termo_busca)
+            | Q(codigo__iexact=termo_busca)
+            | Q(marca_ou_modelo__icontains=termo_busca)
+            | Q(descricao__icontains=termo_busca)
+            | Q(cor__icontains=termo_busca)
         )
 
     if status_filtro and status_filtro.isdigit():
@@ -648,9 +658,16 @@ def lista_itens(request):
 
 @superuser_required
 def detalhes_item(request, uuid):
-    item = get_object_or_404(Item.objects.select_related("categoria", "instituicao", "local", "local_guardado", "usuario_registro", "dono"), uuid=uuid)
+    item = get_object_or_404(
+        Item.objects.select_related(
+            "categoria", "instituicao", "local", "local_guardado", "usuario_registro", "dono"
+        ),
+        uuid=uuid,
+    )
     reivindicacoes = item.reivindicacoes.select_related("autor").order_by("-data")
-    return render(request, "adm/detalhes_item.html", {"item": item, "reivindicacoes": reivindicacoes})
+    return render(
+        request, "adm/detalhes_item.html", {"item": item, "reivindicacoes": reivindicacoes}
+    )
 
 
 @superuser_required
@@ -681,7 +698,7 @@ def apagar_item(request, uuid):
     except ProtectedError:
         messages.error(
             request,
-            f"Não é possível excluir o {identificador}, pois há vínculos protegidos associados a ele."
+            f"Não é possível excluir o {identificador}, pois há vínculos protegidos associados a ele.",
         )
 
     return redirect("lista_itens")
@@ -691,16 +708,18 @@ def apagar_item(request, uuid):
 def lista_reivindicacoes(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
-    reivindicacoes_query = Reivindicacao.objects.select_related("autor", "item", "instituicao").order_by("-data")
+    reivindicacoes_query = Reivindicacao.objects.select_related(
+        "autor", "item", "instituicao"
+    ).order_by("-data")
 
     if termo_busca:
         reivindicacoes_query = reivindicacoes_query.filter(
-            Q(protocolo__icontains=termo_busca) |
-            Q(autor__nome__icontains=termo_busca) |
-            Q(autor__email__icontains=termo_busca) |
-            Q(item__nome__icontains=termo_busca) |
-            Q(item__codigo__iexact=termo_busca) |
-            Q(pedido__icontains=termo_busca)
+            Q(protocolo__icontains=termo_busca)
+            | Q(autor__nome__icontains=termo_busca)
+            | Q(autor__email__icontains=termo_busca)
+            | Q(item__nome__icontains=termo_busca)
+            | Q(item__codigo__iexact=termo_busca)
+            | Q(pedido__icontains=termo_busca)
         )
 
     if status_filtro and status_filtro.isdigit():
@@ -731,7 +750,7 @@ def detalhes_reivindicacao(request, protocolo):
         Reivindicacao.objects.select_related(
             "autor", "item", "instituicao", "responsavel_admin", "local_devolucao"
         ),
-        protocolo=protocolo
+        protocolo=protocolo,
     )
     return render(request, "adm/detalhes_reivindicacao.html", {"reivindicacao": reivindicacao})
 
@@ -766,9 +785,7 @@ def atualizar_reivindicacao(request, protocolo):
         form = ReivindicacaoUpdateForm(instance=reivindicacao)
 
     return render(
-        request,
-        "adm/editar_reivindicacao.html",
-        {"form": form, "reivindicacao": reivindicacao}
+        request, "adm/editar_reivindicacao.html", {"form": form, "reivindicacao": reivindicacao}
     )
 
 
@@ -778,8 +795,7 @@ def apagar_reivindicacao(request, protocolo):
     num_protocolo = reivindicacao.protocolo
     reivindicacao.delete()
     messages.success(request, f"Reivindicação #{num_protocolo} removida com sucesso.")
-    return redirect("lista_reivindicacoes")    
-
+    return redirect("lista_reivindicacoes")
 
 
 @superuser_required
@@ -809,7 +825,6 @@ def editar_meu_perfil(request):
     return render(request, "adm/editar_perfil.html", {"form": form, "usuario": usuario})
 
 
-
 @superuser_required
 def trocar_minha_senha(request):
     if request.method == "POST":
@@ -825,6 +840,7 @@ def trocar_minha_senha(request):
         form = TrocarMinhaSenhaForm(user=request.user)
 
     return render(request, "adm/trocar_senha.html", {"form": form})
+
 
 def novo_usuario_instituicao(request, token):
     """
@@ -854,7 +870,9 @@ def novo_usuario_instituicao(request, token):
             )
             return redirect("login")
 
-        messages.error(request, "Não foi possível concluir seu cadastro. Verifique os campos destacados.")
+        messages.error(
+            request, "Não foi possível concluir seu cadastro. Verifique os campos destacados."
+        )
     else:
         form = AutoCadastroUsuarioForm(instituicao=instituicao)
 
@@ -895,7 +913,9 @@ def novo_servidor_instituicao(request, token):
             )
             return redirect("login")
 
-        messages.error(request, "Não foi possível concluir o cadastro. Verifique os campos destacados.")
+        messages.error(
+            request, "Não foi possível concluir o cadastro. Verifique os campos destacados."
+        )
     else:
         form = AutoCadastroServidorForm(instituicao=instituicao)
 

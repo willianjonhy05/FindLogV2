@@ -8,9 +8,10 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from ..models import Item, Reivindicacao, Categoria, Instituicao
+from ..models import Item, Reivindicacao, Categoria
 
 from ..decorators import usuario_required
+
 
 @usuario_required
 def usuario_feed(request):
@@ -154,45 +155,38 @@ def detalhar_item(request, uuid):
 
     return render(request, "usuario/item.html", context)
 
+
 @usuario_required
 def reivindicar_item(request, codigo_item):
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
         with transaction.atomic():
 
             item = get_object_or_404(
                 Item.objects.select_for_update(),
                 codigo=codigo_item,
-                instituicao__in=request.user.instituicao.filter(ativo=True)
+                instituicao__in=request.user.instituicao.filter(ativo=True),
             )
 
             if item.status != Item.StatusItem.ENCONTRADO:
-                messages.error(
-                    request,
-                    'Este item não está disponível para reivindicação.'
-                )
-                return redirect('usuario_feed')
+                messages.error(request, "Este item não está disponível para reivindicação.")
+                return redirect("usuario_feed")
 
             # Impede que o usuário reivindique um item associado à própria conta
             if item.usuario_registro == request.user or item.dono == request.user:
                 messages.error(
-                    request,
-                    'Você não pode reivindicar um item que já está associado à sua conta.'
+                    request, "Você não pode reivindicar um item que já está associado à sua conta."
                 )
-                return redirect('usuario_feed')
+                return redirect("usuario_feed")
 
-            pedido = request.POST.get('pedido', '').strip()
+            pedido = request.POST.get("pedido", "").strip()
 
             if not pedido:
                 messages.error(
-                    request,
-                    'Informe os motivos pelos quais você acredita que o item é seu.'
+                    request, "Informe os motivos pelos quais você acredita que o item é seu."
                 )
-                return redirect(
-                    'reivindicar_item',
-                    codigo_item=codigo_item
-                )
+                return redirect("reivindicar_item", codigo_item=codigo_item)
 
             # Verifica se já existe uma reivindicação ativa
             status_ativos = [
@@ -202,53 +196,40 @@ def reivindicar_item(request, codigo_item):
             ]
 
             existe_reivindicacao = Reivindicacao.objects.filter(
-                autor=request.user,
-                item=item,
-                status__in=status_ativos
+                autor=request.user, item=item, status__in=status_ativos
             ).exists()
 
             if existe_reivindicacao:
-                messages.warning(
-                    request,
-                    'Você já possui uma reivindicação para este item.'
-                )
-                return redirect('minhas_reivindicacoes')
+                messages.warning(request, "Você já possui uma reivindicação para este item.")
+                return redirect("minhas_reivindicacoes")
 
             Reivindicacao.objects.create(
                 autor=request.user,
                 item=item,
                 instituicao=item.instituicao,
                 pedido=pedido,
-                anexos=request.FILES.get('anexos')
+                anexos=request.FILES.get("anexos"),
             )
 
-        messages.success(
-            request,
-            'Sua reivindicação foi enviada com sucesso!'
-        )
-        return redirect('minhas_reivindicacoes')
+        messages.success(request, "Sua reivindicação foi enviada com sucesso!")
+        return redirect("minhas_reivindicacoes")
 
     item = get_object_or_404(
         Item,
         codigo=codigo_item,
         instituicao__in=request.user.instituicao.filter(ativo=True),
-        status=Item.StatusItem.ENCONTRADO
+        status=Item.StatusItem.ENCONTRADO,
     )
 
     # Também impede que o usuário acesse a página de reivindicação
     # de um item associado à própria conta
     if item.usuario_registro == request.user or item.dono == request.user:
         messages.error(
-            request,
-            'Você não pode reivindicar um item que já está associado à sua conta.'
+            request, "Você não pode reivindicar um item que já está associado à sua conta."
         )
-        return redirect('usuario_feed')
+        return redirect("usuario_feed")
 
-    return render(
-        request,
-        'usuario/reivindicar_item.html',
-        {'item': item}
-    )
+    return render(request, "usuario/reivindicar_item.html", {"item": item})
 
 
 @login_required
@@ -259,31 +240,22 @@ def meu_perfil(request):
 
     usuario = request.user
 
-    reivindicacoes = Reivindicacao.objects.filter(
-        autor=usuario
-    )
+    reivindicacoes = Reivindicacao.objects.filter(autor=usuario)
 
     contexto = {
-        'usuario': usuario,
-
-        'quantidade_reivindicacoes': reivindicacoes.count(),
-
-        'reivindicacoes_pendentes': reivindicacoes.filter(
+        "usuario": usuario,
+        "quantidade_reivindicacoes": reivindicacoes.count(),
+        "reivindicacoes_pendentes": reivindicacoes.filter(
             status=Reivindicacao.StatusReivindicacao.PENDENTE
         ).count(),
-
-        'reivindicacoes_aprovadas': reivindicacoes.filter(
+        "reivindicacoes_aprovadas": reivindicacoes.filter(
             status=Reivindicacao.StatusReivindicacao.APROVADA
         ).count(),
-
-        'instituicoes': usuario.instituicao.filter(ativo=True),
+        "instituicoes": usuario.instituicao.filter(ativo=True),
     }
 
-    return render(
-        request,
-        'usuario/meu_perfil.html',
-        contexto
-    )
+    return render(request, "usuario/meu_perfil.html", contexto)
+
 
 @login_required
 def editar_meu_perfil(request):
@@ -293,43 +265,27 @@ def editar_meu_perfil(request):
 
     usuario = request.user
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        nome = request.POST.get('nome', '').strip()
-        email = request.POST.get('email', '').strip()
-        telefone = request.POST.get('telefone', '').strip()
+        nome = request.POST.get("nome", "").strip()
+        email = request.POST.get("email", "").strip()
+        telefone = request.POST.get("telefone", "").strip()
 
-        data_nascimento_texto = request.POST.get(
-            'data_nascimento', ''
-        ).strip()
+        data_nascimento_texto = request.POST.get("data_nascimento", "").strip()
 
-        data_nascimento = (
-            parse_date(data_nascimento_texto)
-            if data_nascimento_texto else None
-        )
+        data_nascimento = parse_date(data_nascimento_texto) if data_nascimento_texto else None
 
         if not nome or not email:
 
-            messages.error(
-                request,
-                'Nome e e-mail são obrigatórios.'
-            )
+            messages.error(request, "Nome e e-mail são obrigatórios.")
 
         elif data_nascimento_texto and not data_nascimento:
 
-            messages.error(
-                request,
-                'Informe uma data de nascimento válida.'
-            )
+            messages.error(request, "Informe uma data de nascimento válida.")
 
-        elif usuario.__class__.objects.filter(
-            email__iexact=email
-        ).exclude(pk=usuario.pk).exists():
+        elif usuario.__class__.objects.filter(email__iexact=email).exclude(pk=usuario.pk).exists():
 
-            messages.error(
-                request,
-                'Este e-mail já está cadastrado.'
-            )
+            messages.error(request, "Este e-mail já está cadastrado.")
 
         else:
 
@@ -338,27 +294,19 @@ def editar_meu_perfil(request):
             usuario.telefone = telefone
             usuario.data_nascimento = data_nascimento
 
-            if request.FILES.get('foto'):
-                usuario.foto = request.FILES['foto']
+            if request.FILES.get("foto"):
+                usuario.foto = request.FILES["foto"]
 
             usuario.save()
 
-            messages.success(
-                request,
-                'Seu perfil foi atualizado com sucesso!'
-            )
+            messages.success(request, "Seu perfil foi atualizado com sucesso!")
 
-            return redirect('meu_perfil')
+            return redirect("meu_perfil")
 
-    contexto = {
-        'usuario': usuario
-    }
+    contexto = {"usuario": usuario}
 
-    return render(
-        request,
-        'usuario/editar_perfil.html',
-        contexto
-    )
+    return render(request, "usuario/editar_perfil.html", contexto)
+
 
 @login_required
 def trocar_senha(request):
@@ -366,12 +314,9 @@ def trocar_senha(request):
     Função para o usuário trocar a senha de acesso ao sistema.
     """
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        form = PasswordChangeForm(
-            user=request.user,
-            data=request.POST
-        )
+        form = PasswordChangeForm(user=request.user, data=request.POST)
 
         if form.is_valid():
 
@@ -379,29 +324,20 @@ def trocar_senha(request):
 
             update_session_auth_hash(request, usuario)
 
-            messages.success(
-                request,
-                'Sua senha foi alterada com sucesso!'
-            )
+            messages.success(request, "Sua senha foi alterada com sucesso!")
 
-            return redirect('meu_perfil')
+            return redirect("meu_perfil")
 
         else:
 
-            messages.error(
-                request,
-                'Verifique os dados informados e tente novamente.'
-            )
+            messages.error(request, "Verifique os dados informados e tente novamente.")
 
     else:
 
         form = PasswordChangeForm(user=request.user)
 
-    return render(
-        request,
-        'usuario/trocar_senha.html',
-        {'form': form}
-    )
+    return render(request, "usuario/trocar_senha.html", {"form": form})
+
 
 def minhas_reivindicacoes(request):
     """
@@ -459,10 +395,3 @@ def minhas_reivindicacoes(request):
     }
 
     return render(request, "usuario/minhas_reivindicacoes.html", contexto)
-
-
-
-
-
-
-
