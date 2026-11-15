@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from .views import index, login_view, logout_view, selecionar_instituicao, esqueci_senha_view
+from findlog.views.adm_views import novo_usuario_instituicao, novo_servidor_instituicao
 
 
 urlpatterns = [
@@ -29,6 +30,8 @@ urlpatterns = [
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("selecionar-instituicao/", selecionar_instituicao, name="selecionar_instituicao"),
+    path("convite/<str:token>/novo-usuario/", novo_usuario_instituicao, name="novo_usuario_instituicao"),
+    path("convite/<str:token>/novo-servidor/", novo_servidor_instituicao, name="novo_servidor_instituicao"),
     path("esqueci-senha/", esqueci_senha_view, name="recuperar_senha"),
     path('', index, name='home')
 ]

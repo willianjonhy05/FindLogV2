@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 from ..models import Item, Reivindicacao, Categoria, Instituicao
 
@@ -12,42 +14,143 @@ from ..decorators import usuario_required
 
 @usuario_required
 def usuario_feed(request):
-    """"
-    Essa é a função principal que o usuário vai acessar assim que logar no sistema. 
-    Ela vai mostrar os itens, encontrados na instituição que ela é vinculada e
-    que estão disponíveis para reivindicação.
     """
-    
+    Essa é a função principal que o usuário vai acessar assim que logar no sistema.
+    Ela vai mostrar os itens encontrados na instituição a que ele está vinculado e
+    que estão disponíveis para reivindicação, com suporte a pesquisa por nome.
+    """
+    usuario = request.user
     cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
 
     if not instituicao:
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
         return redirect("login")
 
-    itens = Item.objects.filter(instituicao=instituicao).order_by("-data_registro")
+    itens = (
+        Item.objects.filter(
+            instituicao=instituicao,
+            status=Item.StatusItem.ENCONTRADO,
+        )
+        .select_related("categoria", "local")
+        .order_by("-data_registro")
+    )
+
+    # Pesquisa por nome do item
+    termo_busca = request.GET.get("q", "").strip()
+    if termo_busca:
+        itens = itens.filter(nome__icontains=termo_busca)
 
     contexto = {
-        'itens': itens,
+        "instituicao": instituicao,
+        "itens": itens,
+        "termo_busca": termo_busca,
     }
 
-    return render(request, 'usuario/feed.html', contexto)
+    return render(request, "usuario/feed.html", contexto)
+
+
+@usuario_required
+def usuario_feed_por_categoria(request, slug):
+    """
+    Exibe os itens encontrados na instituição vinculada ao usuário filtrados por
+    uma categoria específica, mantendo a pesquisa por nome.
+    """
+    usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
+        return redirect("login")
+
+    # Busca a categoria pelo slug garantindo que esteja ativa
+    categoria = get_object_or_404(Categoria, slug=slug, ativa=True)
+
+    # Filtra os itens disponíveis daquela instituição e categoria
+    itens = (
+        Item.objects.filter(
+            instituicao=instituicao,
+            categoria=categoria,
+            status=Item.StatusItem.ENCONTRADO,
+        )
+        .select_related("categoria", "local")
+        .order_by("-data_registro")
+    )
+
+    # Pesquisa por nome do item dentro da categoria selecionada
+    termo_busca = request.GET.get("q", "").strip()
+    if termo_busca:
+        itens = itens.filter(nome__icontains=termo_busca)
+
+    # Lista de categorias ativas para renderizar filtros/chips no feed
+    categorias = Categoria.objects.filter(ativa=True).order_by("nome")
+
+    contexto = {
+        "instituicao": instituicao,
+        "categoria_ativa": categoria,
+        "categorias": categorias,
+        "itens": itens,
+        "termo_busca": termo_busca,
+    }
+
+    return render(request, "usuario/feed.html", contexto)
 
 
 @usuario_required
 def detalhar_item(request, uuid):
+    """
+    Exibe os detalhes de um item da instituição vinculada ao usuário
+    e verifica se ele já possui uma reivindicação ativa para este objeto.
+    """
+    usuario = request.user
     cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
 
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
-        return redirect('servidor_painel')
+        return redirect("login")
 
-    item = get_object_or_404(Item, instituicao=instituicao, uuid=uuid)
+    # Busca o item garantindo que pertence à mesma instituição do usuário
+    item = get_object_or_404(
+        Item.objects.select_related("categoria", "local"),
+        instituicao=instituicao,
+        uuid=uuid,
+    )
+
+    # Verifica se o usuário já abriu uma reivindicação para este item
+    reivindicacao_existente = Reivindicacao.objects.filter(
+        autor=usuario,
+        item=item,
+        instituicao=instituicao,
+    ).first()
 
     context = {
-        "item": item
-    }    
+        "instituicao": instituicao,
+        "item": item,
+        "reivindicacao_existente": reivindicacao_existente,
+        "pode_reivindicar": (
+            item.status == Item.StatusItem.ENCONTRADO and not reivindicacao_existente
+        ),
+    }
 
     return render(request, "usuario/item.html", context)
 
@@ -147,44 +250,6 @@ def reivindicar_item(request, codigo_item):
         {'item': item}
     )
 
-
-@login_required
-def itens_por_categoria(request, categoria):
-    """
-    Essa é a função que o usuário vai acessar para mostrar os itens, 
-    encontrados na instituição que ele é vinculado de determinada categoria
-    que estão disponíveis para reivindicação.
-    """
-
-    instituicoes = request.user.instituicao.filter(ativo=True)
-
-    categoria_obj = get_object_or_404(
-        Categoria,
-        slug=categoria,
-        ativa=True
-    )
-
-    itens = Item.objects.filter(
-        instituicao__in=instituicoes,
-        categoria=categoria_obj,
-        status=Item.StatusItem.ENCONTRADO
-    ).select_related(
-        'categoria',
-        'instituicao',
-        'local'
-    ).order_by('-data_registro')
-
-    contexto = {
-        'itens': itens,
-        'categoria_atual': categoria_obj,
-        'quantidade': itens.count()
-    }
-
-    return render(
-        request,
-        'usuario/categoria.html',
-        contexto
-    )
 
 @login_required
 def meu_perfil(request):
@@ -338,26 +403,62 @@ def trocar_senha(request):
         {'form': form}
     )
 
-@login_required
 def minhas_reivindicacoes(request):
-    """"
-    Essa é a função que o usuário vai acessar para ver as reivindicações que ele fez. 
-    """     
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    """
+    Exibe as reivindicações feitas pelo usuário autenticado na instituição ativa,
+    com suporte a busca por nome do item ou protocolo, filtro de status e paginação.
+    """
     usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
 
     if not instituicao:
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
         return redirect("login")
 
-    reivindicacoes = Reivindicacao.objects.filter(autor=usuario, instituicao=instituicao).order_by("-data")
+    # Queryset base ordenado das mais recentes para as mais antigas
+    reivindicacoes_qs = (
+        Reivindicacao.objects.filter(autor=usuario, instituicao=instituicao)
+        .select_related("item", "item__categoria", "local_devolucao")
+        .order_by("-data")
+    )
+
+    # 1. Pesquisa por nome do item ou número de protocolo
+    termo_busca = request.GET.get("q", "").strip()
+    if termo_busca:
+        filtro_busca = Q(item__nome__icontains=termo_busca)
+        protocolo_limpo = termo_busca.lstrip("#")
+        if protocolo_limpo.isdigit():
+            filtro_busca |= Q(protocolo=int(protocolo_limpo))
+        reivindicacoes_qs = reivindicacoes_qs.filter(filtro_busca)
+
+    # 2. Filtro por status da reivindicação
+    status_filtro = request.GET.get("status", "").strip()
+    if status_filtro.isdigit():
+        reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
+
+    # 3. Paginação (10 itens por página)
+    paginator = Paginator(reivindicacoes_qs, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     contexto = {
-        'reivindicacoes': reivindicacoes,
+        "instituicao": instituicao,
+        "reivindicacoes": page_obj,
+        "page_obj": page_obj,
+        "termo_busca": termo_busca,
+        "status_filtro": status_filtro,
+        "status_choices": Reivindicacao.StatusReivindicacao.choices,
+        "total_reivindicacoes": paginator.count,
     }
 
-    return render(request, 'usuario/minhas_reivindicacoes.html', contexto)
+    return render(request, "usuario/minhas_reivindicacoes.html", contexto)
 
 
 

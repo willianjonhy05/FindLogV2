@@ -13,8 +13,10 @@ from ..forms import (
     EditarMeuPerfilForm,
     TrocarMinhaSenhaForm,
     InstituicaoUpdateForm,
+    AutoCadastroUsuarioForm,
+    AutoCadastroServidorForm
 )
-from ..utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
+from ..utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil, _obter_instituicao_por_token
 from django.contrib.auth import update_session_auth_hash
 import re
 from ..decorators import superuser_required
@@ -823,3 +825,84 @@ def trocar_minha_senha(request):
         form = TrocarMinhaSenhaForm(user=request.user)
 
     return render(request, "adm/trocar_senha.html", {"form": form})
+
+def novo_usuario_instituicao(request, token):
+    """
+    Link público com token assinado para autocadastro de Usuários Comuns.
+    """
+    if request.user.is_authenticated:
+        messages.info(request, "Você já está autenticado no sistema.")
+        return redirect("login")
+
+    instituicao = _obter_instituicao_por_token(token)
+
+    if request.method == "POST":
+        dados_post = request.POST.copy()
+        if "cpf" in dados_post:
+            dados_post["cpf"] = apenas_digitos(dados_post["cpf"])
+        if "telefone" in dados_post:
+            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
+
+        form = AutoCadastroUsuarioForm(dados_post, instituicao=instituicao)
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                f"Cadastro realizado com sucesso na unidade {instituicao.nome}! "
+                "Faça login abaixo utilizando o e-mail e a senha cadastrados.",
+            )
+            return redirect("login")
+
+        messages.error(request, "Não foi possível concluir seu cadastro. Verifique os campos destacados.")
+    else:
+        form = AutoCadastroUsuarioForm(instituicao=instituicao)
+
+    context = {
+        "form": form,
+        "instituicao": instituicao,
+        "token": token,
+        "tipo_cadastro": "Usuário",
+    }
+    return render(request, "public/autocadastro_usuario.html", context)
+
+
+def novo_servidor_instituicao(request, token):
+    """
+    Link público com token assinado para autocadastro de Servidores (aguarda aprovação).
+    """
+    if request.user.is_authenticated:
+        messages.info(request, "Você já está autenticado no sistema.")
+        return redirect("login")
+
+    instituicao = _obter_instituicao_por_token(token)
+
+    if request.method == "POST":
+        dados_post = request.POST.copy()
+        if "cpf" in dados_post:
+            dados_post["cpf"] = apenas_digitos(dados_post["cpf"])
+        if "telefone" in dados_post:
+            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
+
+        form = AutoCadastroServidorForm(dados_post, instituicao=instituicao)
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                f"Solicitação de cadastro enviada com sucesso para {instituicao.nome}! "
+                "Por segurança, seu acesso passará por aprovação da administração da unidade antes do primeiro login.",
+            )
+            return redirect("login")
+
+        messages.error(request, "Não foi possível concluir o cadastro. Verifique os campos destacados.")
+    else:
+        form = AutoCadastroServidorForm(instituicao=instituicao)
+
+    context = {
+        "form": form,
+        "instituicao": instituicao,
+        "token": token,
+        "tipo_cadastro": "Servidor",
+    }
+    return render(request, "public/autocadastro_servidor.html", context)

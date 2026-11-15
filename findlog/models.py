@@ -9,6 +9,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from datetime import date
+from django.core import signing
+from django.core.signing import BadSignature, SignatureExpired
 
 from .utils import (
     apenas_digitos,
@@ -61,6 +63,25 @@ class Instituicao(models.Model):
     @property
     def telefone_formatado(self):
         return formatar_telefone(self.telefone)
+
+    @property
+    def token_convite(self):
+        """Gera um token assinado e seguro a partir do CNPJ (sem alterar o banco)."""
+        signer = signing.TimestampSigner(salt="findlog-convite-instituicao")
+        return signer.sign(self.cnpj)
+
+    @classmethod
+    def obter_por_token(cls, token, max_age=None):
+        """
+        Valida o token assinado e retorna a Instituicao ativa correspondente.
+        max_age (opcional): tempo em segundos para expiração (ex: 86400 * 7 = 7 dias).
+        """
+        signer = signing.TimestampSigner(salt="findlog-convite-instituicao")
+        try:
+            cnpj = signer.unsign(token, max_age=max_age)
+            return cls.objects.filter(cnpj=cnpj, ativo=True).first()
+        except (BadSignature, SignatureExpired):
+            return None    
 
     def __str__(self):
         return self.nome
@@ -381,6 +402,29 @@ class Reivindicacao(models.Model):
     def __str__(self):
         return f"Reivindicação #{self.protocolo}"
 
+    def clean(self):
+        super().clean()
+        if self.item_id:
+            # 1. Bloqueia se o item já foi devolvido
+            if self.item.status == Item.StatusItem.DEVOLVIDO:
+                raise ValidationError(
+                    {"item": "Este item já foi devolvido ao proprietário e não aceita novas reivindicações."}
+                )
+
+            # 2. Bloqueia se o item não estiver disponível (status != ENCONTRADO)
+            if not self.pk and self.item.status != Item.StatusItem.ENCONTRADO:
+                raise ValidationError(
+                    {"item": "Este item não está disponível para reivindicação no momento."}
+                )
+
+            # 3. Garante que o autor e o item pertencem à mesma instituição
+            if self.instituicao_id and self.item.instituicao_id != self.instituicao_id:
+                raise ValidationError("A reivindicação deve pertencer à mesma instituição do item.")    
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)    
+    
     class Meta:
         verbose_name = "Reivindicação"
         verbose_name_plural = "Reivindicações"

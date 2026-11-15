@@ -74,6 +74,106 @@
                 </div>
             </div>
         </div>
+
+        <!-- ================================================================
+             LINKS DE CONVITE PARA AUTOCADASTRO (TOKEN ASSINADO)
+             ================================================================ -->
+        <div class="col-12">
+            <div class="card table-card p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-3 gap-2">
+                    <div>
+                        <h5 class="card-section-title mb-0">
+                            <i class="bi bi-link-45deg me-1 text-primary"></i>Links de Convite para Autocadastro
+                        </h5>
+                        <small class="text-muted">Compartilhe os links abaixo para que usuários e servidores se vinculem diretamente a esta unidade sem expor o CNPJ.</small>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                        <i class="bi bi-shield-lock-fill me-1"></i>Token Assinado Ativo
+                    </span>
+                </div>
+
+                {% if not instituicao.ativo %}
+                    <div class="alert alert-warning border-0 small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <strong>Atenção:</strong> Como esta instituição está <strong>inativa</strong>, os links de convite abaixo permanecerão bloqueados até que a unidade seja reativada.
+                    </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <!-- Link para Usuários Comuns -->
+                    <div class="col-12 col-lg-6">
+                        <div class="p-3 rounded-3 bg-light border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label for="linkConviteUsuario" class="form-label form-label-custom mb-0 text-dark">
+                                        <i class="bi bi-people-fill me-1 text-primary"></i> Convite para Usuários (Alunos / Público)
+                                    </label>
+                                    <span class="badge bg-success-subtle text-success small">Acesso Imediato</span>
+                                </div>
+                                <p class="text-muted small mb-3">
+                                    Ideal para divulgar em murais, QR Codes ou grupos de alunos para consulta e reivindicação de itens.
+                                </p>
+                            </div>
+                            <div class="input-group">
+                                <input type="text"
+                                       id="linkConviteUsuario"
+                                       class="form-control form-control-sm bg-white font-monospace text-secondary"
+                                       data-path="{% url 'novo_usuario_instituicao' instituicao.token_convite %}"
+                                       value="{% url 'novo_usuario_instituicao' instituicao.token_convite %}"
+                                       readonly>
+                                <button type="button"
+                                        class="btn btn-primary-custom btn-sm btn-copiar-link"
+                                        data-target="linkConviteUsuario">
+                                    <i class="bi bi-clipboard me-1"></i> Copiar
+                                </button>
+                                <a href="{% url 'novo_usuario_instituicao' instituicao.token_convite %}"
+                                   target="_blank"
+                                   class="btn btn-secondary-custom btn-sm"
+                                   title="Abrir formulário em nova aba">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Link para Servidores -->
+                    <div class="col-12 col-lg-6">
+                        <div class="p-3 rounded-3 bg-light border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label for="linkConviteServidor" class="form-label form-label-custom mb-0 text-dark">
+                                        <i class="bi bi-person-badge-fill me-1 text-warning-emphasis"></i> Convite para Servidores (Equipe)
+                                    </label>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis small">Requer Aprovação</span>
+                                </div>
+                                <p class="text-muted small mb-3">
+                                    Compartilhe apenas com a equipe da unidade. Novos servidores nascem inativos até aprovação da gestão.
+                                </p>
+                            </div>
+                            <div class="input-group">
+                                <input type="text"
+                                       id="linkConviteServidor"
+                                       class="form-control form-control-sm bg-white font-monospace text-secondary"
+                                       data-path="{% url 'novo_servidor_instituicao' instituicao.token_convite %}"
+                                       value="{% url 'novo_servidor_instituicao' instituicao.token_convite %}"
+                                       readonly>
+                                <button type="button"
+                                        class="btn btn-primary-custom btn-sm btn-copiar-link"
+                                        data-target="linkConviteServidor">
+                                    <i class="bi bi-clipboard me-1"></i> Copiar
+                                </button>
+                                <a href="{% url 'novo_servidor_instituicao' instituicao.token_convite %}"
+                                   target="_blank"
+                                   class="btn btn-secondary-custom btn-sm"
+                                   title="Abrir formulário em nova aba">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -110,4 +210,5 @@
 
 {% block scripts %}
 <script src="{% static 'js/confirmar_exclusao.js' %}"></script>
+<script src="{% static 'js/copiar_links_convite.js' %}"></script>
 {% endblock %}

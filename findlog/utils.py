@@ -5,8 +5,9 @@ import secrets
 import unicodedata
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-
-from django.shortcuts import redirect
+from .models import Instituicao
+from django.shortcuts import redirect, get_object_or_404
+from django.http import Http404
 
 
 def apenas_digitos(valor: str) -> str:
@@ -164,3 +165,12 @@ def gerar_senha_provisoria(tamanho=10):
     """Gera uma senha segura com letras maiúsculas, minúsculas e dígitos."""
     caracteres = string.ascii_letters + string.digits + "@#$%"
     return "".join(secrets.choice(caracteres) for _ in range(tamanho))
+
+
+def _obter_instituicao_por_token(token):
+    """Decodifica e valida o token assinado da instituição."""
+    # Se quiser que o link expire em 30 dias, passe: max_age=60 * 60 * 24 * 30
+    instituicao = Instituicao.obter_por_token(token, max_age=None)
+    if not instituicao:
+        raise Http404("Link de convite inválido ou expirado.")
+    return instituicao

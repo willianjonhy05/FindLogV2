@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.contrib import messages
-from ..forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm, ServidorItemForm
+from ..forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm, ServidorItemForm, ServidorAnaliseReivindicacaoForm
 from ..models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
 from ..decorators import servidor_required
 from django.core.paginator import Paginator
@@ -520,8 +521,256 @@ def servidor_cadastra_item(request):
     return render(request, "serv/cadastrar_item.html", context)
 
 
-def servidor_detalhes_item():
-    pass
+@servidor_required
+def servidor_detalhes_item(request, codigo):
+    """
+    Exibe os detalhes completos de um item da instituição ativa do servidor
+    e lista todas as reivindicações registradas para este objeto (com filtro por status e paginação).
+    """
+    usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    # Busca o item garantindo que pertence à instituição do servidor
+    item = get_object_or_404(
+        Item.objects.select_related(
+            "categoria",
+            "local",
+            "local_guardado",
+            "usuario_registro",
+            "dono",
+        ),
+        codigo=codigo,
+        instituicao=instituicao,
+    )
+
+    # Lista todas as reivindicações vinculadas a este item
+    reivindicacoes_qs = (
+        Reivindicacao.objects.filter(item=item, instituicao=instituicao)
+        .select_related("autor", "responsavel_admin", "local_devolucao")
+        .order_by("-data")
+    )
+
+    # Filtro opcional por status da reivindicação
+    status_filtro = request.GET.get("status", "").strip()
+    if status_filtro.isdigit():
+        reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
+
+    # Paginação das reivindicações (10 por página)
+    paginator = Paginator(reivindicacoes_qs, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "instituicao": instituicao,
+        "item": item,
+        "reivindicacoes": page_obj,
+        "page_obj": page_obj,
+        "status_filtro": status_filtro,
+        "status_choices": Reivindicacao.StatusReivindicacao.choices,
+        "total_reivindicacoes": paginator.count,
+    }
+
+    return render(request, "serv/detalhar_item.html", context)
+
+
+@servidor_required
+def servidor_detalhar_reivindicacao(request, protocolo):
+    """
+    Exibe todos os detalhes de uma reivindicação pelo protocolo, permitindo que o
+    servidor analise, aprove, rejeite ou conclua a entrega do item.
+    """
+    usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    # Busca a reivindicação garantindo o vínculo institucional
+    reivindicacao = get_object_or_404(
+        Reivindicacao.objects.select_related(
+            "autor",
+            "item",
+            "item__categoria",
+            "item__local",
+            "item__local_guardado",
+            "responsavel_admin",
+            "local_devolucao",
+        ),
+        protocolo=protocolo,
+        instituicao=instituicao,
+    )
+
+    # Lista outras reivindicações concorrentes para o mesmo item (útil para comparação)
+    outras_reivindicacoes = (
+        Reivindicacao.objects.filter(
+            item=reivindicacao.item,
+            instituicao=instituicao,
+        )
+        .exclude(protocolo=reivindicacao.protocolo)
+        .select_related("autor")
+        .order_by("-data")
+    )
+
+    if request.method == "POST":
+        form = ServidorAnaliseReivindicacaoForm(
+            request.POST,
+            instance=reivindicacao,
+            instituicao=instituicao,
+        )
+        if form.is_valid():
+            reiv_atualizada = form.save(commit=False)
+            reiv_atualizada.responsavel_admin = usuario
+
+            # Se marcada como CONCLUÍDA, registra data e atualiza o status do Item para DEVOLVIDO
+            if reiv_atualizada.status == Reivindicacao.StatusReivindicacao.CONCLUIDA:
+                agora = timezone.now()
+                if not reiv_atualizada.data_devolucao:
+                    reiv_atualizada.data_devolucao = agora
+
+                item = reiv_atualizada.item
+                item.status = Item.StatusItem.DEVOLVIDO
+                item.dono = reiv_atualizada.autor
+                item.data_devolucao = agora
+                item.save(update_fields=["status", "dono", "data_devolucao"])
+
+            reiv_atualizada.save()
+
+            messages.success(
+                request,
+                f"Reivindicação #{reiv_atualizada.protocolo} atualizada para '{reiv_atualizada.get_status_display()}'.",
+            )
+            return redirect(
+                "servidor_detalhar_reivindicacao",
+                protocolo=reiv_atualizada.protocolo,
+            )
+
+        messages.error(request, "Verifique os erros apontados no formulário de análise.")
+    else:
+        # Sugere por padrão a sala onde o item está guardado caso ainda não haja local de devolução
+        dados_iniciais = {}
+        if not reivindicacao.local_devolucao and reivindicacao.item.local_guardado:
+            dados_iniciais["local_devolucao"] = reivindicacao.item.local_guardado
+
+        form = ServidorAnaliseReivindicacaoForm(
+            instance=reivindicacao,
+            initial=dados_iniciais,
+            instituicao=instituicao,
+        )
+
+    context = {
+        "instituicao": instituicao,
+        "reivindicacao": reivindicacao,
+        "item": reivindicacao.item,
+        "outras_reivindicacoes": outras_reivindicacoes,
+        "form": form,
+    }
+
+    return render(request, "serv/detalhar_reivindicacao.html", context)
 
 def servidor_atualizar_item():
     pass
+
+
+@servidor_required
+def servidor_listar_reivindicacoes(request):
+    """
+    Lista todas as reivindicações da instituição vinculada ao servidor autenticado,
+    ordenadas das mais recentes para as mais antigas, com suporte a:
+    - Busca por protocolo, nome/código do item, nome/CPF/e-mail do solicitante ou descrição do pedido
+    - Filtro por status da reivindicação
+    - Filtro para exibir apenas reivindicações de itens cadastrados pelo próprio servidor
+    - Paginação (12 itens por página)
+    """
+    usuario = request.user
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo ativo com nenhuma instituição.")
+        return redirect("servidor_painel")
+
+    # Queryset base filtrado pela instituição do servidor e ordenado das mais recentes
+    reivindicacoes_qs = (
+        Reivindicacao.objects.filter(instituicao=instituicao)
+        .select_related(
+            "autor",
+            "item",
+            "item__categoria",
+            "item__usuario_registro",
+            "responsavel_admin",
+            "local_devolucao",
+        )
+        .order_by("-data")
+    )
+
+    # 1. Pesquisa textual (Protocolo, Item, Solicitante ou Descrição do Pedido)
+    termo_busca = request.GET.get("q", "").strip()
+    if termo_busca:
+        filtro_busca = (
+            Q(item__nome__icontains=termo_busca)
+            | Q(item__codigo__icontains=termo_busca)
+            | Q(autor__nome__icontains=termo_busca)
+            | Q(autor__email__icontains=termo_busca)
+            | Q(autor__cpf__icontains=termo_busca)
+            | Q(pedido__icontains=termo_busca)
+        )
+        protocolo_limpo = termo_busca.lstrip("#")
+        if protocolo_limpo.isdigit():
+            filtro_busca |= Q(protocolo=int(protocolo_limpo))
+
+        reivindicacoes_qs = reivindicacoes_qs.filter(filtro_busca)
+
+    # 2. Filtro por Status da Reivindicação
+    status_filtro = request.GET.get("status", "").strip()
+    if status_filtro.isdigit():
+        reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
+
+    # 3. Filtro: Apenas itens cadastrados pelo servidor autenticado (?meus_itens=1)
+    apenas_meus_itens = request.GET.get("meus_itens", "").strip() == "1"
+    if apenas_meus_itens:
+        reivindicacoes_qs = reivindicacoes_qs.filter(item__usuario_registro=usuario)
+
+    # 4. Paginação (12 registros por página)
+    paginator = Paginator(reivindicacoes_qs, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "titulo": "Reivindicações da Unidade",
+        "subtitulo": f"Solicitações de devolução registradas em {instituicao.nome}",
+        "instituicao": instituicao,
+        "reivindicacoes": page_obj,
+        "page_obj": page_obj,
+        "termo_busca": termo_busca,
+        "status_filtro": status_filtro,
+        "apenas_meus_itens": apenas_meus_itens,
+        "status_choices": Reivindicacao.StatusReivindicacao.choices,
+        "total_reivindicacoes": paginator.count,
+    }
+
+    return render(request, "serv/listar_reivindicacoes.html", context)

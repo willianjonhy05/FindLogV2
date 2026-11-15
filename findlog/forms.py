@@ -1,7 +1,7 @@
 
 from django import forms
 from findlog.models import Contato, Instituicao, Categoria, Perfil, Sala, Item, Reivindicacao, VinculoInstituicao
-from .utils import apenas_digitos
+from .utils import apenas_digitos, validar_cpf
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import authenticate
 import re
@@ -758,3 +758,243 @@ class EsqueciSenhaForm(forms.Form):
         if len(apenas_num) == 11 and "@" not in dado:
             return apenas_num
         return dado.lower()        
+
+
+class ServidorAnaliseReivindicacaoForm(forms.ModelForm):
+    class Meta:
+        model = Reivindicacao
+        fields = [
+            "status",
+            "local_devolucao",
+            "resposta_admin",
+        ]
+        widgets = {
+            "status": forms.Select(attrs={
+                "class": "form-select form-select-custom",
+                "id": "id_status_reivindicacao",
+            }),
+            "local_devolucao": forms.Select(attrs={
+                "class": "form-select form-select-custom",
+                "id": "id_local_devolucao",
+            }),
+            "resposta_admin": forms.Textarea(attrs={
+                "class": "form-control form-control-custom",
+                "rows": 4,
+                "placeholder": "Informe o parecer da análise, instruções de retirada ou motivo da recusa...",
+            }),
+        }
+
+    def __init__(self, *args, instituicao=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if instituicao:
+            self.fields["local_devolucao"].queryset = Sala.objects.filter(
+                instituicao=instituicao,
+                ativa=True,
+            ).order_by("predio", "nome")
+        else:
+            self.fields["local_devolucao"].queryset = Sala.objects.none()
+
+        self.fields["local_devolucao"].empty_label = "Selecione a sala para retirada/devolução..."
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        local_devolucao = cleaned_data.get("local_devolucao")
+        resposta_admin = cleaned_data.get("resposta_admin", "").strip()
+
+        # Exige local de retirada caso seja Aprovada
+        if status == Reivindicacao.StatusReivindicacao.APROVADA and not local_devolucao:
+            self.add_error(
+                "local_devolucao",
+                "Informe a sala onde o usuário deverá comparecer para retirar o item.",
+            )
+
+        # Exige justificativa caso seja Rejeitada
+        if status == Reivindicacao.StatusReivindicacao.REJEITADA and not resposta_admin:
+            self.add_error(
+                "resposta_admin",
+                "É obrigatório informar o motivo da rejeição para o solicitante.",
+            )
+
+        return cleaned_data    
+
+
+
+class AutoCadastroBaseForm(forms.ModelForm):
+    senha = forms.CharField(
+        label="Crie uma Senha",
+        min_length=6,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "Mínimo de 6 caracteres",
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+    confirmar_senha = forms.CharField(
+        label="Confirme sua Senha",
+        min_length=6,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "Repita a senha digitada",
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+
+    class Meta:
+        model = Perfil
+        fields = ["nome", "email", "cpf", "telefone", "codigo", "data_nascimento"]
+        widgets = {
+            "nome": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "placeholder": "Seu nome completo",
+                    "required": True,
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "placeholder": "seu.email@exemplo.com",
+                    "required": True,
+                }
+            ),
+            "cpf": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom cpf-format",
+                    "placeholder": "000.000.000-00",
+                    "required": True,
+                }
+            ),
+            "telefone": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom telefone-format",
+                    "placeholder": "(00) 00000-0000",
+                }
+            ),
+            "codigo": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "placeholder": "Matrícula ou SIAPE (opcional)",
+                }
+            ),
+            "data_nascimento": forms.DateInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "type": "date",
+                }
+            ),
+        }
+
+    def __init__(self, *args, instituicao=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instituicao = instituicao
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip().lower()
+        if Perfil.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "Este e-mail já está cadastrado no sistema. Faça login para vincular outra instituição."
+            )
+        return email
+
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get("cpf", "")
+        cpf_limpo = apenas_digitos(cpf)
+        validar_cpf(cpf_limpo)  # Usa seu validador matemático do utils.py
+        if Perfil.objects.filter(cpf=cpf_limpo).exists():
+            raise forms.ValidationError(
+                "Este CPF já possui cadastro no FindLog. Caso já tenha conta, faça login."
+            )
+        return cpf_limpo
+
+    def clean_telefone(self):
+        telefone = self.cleaned_data.get("telefone", "")
+        return apenas_digitos(telefone) if telefone else ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        senha = cleaned_data.get("senha")
+        confirmar_senha = cleaned_data.get("confirmar_senha")
+
+        if senha and confirmar_senha and senha != confirmar_senha:
+            self.add_error("confirmar_senha", "As senhas informadas não coincidem.")
+
+        return cleaned_data    
+
+
+class AutoCadastroUsuarioForm(AutoCadastroBaseForm):
+    """Formulário público para autocadastro de Usuários Comuns (Alunos/Visitantes)."""
+
+    def save(self, commit=True):
+        usuario = super().save(commit=False)
+        usuario.tipo = Perfil.TipoUsuario.USUARIO
+        usuario.sala = None
+        usuario.ativo = True
+        usuario.is_staff = False
+        usuario.is_superuser = False
+        usuario.set_password(self.cleaned_data["senha"])
+
+        if commit:
+            usuario.save()
+            if self.instituicao:
+                VinculoInstituicao.objects.get_or_create(
+                    perfil=usuario,
+                    instituicao=self.instituicao,
+                )
+        return usuario    
+
+
+class AutoCadastroServidorForm(AutoCadastroBaseForm):
+    """Formulário público para autocadastro de Servidores (aguarda aprovação institucional)."""
+
+    sala = forms.ModelChoiceField(
+        queryset=Sala.objects.none(),
+        required=True,
+        empty_label="Selecione seu setor / sala de atuação...",
+        label="Sala / Setor de Atuação",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select form-select-custom",
+                "required": True,
+            }
+        ),
+    )
+
+    class Meta(AutoCadastroBaseForm.Meta):
+        fields = AutoCadastroBaseForm.Meta.fields + ["sala"]
+
+    def __init__(self, *args, instituicao=None, **kwargs):
+        super().__init__(*args, instituicao=instituicao, **kwargs)
+        if self.instituicao:
+            self.fields["sala"].queryset = Sala.objects.filter(
+                instituicao=self.instituicao,
+                ativa=True,
+            ).order_by("predio", "andar", "nome")
+
+    def clean_sala(self):
+        sala = self.cleaned_data.get("sala")
+        if sala and self.instituicao and sala.instituicao != self.instituicao:
+            raise forms.ValidationError("A sala selecionada não pertence a esta instituição.")
+        return sala
+
+    def save(self, commit=True):
+        servidor = super().save(commit=False)
+        servidor.tipo = Perfil.TipoUsuario.SERVIDOR
+        servidor.ativo = False          # Nasce bloqueado aguardando aprovação do Admin ou Servidor da unidade
+        servidor.is_staff = False
+        servidor.is_superuser = False
+        servidor.set_password(self.cleaned_data["senha"])
+
+        if commit:
+            servidor.save()
+            if self.instituicao:
+                VinculoInstituicao.objects.get_or_create(
+                    perfil=servidor,
+                    instituicao=self.instituicao,
+                )
+        return servidor        

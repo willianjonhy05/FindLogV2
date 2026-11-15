@@ -60,6 +60,8 @@ No seu terminal, com o ambiente virtual ativado execute a sequencia de dois coma
 python manage.py makemigrations
 
 python manage.py migrate
+
+python scripts/popular_tudo.py
 ```
 
 

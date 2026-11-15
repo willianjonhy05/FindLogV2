@@ -37,7 +37,8 @@ from ..views.adm_views import (
     apagar_reivindicacao,
     meu_perfil,
     trocar_minha_senha,
-    editar_meu_perfil
+    editar_meu_perfil,
+
 )
 
 

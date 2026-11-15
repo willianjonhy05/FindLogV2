@@ -18,7 +18,9 @@ from ..views.servidor_views import (
     servidor_cadastra_item,
     servidor_detalhes_item,
     servidor_atualizar_item,
-    servidor_excluir_sala
+    servidor_excluir_sala,
+    servidor_detalhar_reivindicacao,
+    servidor_listar_reivindicacoes
 )
 
 urlpatterns = [
@@ -43,6 +45,9 @@ urlpatterns = [
     path("itens/novo/", servidor_cadastra_item, name="servidor_cadastra_item"),
     path("itens/<str:codigo>/", servidor_detalhes_item, name="servidor_detalhes_item"),
     path("itens/<str:codigo>/editar/", servidor_atualizar_item, name="servidor_atualizar_item"),
+
+    path("reividicacoes/", servidor_listar_reivindicacoes, name="servidor_listar_reivindicacoes"),
+    path("reivindicacoes/<int:protocolo>/", servidor_detalhar_reivindicacao, name="servidor_detalhar_reivindicacao"),
 
     path("categorias/<int:categoria_id>/itens/", servidor_itens_por_categoria, name="servidor_itens_por_categoria"),
 

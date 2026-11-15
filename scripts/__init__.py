@@ -1,0 +1,1 @@
+# Pacote de scripts utilitários para popular o banco de dados do FindLog
