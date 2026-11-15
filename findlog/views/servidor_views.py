@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm, ServidorItemForm
-from .models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
-from .decorators import servidor_required
+from ..forms import ServidorSalaForm, ServidorUpdateSalaForm, ServidorCadastroColegaForm, ServidorItemForm
+from ..models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
+from ..decorators import servidor_required
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from .utils import _obter_instituicao_do_servidor
+from ..utils import _obter_instituicao_do_servidor
 from django.db.models import Q
 import re
 

@@ -1,4 +1,4 @@
-from .usuario_views import usuario_feed
+from ..views.usuario_views import usuario_feed
 from django.urls import path
 
 

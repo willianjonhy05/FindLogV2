@@ -23,7 +23,7 @@ from .views import index, login_view, logout_view, selecionar_instituicao, esque
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('adm/', include('findlog.adm_urls')),
+    path('adm/', include('findlog.urls.adm_urls')),
     path('painel/', include('findlog.servidor_urls')),
     path('findlog/', include('findlog.usuario_urls')),
     path("login/", login_view, name="login"),

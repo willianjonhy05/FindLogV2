@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivindicacao
+from ..models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivindicacao
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, ProtectedError
-from .forms import (
+from ..forms import (
     InstituicaoForm,
     CategoriaForm,
     NovoUsuarioForm,
@@ -14,10 +14,10 @@ from .forms import (
     TrocarMinhaSenhaForm,
     InstituicaoUpdateForm,
 )
-from .utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
+from ..utils import apenas_digitos, gerar_slug_unico, redirecionar_por_perfil
 from django.contrib.auth import update_session_auth_hash
 import re
-from .decorators import superuser_required
+from ..decorators import superuser_required
 
 # Create your views here.
 

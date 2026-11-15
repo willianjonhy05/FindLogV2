@@ -1,5 +1,5 @@
 from django.urls import path
-from .adm_views import (
+from ..views.adm_views import (
     dashboard_adm,
     nova_instituicao,
     lista_instituicoes,

@@ -6,7 +6,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 
-from .models import Item, Reivindicacao, Categoria, Instituicao
+from ..models import Item, Reivindicacao, Categoria, Instituicao
 
 @login_required
 def usuario_feed(request):

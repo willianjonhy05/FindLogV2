@@ -1,5 +1,5 @@
 from django.urls import path
-from .servidor_views import (
+from ..views.servidor_views import (
     servidor_painel,
     servidor_listar_itens,
     servidor_itens_por_categoria,
