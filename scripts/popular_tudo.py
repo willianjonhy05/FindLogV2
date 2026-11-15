@@ -11,6 +11,7 @@ from scripts import (
     popular_instituicoes,
     popular_salas,
     popular_categorias,
+    popular_usuarios,
     popular_contatos,
 )
 
@@ -22,6 +23,8 @@ if __name__ == "__main__":
     popular_salas.executar()
     print("\n" + "-" * 50 + "\n")
     popular_categorias.executar()
+    print("\n" + "-" * 50 + "\n")
+    popular_usuarios.executar()
     print("\n" + "-" * 50 + "\n")
     popular_contatos.executar()
     print("\n=== CONCLUÍDO COM SUCESSO ===")
