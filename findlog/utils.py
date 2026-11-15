@@ -1,7 +1,7 @@
 import re
 import string
 import random
-import secrets                         
+import secrets
 import unicodedata
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
@@ -13,7 +13,7 @@ def apenas_digitos(valor: str) -> str:
     """Remove qualquer caractere não numérico da string."""
     if not valor:
         return ""
-    return re.sub(r'\D', '', str(valor))
+    return re.sub(r"\D", "", str(valor))
 
 
 def formatar_cnpj(cnpj: str) -> str:
@@ -38,13 +38,10 @@ def remover_acentos(texto: str) -> str:
     """Remove caracteres com acento de uma string."""
     if not texto:
         return ""
-    return "".join(
-        c for c in unicodedata.normalize("NFKD", texto)
-        if not unicodedata.combining(c)
-    )
+    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c))
 
 
-def gerar_slug_unico(model_class, instancia, campo_origem='nome', campo_slug='slug') -> str:
+def gerar_slug_unico(model_class, instancia, campo_origem="nome", campo_slug="slug") -> str:
     """Gera um slug único para instâncias de um model."""
     valor_origem = getattr(instancia, campo_origem, "") or "item"
     slug_base = slugify(valor_origem) or "item"
@@ -74,10 +71,11 @@ def validar_cnpj(valor):
         raise ValidationError("CNPJ inválido: deve conter 14 dígitos.")
 
 
-def gerar_codigo_aleatorio(tamanho: int = 8, caracteres: str = string.ascii_uppercase + string.digits) -> str:
+def gerar_codigo_aleatorio(
+    tamanho: int = 8, caracteres: str = string.ascii_uppercase + string.digits
+) -> str:
     """Gera uma string aleatória com o comprimento especificado."""
     return "".join(random.choices(caracteres, k=tamanho))
-
 
 
 def validar_cpf(valor: str) -> None:
@@ -115,6 +113,7 @@ def formatar_cpf(cpf: str) -> str:
         return f"{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}"
     return cpf or ""
 
+
 def obter_ip_usuario(request):
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
 
@@ -122,7 +121,6 @@ def obter_ip_usuario(request):
         return x_forwarded_for.split(",")[0].strip()
 
     return request.META.get("REMOTE_ADDR")
-
 
 
 def redirecionar_por_perfil(request, usuario):
@@ -157,7 +155,7 @@ def _obter_instituicao_do_servidor(request):
     try:
         return request.user.servidor.instituicao
     except AttributeError:
-        return getattr(request.user, 'instituicao', None)
+        return getattr(request.user, "instituicao", None)
 
 
 def gerar_senha_provisoria(tamanho=10):
@@ -168,6 +166,7 @@ def gerar_senha_provisoria(tamanho=10):
 
 def _obter_instituicao_por_token(token):
     from .models import Instituicao
+
     """Decodifica e valida o token assinado da instituição."""
     # Se quiser que o link expire em 30 dias, passe: max_age=60 * 60 * 24 * 30
     instituicao = Instituicao.obter_por_token(token, max_age=None)

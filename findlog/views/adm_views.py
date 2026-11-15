@@ -703,26 +703,30 @@ def apagar_item(request, uuid):
 
     return redirect("lista_itens")
 
-
 @superuser_required
 def lista_reivindicacoes(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
+
     reivindicacoes_query = Reivindicacao.objects.select_related(
         "autor", "item", "instituicao"
     ).order_by("-data")
 
     if termo_busca:
-        reivindicacoes_query = reivindicacoes_query.filter(
-            Q(protocolo__icontains=termo_busca)
-            | Q(autor__nome__icontains=termo_busca)
+        protocolo_limpo = termo_busca.lstrip("#")
+        filtro_busca = (
+            Q(autor__nome__icontains=termo_busca)
             | Q(autor__email__icontains=termo_busca)
             | Q(item__nome__icontains=termo_busca)
             | Q(item__codigo__iexact=termo_busca)
             | Q(pedido__icontains=termo_busca)
         )
+        if protocolo_limpo.isdigit():
+            filtro_busca |= Q(protocolo=int(protocolo_limpo))
 
-    if status_filtro and status_filtro.isdigit():
+        reivindicacoes_query = reivindicacoes_query.filter(filtro_busca)
+
+    if status_filtro.isdigit() and int(status_filtro) in Reivindicacao.StatusReivindicacao.values:
         reivindicacoes_query = reivindicacoes_query.filter(status=int(status_filtro))
 
     paginator = Paginator(reivindicacoes_query, 10)

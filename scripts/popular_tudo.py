@@ -13,11 +13,13 @@ from scripts import (
     popular_categorias,
     popular_usuarios,
     popular_contatos,
+    popular_itens,
+    popular_reivindicacoes,
 )
 
 
 if __name__ == "__main__":
-    print("=== INICIANDO POPULAÇÃO DE DADOS DO FINDLOG ===\n")
+    print("=== INICIANDO POPULAÇÃO COMPLETA DO FINDLOG ===\n")
     popular_instituicoes.executar()
     print("\n" + "-" * 50 + "\n")
     popular_salas.executar()
@@ -27,4 +29,8 @@ if __name__ == "__main__":
     popular_usuarios.executar()
     print("\n" + "-" * 50 + "\n")
     popular_contatos.executar()
-    print("\n=== CONCLUÍDO COM SUCESSO ===")
+    print("\n" + "-" * 50 + "\n")
+    popular_itens.executar()
+    print("\n" + "-" * 50 + "\n")
+    popular_reivindicacoes.executar()
+    print("\n=== BANCO POPULADO COM SUCESSO ===")

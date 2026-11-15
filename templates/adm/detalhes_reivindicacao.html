@@ -111,7 +111,11 @@
                         <span class="profile-data-label">Responsável pelo Atendimento</span>
                         <div class="profile-data-value">
                             <i class="bi bi-person-check profile-info-icon"></i>
-                            <span>{{ reivindicacao.responsavel_admin.nome|default:reivindicacao.responsavel_admin.username }}</span>
+                            <span>            
+                                <a href="{% url 'visualizar_usuario' reivindicacao.responsavel_admin.pk %}" class="text-decoration-none">
+                                    {{ reivindicacao.responsavel_admin.nome|default:reivindicacao.responsavel_admin.username }}
+                                </a>                             
+                            </span>
                         </div>
                     </div>
                     {% endif %}
@@ -164,6 +168,11 @@
                     <a href="{% url 'atualizar_reivindicacao' reivindicacao.protocolo %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2">
                         <i class="bi bi-pencil-square"></i>
                         <span>Avaliar / Atualizar Status</span>
+                    </a>
+
+                    <a href="{% url 'visualizar_usuario' reivindicacao.autor.pk %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-person"></i>
+                        <span>Detalhar solicitante</span>
                     </a>
 
                     <!-- Contato com o autor -->
