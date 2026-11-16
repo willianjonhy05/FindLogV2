@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from api.views.auth_views import LoginAPIView, perfil_usuario_api_view, logout_api_view
+from ..views.auth_views import LoginAPIView, perfil_usuario_api_view, logout_api_view
 
 urlpatterns = [
     path('auth/login/', LoginAPIView.as_view(), name='api_login'),
