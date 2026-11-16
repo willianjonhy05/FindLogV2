@@ -136,7 +136,7 @@ def redirecionar_por_perfil(request, usuario):
 
     # 1. Superusuário vai direto para o Django Admin nativo
     if usuario.is_superuser:
-        return redirect("admin:index")
+        return redirect("dashboard_admin")
 
     # 2. Administrador comum vai para a dashboard personalizada
     if usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR:
