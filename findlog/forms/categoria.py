@@ -2,15 +2,20 @@ from django import forms
 from ..models import Categoria
 
 class CategoriaForm(forms.ModelForm):
+    nome = forms.CharField(
+        error_messages={"required": "O nome da categoria é obrigatório."},
+        widget=forms.TextInput(attrs={
+            "class": "form-control form-control-custom",
+            "placeholder": "Ex: Eletrônicos, Documentos, Acessórios",
+            "id": "nome",
+        })
+    )    
+
     class Meta:
         model = Categoria
         fields = ["nome", "descricao"]
         widgets = {
-            "nome": forms.TextInput(attrs={
-                "class": "form-control form-control-custom",
-                "placeholder": "Ex: Eletrônicos, Documentos, Acessórios",
-                "id": "nome",
-            }),
+            # O "nome" foi removido daqui pois já está configurado acima com error_messages
             "descricao": forms.Textarea(attrs={
                 "class": "form-control form-control-custom",
                 "rows": 3,
@@ -32,6 +37,3 @@ class CategoriaForm(forms.ModelForm):
             raise forms.ValidationError("Já existe uma categoria cadastrada com este nome.")
 
         return nome
-
-
-

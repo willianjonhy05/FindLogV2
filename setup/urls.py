@@ -41,6 +41,8 @@ urlpatterns = [
         name="novo_servidor_instituicao",
     ),
     path("esqueci-senha/", esqueci_senha_view, name="recuperar_senha"),
+
+    path('api/v1/', include('findlog.api.routes.auth_urls')),
     path("", index, name="home"),
 ]
 
