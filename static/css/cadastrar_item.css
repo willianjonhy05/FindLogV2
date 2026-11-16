@@ -1,0 +1,13 @@
+.ts-wrapper.form-select-custom .ts-control {
+        min-height: 42px;
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.95rem;
+    }
+    /* Fundo levemente mais escuro para destacar o modal de orientações */
+    #modalOrientacaoCadastroItem + .modal-backdrop.show,
+    .modal-backdrop.show {
+        opacity: 0.65;
+        background-color: #0B2347;
+    }
+

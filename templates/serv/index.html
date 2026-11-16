@@ -1,4 +1,5 @@
 {% extends "serv/base.html" %}
+{% load static %}
 
 {% block title %}Painel Institucional | {{ instituicao.nome }}{% endblock %}
 
@@ -41,8 +42,7 @@
                             Olá, {{ request.session.primeiro_nome|default:request.user.primeiro_nome|default:"Servidor Conectado" }}!
                         </h1>
                         <p class="dash-hero-subtitle">
-                            Gestão operacional de <strong>{{ request.session.instituicao_nome }}</strong>
-                           
+                            Gestão operacional de <strong>{{ request.session.instituicao_nome|default:instituicao.nome }}</strong>
                         </p>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
             <!-- Botões de Ação Rápida no Hero -->
             <div class="col-12 col-lg-5 text-start text-lg-end">
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
-                    <a href="#" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                    <a href="{% url 'servidor_listar_reivindicacoes' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
                         <i class="bi bi-door-open"></i> Reivindicações
                     </a>
                     <a href="{% url 'servidor_cadastra_item' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
@@ -111,7 +111,7 @@
                         <span class="badge bg-light text-dark border small fw-normal">Locais</span>
                     </div>
                     <div>
-                        <div class="dash-stat-value">{{ qtde_salas }}</div>
+                        <div class="dash-stat-value">{{ qtde_salas|default:0 }}</div>
                         <p class="dash-stat-label">Salas & Ambientes</p>
                     </div>
                 </div>
@@ -231,7 +231,7 @@
                                         <div>
                                             <span class="dash-tag dash-tag-status">
                                                 <i class="bi bi-check2-circle"></i>
-                                                {{ item.status|default:"Cadastrado" }}
+                                                {{ item.get_status_display|default:"Cadastrado" }}
                                             </span>
                                         </div>
                                     </td>
@@ -293,10 +293,15 @@
                         <i class="bi bi-chevron-right dash-nav-arrow"></i>
                     </a>
 
-                    <a href="#" class="dash-quick-link-item">
+                    <!-- Botão que abre o Modal de Links & QR Codes de Cadastro -->
+                    <a href="#modalConvitesCadastro"
+                       role="button"
+                       class="dash-quick-link-item"
+                       data-bs-toggle="modal"
+                       data-bs-target="#modalConvitesCadastro">
                         <span class="d-flex align-items-center gap-2">
-                            <i class="bi bi-person-plus-fill text-info fs-5"></i>
-                            Novo Usuário
+                            <i class="bi bi-qr-code-scan text-info fs-5"></i>
+                            Links & QR Codes de Cadastro
                         </span>
                         <i class="bi bi-chevron-right dash-nav-arrow"></i>
                     </a>
@@ -329,4 +334,136 @@
     </div>
 
 </div>
+
+<!-- ====================================================================
+     MODAL: LINKS DE CONVITE & QR CODES DE AUTOCADASTRO
+     ==================================================================== -->
+<div class="modal fade" id="modalConvitesCadastro" tabindex="-1" aria-labelledby="modalConvitesCadastroLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content custom-modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalConvitesCadastroLabel">
+                        <i class="bi bi-qr-code text-primary"></i>
+                        Convites & QR Codes de Autocadastro
+                    </h5>
+                    <small class="text-muted">Compartilhe os links ou salve os QR Codes para {{ instituicao.nome }}</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <div class="row g-4">
+
+                    <!-- COLUNA 1: NOVOS USUÁRIOS -->
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 bg-light border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-bold text-dark">
+                                        <i class="bi bi-people-fill text-primary me-1"></i> Novos Usuários
+                                    </span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Acesso Imediato</span>
+                                </div>
+                                <p class="text-muted small mb-3">
+                                    Para alunos e visitantes consultarem e reivindicarem itens perdidos na unidade.
+                                </p>
+
+                                <!-- QR Code gerado pela View (Base64 PNG) -->
+                                <div class="bg-white p-3 rounded border text-center mb-3 shadow-sm">
+                                    <img src="{{ qrcode_usuario }}"
+                                         alt="QR Code Cadastro de Usuários - {{ instituicao.nome }}"
+                                         class="img-fluid rounded"
+                                         style="width: 185px; height: 185px;">
+                                    <div class="mt-2">
+                                        <a href="{{ qrcode_usuario }}"
+                                           download="qrcode-usuarios-{{ instituicao.nome|slugify }}.png"
+                                           class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="bi bi-download me-1"></i> Salvar QR Code (PNG)
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Input + Botão Copiar -->
+                            <div>
+                                <label for="inputLinkUsuarioModal" class="form-label small fw-semibold text-secondary mb-1">Link direto:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text"
+                                           id="inputLinkUsuarioModal"
+                                           class="form-control bg-white font-monospace text-secondary"
+                                           value="{{ link_convite_usuario }}"
+                                           readonly>
+                                    <button type="button"
+                                            class="btn btn-primary-custom btn-copiar-modal"
+                                            data-target="inputLinkUsuarioModal">
+                                        <i class="bi bi-clipboard me-1"></i> Copiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUNA 2: NOVOS SERVIDORES -->
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 bg-light border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-bold text-dark">
+                                        <i class="bi bi-person-badge-fill text-warning-emphasis me-1"></i> Novos Servidores
+                                    </span>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Requer Aprovação</span>
+                                </div>
+                                <p class="text-muted small mb-3">
+                                    Restrito à equipe interna. O acesso fica pendente até liberação administrativa.
+                                </p>
+
+                                <!-- QR Code gerado pela View (Base64 PNG) -->
+                                <div class="bg-white p-3 rounded border text-center mb-3 shadow-sm">
+                                    <img src="{{ qrcode_servidor }}"
+                                         alt="QR Code Cadastro de Servidores - {{ instituicao.nome }}"
+                                         class="img-fluid rounded"
+                                         style="width: 185px; height: 185px;">
+                                    <div class="mt-2">
+                                        <a href="{{ qrcode_servidor }}"
+                                           download="qrcode-servidores-{{ instituicao.nome|slugify }}.png"
+                                           class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="bi bi-download me-1"></i> Salvar QR Code (PNG)
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Input + Botão Copiar -->
+                            <div>
+                                <label for="inputLinkServidorModal" class="form-label small fw-semibold text-secondary mb-1">Link direto:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text"
+                                           id="inputLinkServidorModal"
+                                           class="form-control bg-white font-monospace text-secondary"
+                                           value="{{ link_convite_servidor }}"
+                                           readonly>
+                                    <button type="button"
+                                            class="btn btn-primary-custom btn-copiar-modal"
+                                            data-target="inputLinkServidorModal">
+                                        <i class="bi bi-clipboard me-1"></i> Copiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/modal_convites_qrcode.js' %}"></script>
 {% endblock %}

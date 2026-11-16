@@ -38,7 +38,6 @@ class ItemUpdateForm(forms.ModelForm):
         }
 
 
-
 class ServidorItemForm(forms.ModelForm):
     class Meta:
         model = Item
@@ -61,10 +60,20 @@ class ServidorItemForm(forms.ModelForm):
                 "placeholder": "Ex: Garrafa térmica, Mochila preta...",
                 "required": True,
             }),
-            "categoria": forms.Select(attrs={"class": "form-select form-select-custom", "required": True}),
-            "status": forms.Select(attrs={"class": "form-select form-select-custom", "required": True}),
-            "local": forms.Select(attrs={"class": "form-select form-select-custom"}),
-            "local_guardado": forms.Select(attrs={"class": "form-select form-select-custom"}),
+            "categoria": forms.Select(attrs={
+                "class": "form-select form-select-custom select-pesquisavel",
+                "required": True,
+            }),
+            "status": forms.Select(attrs={
+                "class": "form-select form-select-custom",
+                "required": True,
+            }),
+            "local": forms.Select(attrs={
+                "class": "form-select form-select-custom select-pesquisavel",
+            }),
+            "local_guardado": forms.Select(attrs={
+                "class": "form-select form-select-custom select-pesquisavel",
+            }),
             "marca_ou_modelo": forms.TextInput(attrs={
                 "class": "form-control form-control-custom",
                 "placeholder": "Ex: Invicta, Dell, Samsung...",
@@ -84,11 +93,12 @@ class ServidorItemForm(forms.ModelForm):
             "foto": forms.FileInput(attrs={
                 "class": "form-control form-control-custom",
                 "accept": "image/*",
+                "capture": "environment",
             }),
             "descricao": forms.Textarea(attrs={
                 "class": "form-control form-control-custom",
                 "rows": 3,
-                "placeholder": "Descreva detalhes específicos, adesivos, arranhões ou sinais particulares...",
+                "placeholder": "Descreva características gerais sem revelar segredos que apenas o dono saberia...",
             }),
         }
 
@@ -97,7 +107,7 @@ class ServidorItemForm(forms.ModelForm):
 
         # 1. Filtra apenas categorias ativas
         self.fields["categoria"].queryset = Categoria.objects.filter(ativa=True).order_by("nome")
-        self.fields["categoria"].empty_label = "Selecione a categoria..."
+        self.fields["categoria"].empty_label = "Digite para buscar a categoria..."
 
         # 2. Filtra as salas estritamente para a instituição ativa do servidor
         if instituicao:
@@ -108,9 +118,5 @@ class ServidorItemForm(forms.ModelForm):
             self.fields["local"].queryset = Sala.objects.none()
             self.fields["local_guardado"].queryset = Sala.objects.none()
 
-        self.fields["local"].empty_label = "Onde foi encontrado? (Opcional)"
-        self.fields["local_guardado"].empty_label = "Onde está guardado? (Opcional)"        
-
-
-
-
+        self.fields["local"].empty_label = "Digite para buscar onde foi encontrado... (Opcional)"
+        self.fields["local_guardado"].empty_label = "Digite para buscar onde está guardado... (Opcional)"

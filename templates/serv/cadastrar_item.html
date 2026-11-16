@@ -1,18 +1,19 @@
 {% extends "serv/base.html" %}
+{% load static %}
 
 {% block title %}Cadastrar Item | {{ instituicao.nome }}{% endblock %}
 
 {% block extra_head %}
-
+<!-- Tom Select (Bootstrap 5 Theme) para busca digitável nos selects -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/cadastrar_item.css' %}">
 {% endblock %}
 
-
 {% block content %}
-
 <div class="container-fluid px-0">
 
-
-        <section class="dash-hero-card mb-4">
+    <!-- CABEÇALHO HERO -->
+    <section class="dash-hero-card mb-4">
         <div class="row align-items-center g-3">
             <div class="col-12 col-lg-7">
                 <div class="d-flex align-items-center gap-3">
@@ -24,8 +25,7 @@
                             Cadastrar Item
                         </h1>
                         <p class="dash-hero-subtitle">
-                            Gestão operacional de <strong>{{ request.session.instituicao_nome }}</strong>
-                           
+                            Gestão operacional de <strong>{{ request.session.instituicao_nome|default:instituicao.nome }}</strong>
                         </p>
                     </div>
                 </div>
@@ -34,18 +34,21 @@
             <!-- Botões de Ação Rápida no Hero -->
             <div class="col-12 col-lg-5 text-start text-lg-end">
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <button type="button"
+                            class="dash-btn-hero btn-outline-warning text-dark flex-fill flex-sm-grow-0"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalOrientacaoCadastroItem">
+                        <i class="bi bi-shield-exclamation text-warning-emphasis"></i> Boas Práticas
+                    </button>
                     <a href="{% url 'servidor_listar_itens' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
                         <i class="bi bi-arrow-left"></i> Listar Itens
                     </a>
-                    <!-- <a href="{% url 'servidor_cadastrar_sala' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
-                        <i class="bi bi-plus-circle-fill"></i> Nova Sala
-                    </a> -->
                 </div>
             </div>
         </div>
     </section>
 
-
+    <!-- MENSAGENS FLASH -->
     {% if messages %}
         <div class="mb-3">
             {% for message in messages %}
@@ -57,8 +60,8 @@
         </div>
     {% endif %}
 
+    <!-- FORMULÁRIO -->
     <div class="card table-card p-4">
-        <!-- O atributo enctype="multipart/form-data" é obrigatório para envio da foto -->
         <form method="POST" action="{% url 'servidor_cadastra_item' %}" enctype="multipart/form-data">
             {% csrf_token %}
 
@@ -117,15 +120,29 @@
                     {{ form.material }}
                 </div>
 
+                <!-- Fotografia com suporte à câmera traseira no celular -->
                 <div class="col-12 col-md-6">
-                    <label for="id_foto" class="form-label form-label-custom">Fotografia do Objeto</label>
+                    <label for="id_foto" class="form-label form-label-custom">
+                        <i class="bi bi-camera-fill me-1 text-primary"></i> Fotografia do Objeto
+                    </label>
                     {{ form.foto }}
+                    <div class="form-text small text-muted">
+                        No celular, toque para tirar uma foto na hora com a câmera traseira ou escolher da galeria.
+                    </div>
                     {% for erro in form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+
+                    <!-- Pré-visualização da foto capturada -->
+                    <div id="previewFotoContainer" class="mt-2 d-none">
+                        <img id="previewFotoImg" src="" alt="Pré-visualização da foto" class="img-thumbnail rounded" style="max-height: 160px;">
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label for="id_descricao" class="form-label form-label-custom">Descrição Detalhada / Avarias</label>
                     {{ form.descricao }}
+                    <div class="form-text small text-muted">
+                        Evite expor senhas, números de documentos ou marcas exclusivas que servirão de prova na reivindicação.
+                    </div>
                 </div>
             </div>
 
@@ -139,4 +156,56 @@
     </div>
 
 </div>
+
+<!-- ====================================================================
+     MODAL DE ALERTA: PROTEÇÃO DE DADOS SENSÍVEIS E COMPROVAÇÃO DE POSSE
+     ==================================================================== -->
+<div class="modal fade" id="modalOrientacaoCadastroItem" tabindex="-1" aria-labelledby="modalOrientacaoCadastroItemLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content border-0 shadow">
+            <div class="modal-header bg-warning-subtle border-bottom-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalOrientacaoCadastroItemLabel">
+                    <i class="bi bi-shield-exclamation text-warning-emphasis fs-4"></i>
+                    Atenção antes de registrar o item
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <p class="text-secondary small mb-3">
+                    Como a foto e a descrição ficarão visíveis no catálogo público da instituição, siga duas recomendações essenciais:
+                </p>
+
+                <div class="p-3 rounded-3 bg-light border mb-3">
+                    <h6 class="fw-bold text-danger mb-1">
+                        <i class="bi bi-person-vcard-fill me-1"></i> 1. Proteja Dados Sensíveis (LGPD)
+                    </h6>
+                    <p class="small text-dark mb-0">
+                        Em caso de <strong>documentos pessoais (RG, CPF, CNH)</strong> ou <strong>cartões bancários</strong>, cubra o número do documento, código de segurança (CVV), data de validade e assinatura antes de fotografar — ou cadastre sem foto, informando apenas o primeiro nome do titular.
+                    </p>
+                </div>
+
+                <div class="p-3 rounded-3 bg-light border">
+                    <h6 class="fw-bold text-primary mb-1">
+                        <i class="bi bi-eye-slash-fill me-1"></i> 2. Preserve Detalhes Ocultos para Prova
+                    </h6>
+                    <p class="small text-dark mb-0">
+                        Não descreva nem fotografe todos os detalhes particulares do objeto (ex: adesivos internos, conteúdo de bolsos, papel de parede do celular, chaves específicas no molho). Guardar essas informações facilita confirmar quem é o verdadeiro proprietário na análise da reivindicação.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-primary-custom w-100" data-bs-dismiss="modal">
+                    <i class="bi bi-check2-circle me-1"></i> Entendi, continuar cadastro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="{% static 'js/cadastrar_item.js' %}"></script>
 {% endblock %}

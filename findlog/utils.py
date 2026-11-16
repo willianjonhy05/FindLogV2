@@ -3,6 +3,9 @@ import string
 import random
 import secrets
 import unicodedata
+import base64
+from io import BytesIO
+import qrcode
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.shortcuts import redirect
@@ -173,3 +176,25 @@ def _obter_instituicao_por_token(token):
     if not instituicao:
         raise Http404("Link de convite inválido ou expirado.")
     return instituicao
+
+
+def gerar_qrcode_base64(texto, fill_color="#0B2347", back_color="#FFFFFF"):
+    """
+    Gera uma imagem PNG de QR Code codificada em Base64 (Data URI)
+    pronta para ser renderizada em tags <img src="..."> e baixada.
+    """
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(texto)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color=fill_color, back_color=back_color)
+
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{img_str}"

@@ -34,9 +34,6 @@
             <!-- Botões de Ação Rápida no Hero -->
             <div class="col-12 col-lg-5 text-start text-lg-end">
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
-                    <!-- <a href="{% url 'servidor_listar_salas' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
-                        <i class="bi bi-door-open"></i> Salas
-                    </a> -->
                     <a href="{% url 'servidor_cadastra_item' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
                         <i class="bi bi-plus-circle-fill"></i> Novo Item
                     </a>
@@ -68,21 +65,33 @@
     <div class="sala-search-container mb-3 mb-md-4">
         <form method="GET" action="{% url 'servidor_listar_itens' %}" class="row g-2 align-items-center m-0">
             <!-- Campo de Texto -->
-            <div class="col-12 col-md-7 px-0">
+            <div class="col-12 col-lg-4 px-0">
                 <div class="input-group sala-search-input-group align-items-center">
                     <span class="sala-search-icon-addon">
                         <i class="bi bi-search"></i>
                     </span>
                     <input type="text" name="q" class="form-control sala-search-field" 
-                           placeholder="Buscar por código, nome, modelo, cor ou descrição..." 
+                           placeholder="Código, nome, modelo, cor..." 
                            value="{{ termo_busca }}">
                 </div>
             </div>
 
+            <!-- Filtro de Categoria -->
+            <div class="col-6 col-md-4 col-lg-2 px-0 ps-lg-2">
+                <select name="categoria" class="form-select form-select-custom h-100" style="border-radius: 8px; font-size: 0.9rem;">
+                    <option value="">Todas Categorias</option>
+                    {% for cat in categorias %}
+                        <option value="{{ cat.pk }}" {% if categoria_filtro == cat.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <!-- Filtro de Status -->
-            <div class="col-7 col-md-3 ps-2 pe-0">
+            <div class="col-6 col-md-4 col-lg-2 ps-2 pe-0">
                 <select name="status" class="form-select form-select-custom h-100" style="border-radius: 8px; font-size: 0.9rem;">
-                    <option value="">Todos os Status</option>
+                    <option value="">Todos Status</option>
                     {% for valor, label in status_choices %}
                         <option value="{{ valor }}" {% if status_filtro == valor|stringformat:"s" %}selected{% endif %}>
                             {{ label }}
@@ -91,14 +100,24 @@
                 </select>
             </div>
 
+            <!-- Filtro: Cadastrados por Mim -->
+            <div class="col-7 col-md-4 col-lg-2 px-0 ps-md-2">
+                <div class="form-check form-switch d-flex align-items-center gap-2 bg-white border rounded px-3 py-2 m-0 h-100" style="border-radius: 8px !important;">
+                    <input class="form-check-input m-0" type="checkbox" role="switch" id="filtroMeusItens" name="meus_itens" value="1" {% if apenas_meus_itens %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-dark text-nowrap mb-0" for="filtroMeusItens" style="cursor: pointer;">
+                        Meus registros
+                    </label>
+                </div>
+            </div>
+
             <!-- Botões de Ação -->
-            <div class="col-5 col-md-2 ps-2 pe-0 d-flex gap-1">
+            <div class="col-5 col-md-12 col-lg-2 ps-2 ps-md-0 ps-lg-2 pe-0 d-flex gap-1">
                 <button type="submit" class="sala-btn-search flex-grow-1" title="Filtrar">
                     <i class="bi bi-filter"></i>
-                    <span class="d-none d-sm-inline">Filtrar</span>
+                    <span>Filtrar</span>
                 </button>
-                {% if termo_busca or status_filtro %}
-                    <a href="{% url 'servidor_listar_itens' %}" class="sala-btn-clear" title="Limpar busca" aria-label="Limpar busca">
+                {% if termo_busca or categoria_filtro or status_filtro or apenas_meus_itens %}
+                    <a href="{% url 'servidor_listar_itens' %}" class="sala-btn-clear" title="Limpar filtros" aria-label="Limpar filtros">
                         <i class="bi bi-x-lg"></i>
                     </a>
                 {% endif %}
@@ -155,32 +174,18 @@
                             <i class="bi bi-tag-fill me-1 text-muted"></i>{{ item.categoria.nome }}
                         </span>
                     {% endif %}
-                    {% if item.marca_ou_modelo %}
-                        <span class="sala-badge-code">
-                            <i class="bi bi-upc-scan me-1 text-muted"></i>{{ item.marca_ou_modelo }}
+                    
+                    {% if item.usuario_registro_id == request.user.id %}
+                        <span class="sala-badge-code text-primary">
+                            <i class="bi bi-person-check-fill me-1"></i>Registrado por você
                         </span>
                     {% endif %}
                 </div>
 
-                <!-- Descrição (se houver) -->
-                {% if item.descricao %}
-                    <p class="sala-feed-card-desc mb-2">{{ item.descricao }}</p>
-                {% endif %}
-
+            
                 <!-- Bloco de Metadados em Chips -->
                 <div class="sala-meta-grid">
-                    <span class="sala-meta-chip">
-                        <i class="bi bi-geo-alt text-danger"></i>
-                        <span>Achado: <strong>{{ item.local.nome|default:"Não informado" }}</strong></span>
-                    </span>
-                    <span class="sala-meta-chip">
-                        <i class="bi bi-shield-lock text-primary"></i>
-                        <span>Guardado: <strong>{{ item.local_guardado.nome|default:"Não informado" }}</strong></span>
-                    </span>
-                    <span class="sala-meta-chip">
-                        <i class="bi bi-palette"></i>
-                        <span>Cor: <strong>{{ item.cor|default:"---" }}</strong></span>
-                    </span>
+                    
                     <span class="sala-meta-chip">
                         <i class="bi bi-calendar3"></i>
                         <span>{{ item.data_registro|date:"d/m/Y H:i" }}</span>
@@ -191,18 +196,13 @@
                 <div class="sala-feed-card-footer">
                     <span class="text-secondary-custom small fw-semibold">Ações</span>
                     <div class="sala-actions-group">
-                        <!-- Visualizar Detalhes / QR Code -->
-                        <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes do item" aria-label="Visualizar item {{ item.nome }}">
+                        <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes do item" aria-label="Visualizar item {{ item.nome }}">
                             <i class="bi bi-eye"></i>
                         </a>
-
-                        <!-- Editar Item -->
                         <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
                             <i class="bi bi-pencil"></i>
                         </a>
-
-                        <!-- Reivindicações Vinculadas -->
-                        <a href="#" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Ver reivindicações" aria-label="Reivindicações de {{ item.nome }}">
+                        <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Ver reivindicações" aria-label="Reivindicações de {{ item.nome }}">
                             <i class="bi bi-person-raised-hand"></i>
                         </a>
                     </div>
@@ -211,7 +211,7 @@
         {% empty %}
             <div class="sala-feed-card text-center py-5">
                 <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                {% if termo_busca or status_filtro %}
+                {% if termo_busca or categoria_filtro or status_filtro or apenas_meus_itens %}
                     <p class="mb-0 text-secondary-custom">
                         Nenhum item encontrado para os filtros selecionados.
                     </p>
@@ -234,8 +234,7 @@
                     <tr>
                         <th class="ps-4">Código / Item</th>
                         <th>Categoria</th>
-                        <th>Locais (Achado / Guardado)</th>
-                        <th>Detalhes</th>
+                        
                         <th>Status</th>
                         <th>Registro</th>
                         <th class="pe-4 text-end">Ações</th>
@@ -274,38 +273,7 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Localização -->
-                            <td>
-                                {% if item.local %}
-                                    <div class="small">
-                                        <i class="bi bi-geo-alt text-danger me-1"></i>Achado: 
-                                        <strong>{{ item.local.nome }}</strong>
-                                    </div>
-                                {% endif %}
-                                {% if item.local_guardado %}
-                                    <small class="text-secondary-custom d-block">
-                                        <i class="bi bi-shield-lock text-primary me-1"></i>Guardado: 
-                                        {{ item.local_guardado.nome }}
-                                    </small>
-                                {% endif %}
-                                {% if not item.local and not item.local_guardado %}
-                                    <span class="text-muted small">Não informado</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Detalhes Físicos -->
-                            <td>
-                                <div class="small text-dark">
-                                    {{ item.marca_ou_modelo|default:"" }}
-                                    {% if item.cor %}<span>({{ item.cor }})</span>{% endif %}
-                                </div>
-                                {% if item.material or item.tamanho %}
-                                    <small class="text-secondary-custom d-block">
-                                        {{ item.tamanho|default:"" }} {% if item.material %}• {{ item.material }}{% endif %}
-                                    </small>
-                                {% endif %}
-                            </td>
-
+                         
                             <!-- Status -->
                             <td>
                                 {% if item.status == 1 %}
@@ -327,31 +295,32 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Data de Registro -->
+                            <!-- Data de Registro e Responsável -->
                             <td>
                                 <span class="small text-nowrap text-secondary-custom">
-                                    {{ item.data_registro|date:"d/m/Y" }}
+                                    {{ item.data_registro|date:"d/m/Y" }} · {{ item.data_registro|date:"H:i" }}
                                 </span>
-                                <small class="text-muted d-block">
-                                    {{ item.data_registro|date:"H:i" }}
-                                </small>
+                                {% if item.usuario_registro %}
+                                    <small class="d-block {% if item.usuario_registro_id == request.user.id %}text-primary fw-semibold{% else %}text-muted{% endif %}">
+                                        {% if item.usuario_registro_id == request.user.id %}
+                                            Por você
+                                        {% else %}
+                                            Por {{ item.usuario_registro.primeiro_nome|default:item.usuario_registro.nome }}
+                                        {% endif %}
+                                    </small>
+                                {% endif %}
                             </td>
 
                             <!-- Ações -->
                             <td class="pe-4 text-end">
                                 <div class="sala-actions-group justify-content-end">
-                                    <!-- Ver Detalhes / QR Code -->
-                                    <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar item {{ item.nome }}">
+                                    <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar item {{ item.nome }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-
-                                    <!-- Editar -->
                                     <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-
-                                    <!-- Reivindicações -->
-                                    <a href="#" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Reivindicações do item" aria-label="Reivindicações de {{ item.nome }}">
+                                    <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Reivindicações do item" aria-label="Reivindicações de {{ item.nome }}">
                                         <i class="bi bi-person-raised-hand"></i>
                                     </a>
                                 </div>
@@ -362,7 +331,7 @@
                             <td colspan="7" class="text-center py-5">
                                 <div class="py-3">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                                    {% if termo_busca or status_filtro %}
+                                    {% if termo_busca or categoria_filtro or status_filtro or apenas_meus_itens %}
                                         <p class="mb-0 text-secondary-custom">
                                             Nenhum item encontrado para os filtros selecionados.
                                         </p>
@@ -381,7 +350,7 @@
     </div>
 
     <!-- ====================================================================
-         6. PAGINAÇÃO (Preservando parâmetros de busca e status)
+         6. PAGINAÇÃO (Preservando parâmetros de busca, categoria, status e meus_itens)
          ==================================================================== -->
     {% if page_obj.has_other_pages %}
         <div class="sala-pagination-bar mt-3 mt-md-0 rounded-bottom-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
@@ -393,7 +362,7 @@
                 <ul class="pagination pagination-sm m-0 gap-1">
                     {% if page_obj.has_previous %}
                         <li class="page-item sala-page-item">
-                            <a class="page-link sala-page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Página anterior">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if categoria_filtro %}&categoria={{ categoria_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if apenas_meus_itens %}&meus_itens=1{% endif %}" aria-label="Página anterior">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
@@ -410,14 +379,14 @@
                             </li>
                         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                             <li class="page-item sala-page-item">
-                                <a class="page-link sala-page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}">{{ num }}</a>
+                                <a class="page-link sala-page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if categoria_filtro %}&categoria={{ categoria_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if apenas_meus_itens %}&meus_itens=1{% endif %}">{{ num }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item sala-page-item">
-                            <a class="page-link sala-page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Próxima página">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if categoria_filtro %}&categoria={{ categoria_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if apenas_meus_itens %}&meus_itens=1{% endif %}" aria-label="Próxima página">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>

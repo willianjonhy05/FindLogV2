@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
+from django.urls import reverse
 
-
+from ..utils import gerar_qrcode_base64
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
 from ..forms.perfil import ServidorCadastroColegaForm
@@ -16,11 +17,16 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q
 import re
 
-
 @servidor_required
 def servidor_painel(request):
     cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = None
+
+    if cnpj_sessao:
+        instituicao = request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = request.user.instituicao.filter(ativo=True).first()
 
     if not instituicao:
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
@@ -37,12 +43,24 @@ def servidor_painel(request):
     ).count()
     qtde_salas = Sala.objects.filter(instituicao=instituicao).count()
 
-    # Opcional: últimos itens registrados para exibição rápida no painel
+    # Últimos itens registrados para exibição rápida no painel
     ultimos_itens = (
         Item.objects.filter(instituicao=instituicao)
         .select_related("categoria", "local")
         .order_by("-data_registro")[:5]
     )
+
+    # Links absolutos e QR Codes em Base64 para convites de autocadastro
+    token = instituicao.token_convite
+    link_convite_usuario = request.build_absolute_uri(
+        reverse("novo_usuario_instituicao", kwargs={"token": token})
+    )
+    link_convite_servidor = request.build_absolute_uri(
+        reverse("novo_servidor_instituicao", kwargs={"token": token})
+    )
+
+    qrcode_usuario = gerar_qrcode_base64(link_convite_usuario)
+    qrcode_servidor = gerar_qrcode_base64(link_convite_servidor)
 
     context = {
         "instituicao": instituicao,
@@ -52,10 +70,13 @@ def servidor_painel(request):
         "qtde_servidores": qtde_servidores,
         "qtde_salas": qtde_salas,
         "ultimos_itens": ultimos_itens,
+        "link_convite_usuario": link_convite_usuario,
+        "link_convite_servidor": link_convite_servidor,
+        "qrcode_usuario": qrcode_usuario,
+        "qrcode_servidor": qrcode_servidor,
     }
 
     return render(request, "serv/index.html", context)
-
 
 @servidor_required
 def servidor_cadastrar_sala(request):
@@ -138,8 +159,8 @@ def servidor_listar_salas(request):
             | Q(andar__icontains=termo_busca)
         )
 
-    # Paginação (10 itens por página)
-    paginator = Paginator(salas_qs, 10)
+    # Paginação (9 itens por página)
+    paginator = Paginator(salas_qs, 9)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -275,11 +296,14 @@ def servidor_detalhar_sala(request, codigo):
 
     return render(request, "serv/detalhar_sala.html", context)
 
-
 @servidor_required
 def servidor_listar_itens(request):
     cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = (
+        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if cnpj_sessao
+        else request.user.instituicao.filter(ativo=True).first()
+    )
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
@@ -301,13 +325,25 @@ def servidor_listar_itens(request):
             | Q(cor__icontains=q)
         )
 
+    # Filtro opcional por Categoria
+    categoria_filtro = request.GET.get("categoria", "").strip()
+    if categoria_filtro.isdigit():
+        itens_qs = itens_qs.filter(categoria_id=int(categoria_filtro))
+
     # Filtro opcional por Status
     status_filtro = request.GET.get("status", "").strip()
     if status_filtro.isdigit():
         itens_qs = itens_qs.filter(status=int(status_filtro))
 
-    paginator = Paginator(itens_qs, 12)
+    # Filtro opcional: Apenas itens cadastrados pelo servidor autenticado
+    apenas_meus_itens = request.GET.get("meus_itens", "").strip() == "1"
+    if apenas_meus_itens:
+        itens_qs = itens_qs.filter(usuario_registro=request.user)
+
+    paginator = Paginator(itens_qs, 9)
     page_obj = paginator.get_page(request.GET.get("page"))
+
+    categorias = Categoria.objects.filter(ativa=True).order_by("nome")
 
     context = {
         "titulo": "Todos os Itens Registrados",
@@ -315,12 +351,14 @@ def servidor_listar_itens(request):
         "instituicao": instituicao,
         "page_obj": page_obj,
         "termo_busca": q,
+        "categoria_filtro": categoria_filtro,
+        "categorias": categorias,
         "status_filtro": status_filtro,
+        "apenas_meus_itens": apenas_meus_itens,
         "status_choices": Item.StatusItem.choices,
         "total_itens": paginator.count,
     }
     return render(request, "serv/listar_itens.html", context)
-
 
 # ----------------------------------------------------------------------
 # 2. LISTAR ITENS POR SALA (Onde foi encontrado ou guardado)
