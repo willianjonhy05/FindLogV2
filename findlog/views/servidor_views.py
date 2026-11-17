@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.urls import reverse
 
-from ..utils import gerar_qrcode_base64
+from ..utils import gerar_qrcode_base64, apenas_digitos
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
 from ..forms.perfil import ServidorCadastroColegaForm
@@ -16,6 +16,20 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 import re
+
+
+def _obter_perfil_da_instituicao(instituicao, pk):
+    """
+    Busca um usuário comum ou servidor vinculado à instituição informada,
+    bloqueando o acesso a superusuários e administradores da plataforma.
+    """
+    return get_object_or_404(
+        Perfil.objects.select_related("sala"),
+        pk=pk,
+        instituicao=instituicao,
+        is_superuser=False,
+        tipo__in=[Perfil.TipoUsuario.USUARIO, Perfil.TipoUsuario.SERVIDOR],
+    )
 
 @servidor_required
 def servidor_painel(request):
@@ -505,24 +519,217 @@ def servidor_cadastrar_usuario(request):
     return render(request, "serv/cadastrar_usuario.html", context)
 
 
+@servidor_required
 def servidor_usuarios_instituicao(request):
     """
-    Lista de todos os usuários da instituição
+    Lista paginada de todos os usuários e servidores vinculados
+    à instituição ativa na sessão do servidor autenticado.
     """
-    pass
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = (
+        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if cnpj_sessao
+        else request.user.instituicao.filter(ativo=True).first()
+    )
+
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    # Tipos permitidos na visualização institucional (exclui Administradores globais)
+    tipos_permitidos = [
+        (Perfil.TipoUsuario.USUARIO, "Usuário"),
+        (Perfil.TipoUsuario.SERVIDOR, "Servidor"),
+    ]
+
+    perfis_qs = (
+        Perfil.objects.filter(
+            instituicao=instituicao,
+            is_superuser=False,
+            tipo__in=[Perfil.TipoUsuario.USUARIO, Perfil.TipoUsuario.SERVIDOR],
+        )
+        .select_related("sala")
+        .distinct()
+        .order_by("ativo", "-criado_em")  # Pendentes (ativo=False) aparecem no topo para fácil aprovação
+    )
+
+    # 1. Busca textual (nome, e-mail, username, código/matrícula, CPF e telefone)
+    q = request.GET.get("q", "").strip()
+    if q:
+        q_digitos = apenas_digitos(q)
+        filtro_busca = (
+            Q(nome__icontains=q)
+            | Q(email__icontains=q)
+            | Q(username__icontains=q)
+            | Q(codigo__icontains=q)
+        )
+        if q_digitos:
+            filtro_busca |= Q(cpf__icontains=q_digitos) | Q(telefone__icontains=q_digitos)
+
+        perfis_qs = perfis_qs.filter(filtro_busca)
+
+    # 2. Filtro por Tipo de Perfil (Usuário ou Servidor)
+    tipo_filtro = request.GET.get("tipo", "").strip()
+    if tipo_filtro.isdigit() and int(tipo_filtro) in [
+        Perfil.TipoUsuario.USUARIO,
+        Perfil.TipoUsuario.SERVIDOR,
+    ]:
+        perfis_qs = perfis_qs.filter(tipo=int(tipo_filtro))
+
+    # 3. Filtro opcional por Status (Ativo / Pendente-Inativo)
+    status_filtro = request.GET.get("status", "").strip()
+    if status_filtro == "ativo":
+        perfis_qs = perfis_qs.filter(ativo=True)
+    elif status_filtro == "inativo":
+        perfis_qs = perfis_qs.filter(ativo=False)
+
+    # Paginação
+    paginator = Paginator(perfis_qs, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "titulo": "Usuários & Equipe da Unidade",
+        "subtitulo": f"Perfis vinculados à instituição: {instituicao.nome}",
+        "instituicao": instituicao,
+        "page_obj": page_obj,
+        "termo_busca": q,
+        "tipo_filtro": tipo_filtro,
+        "status_filtro": status_filtro,
+        "tipos_choices": tipos_permitidos,
+        "total_perfis": paginator.count,
+    }
+    return render(request, "serv/usuarios_instituicao.html", context)
 
 
-def servidor_visualizar_usuario():
-    pass
+@servidor_required
+def servidor_visualizar_usuario(request, pk):
+    """
+    Exibe os detalhes cadastrais, histórico de reivindicações (se usuário)
+    ou itens registrados (se servidor) dentro da instituição ativa.
+    """
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = (
+        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if cnpj_sessao
+        else request.user.instituicao.filter(ativo=True).first()
+    )
+
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")    
+    
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+
+    # Histórico contextualizado na unidade atual
+    reivindicacoes = (
+        Reivindicacao.objects.filter(autor=perfil, instituicao=instituicao)
+        .select_related("item")
+        .order_by("-data")[:10]
+    )
+
+    itens_registrados = (
+        Item.objects.filter(usuario_registro=perfil, instituicao=instituicao)
+        .select_related("categoria", "local")
+        .order_by("-data_registro")[:10]
+    )
+
+    context = {
+        "titulo": "Detalhes do Perfil",
+        "subtitulo": f"Visualização de vínculo na unidade: {instituicao.nome}",
+        "instituicao": instituicao,
+        "perfil": perfil,
+        "reivindicacoes": reivindicacoes,
+        "itens_registrados": itens_registrados,
+    }
+    return render(request, "serv/visualizar_usuario.html", context)
+
+@servidor_required
+@require_POST
+def servidor_ativar_usuario(request, pk):
+    """
+    Ativa o acesso de um usuário ou aprova o cadastro pendente de um servidor
+    vinculado à instituição ativa.
+    """
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = (
+        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if cnpj_sessao
+        else request.user.instituicao.filter(ativo=True).first()
+    )
+
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
 
 
-def servidor_ativar_usuario():
-    pass
+    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+
+    if perfil.pk == request.user.pk:
+        messages.warning(request, "Você não pode alterar o status do seu próprio perfil.")
+        return redirect("servidor_usuarios_instituicao")
+
+    if perfil.ativo:
+        messages.info(request, f"O perfil de {perfil.nome or perfil.username} já está ativo.")
+    else:
+        perfil.ativo = True
+        perfil.is_active = True
+        perfil.save(update_fields=["ativo", "is_active"])
+        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
+        messages.success(
+            request,
+            f"{papel} {perfil.nome or perfil.username} ativado(a) com sucesso!",
+        )
+
+    # Volta para a página de origem (detalhes ou listagem)
+    proxima_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if proxima_url:
+        return redirect(proxima_url)
+    return redirect("servidor_usuarios_instituicao")
 
 
-def servidor_desativar_usuario():
-    pass
+@servidor_required
+@require_POST
+def servidor_desativar_usuario(request, pk):
+    """
+    Bloqueia temporariamente o acesso de um usuário ou servidor vinculado
+    à instituição ativa.
+    """
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    instituicao = (
+        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if cnpj_sessao
+        else request.user.instituicao.filter(ativo=True).first()
+    )
 
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+
+    if perfil.pk == request.user.pk:
+        messages.error(request, "Operação bloqueada: você não pode desativar sua própria conta.")
+        return redirect("servidor_usuarios_instituicao")
+
+    if not perfil.ativo:
+        messages.info(request, f"O perfil de {perfil.nome or perfil.username} já encontra-se desativado.")
+    else:
+        perfil.ativo = False
+        perfil.save(update_fields=["ativo"])
+        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
+        messages.warning(
+            request,
+            f"O acesso de {papel.lower()} {perfil.nome or perfil.username} foi desativado.",
+        )
+
+    proxima_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if proxima_url:
+        return redirect(proxima_url)
+    return redirect("servidor_usuarios_instituicao")
 
 @servidor_required
 def servidor_cadastra_item(request):
@@ -827,3 +1034,13 @@ def servidor_listar_reivindicacoes(request):
     }
 
     return render(request, "serv/listar_reivindicacoes.html", context)
+
+
+def servidor_detalhar_reivindicacao(request):
+    pass
+
+def servidor_listar_reivindicacoes(request):
+    pass
+
+def servidor_visualizar_meu_perfil(request):
+    pass

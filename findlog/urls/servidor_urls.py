@@ -20,7 +20,8 @@ from ..views.servidor_views import (
     servidor_atualizar_item,
     servidor_excluir_sala,
     servidor_detalhar_reivindicacao,
-    servidor_listar_reivindicacoes
+    servidor_listar_reivindicacoes,
+    servidor_visualizar_meu_perfil
 )
 
 urlpatterns = [
@@ -33,6 +34,10 @@ urlpatterns = [
     path('salas/<str:codigo>/ativar/', servidor_ativar_sala, name='servidor_ativar_sala'),
     path('salas/<str:codigo>/desativar/', servidor_desativar_sala, name='servidor_desativar_sala'),    
     path("salas/<str:sala_codigo>/itens/", servidor_itens_por_sala, name="servidor_itens_por_sala"),
+
+    path("meu-perfil/", servidor_visualizar_meu_perfil, name="servidor_visualizar_meu_perfil"),
+    path("meu-perfil/editar/", servidor_visualizar_meu_perfil, name="servidor_editar_meu_perfil"),
+    path("meu-perfil/alterar-senha/", servidor_visualizar_meu_perfil, name="servidor_alterar_senha"),
 
 
     path("usuarios/", servidor_usuarios_instituicao, name="servidor_usuarios_instituicao"),

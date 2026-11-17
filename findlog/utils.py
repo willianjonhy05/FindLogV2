@@ -10,6 +10,8 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.shortcuts import redirect
 from django.http import Http404
+from django.contrib import messages
+from django.core.paginator import Paginator
 
 
 def apenas_digitos(valor: str) -> str:
@@ -17,6 +19,32 @@ def apenas_digitos(valor: str) -> str:
     if not valor:
         return ""
     return re.sub(r"\D", "", str(valor))
+
+def higienizar_dados_post(post_data, campos=("cpf", "telefone", "cnpj")):
+    """Retorna uma cópia mutável do QueryDict mantendo apenas dígitos nos campos informados."""
+    dados = post_data.copy()
+    for campo in campos:
+        if dados.get(campo):
+            dados[campo] = apenas_digitos(dados[campo])
+    return dados    
+
+
+def verificar_acesso_admin(request, mensagem="Permissão negada.", destino="usuario_home"):
+    """
+    Valida se o usuário possui papel de Administrador ou Superusuário.
+    Retorna um HttpResponseRedirect em caso de bloqueio, ou None se autorizado.
+    """
+    from .models import Perfil
+
+    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
+        messages.error(request, mensagem)
+        return redirect(destino)
+    return None
+
+def paginar_queryset(request, queryset, por_pagina=10):
+    """Pagina qualquer QuerySet usando get_page() (trata páginas inválidas ou vazias)."""
+    paginator = Paginator(queryset, por_pagina)
+    return paginator.get_page(request.GET.get("page"))
 
 
 def formatar_cnpj(cnpj: str) -> str:
@@ -198,3 +226,11 @@ def gerar_qrcode_base64(texto, fill_color="#0B2347", back_color="#FFFFFF"):
     img.save(buffer, format="PNG")
     img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return f"data:image/png;base64,{img_str}"
+
+
+def exibir_erros_formulario(request, form):
+    """Envia cada erro de validação do formulário como mensagem flash de erro."""
+    for campo, erros in form.errors.items():
+        prefixo = "" if campo == "__all__" else f"{campo.capitalize()}: "
+        for erro in erros:
+            messages.error(request, f"{prefixo}{erro}")    

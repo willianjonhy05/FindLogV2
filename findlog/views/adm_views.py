@@ -1,80 +1,70 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from ..models import Instituicao, Categoria, Perfil, Sala, Item, Contato, Reivindicacao
 from django.contrib import messages
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q, ProtectedError
-from ..forms.instituicao import InstituicaoUpdateForm, InstituicaoForm
+from django.contrib.auth import update_session_auth_hash
+from django.db.models import ProtectedError, Q
+from django.shortcuts import get_object_or_404, redirect, render
+
+from ..decorators import superuser_required
 from ..forms.categoria import CategoriaForm
+from ..forms.instituicao import InstituicaoForm, InstituicaoUpdateForm
+from ..forms.item import ItemUpdateForm
 from ..forms.perfil import (
-    NovoUsuarioForm,
-    AutoCadastroUsuarioForm,
     AutoCadastroServidorForm,
+    AutoCadastroUsuarioForm,
     EditarMeuPerfilForm,
+    NovoUsuarioForm,
     TrocarMinhaSenhaForm,
 )
-from ..forms.sala import SalaForm
 from ..forms.reivindicacao import ReivindicacaoUpdateForm
-from ..forms.item import ItemUpdateForm
-
-
+from ..forms.sala import SalaForm
+from ..models import Categoria, Contato, Instituicao, Item, Perfil, Reivindicacao, Sala
 from ..utils import (
-    apenas_digitos,
-    gerar_slug_unico,
-    redirecionar_por_perfil,
     _obter_instituicao_por_token,
+    apenas_digitos,
+    exibir_erros_formulario,
+    gerar_slug_unico,
+    higienizar_dados_post,
+    paginar_queryset,
+    verificar_acesso_admin,
 )
-from django.contrib.auth import update_session_auth_hash
-import re
-from ..decorators import superuser_required
 
-# Create your views here.
+
+# ==============================================================================
+# DASHBOARD
+# ==============================================================================
 
 
 @superuser_required
 def dashboard_adm(request):
-    total_instituicoes = Instituicao.objects.count()
-    total_categorias = Categoria.objects.count()
-    total_usuarios = Perfil.objects.count()
-    total_salas = Sala.objects.count()
-    total_itens = Item.objects.count()
-    total_contatos = Contato.objects.count()
-
     context = {
-        "total_instituicoes": total_instituicoes,
-        "total_categorias": total_categorias,
-        "total_usuarios": total_usuarios,
-        "total_salas": total_salas,
-        "total_itens": total_itens,
-        "total_contatos": total_contatos,
+        "total_instituicoes": Instituicao.objects.count(),
+        "total_categorias": Categoria.objects.count(),
+        "total_usuarios": Perfil.objects.count(),
+        "total_salas": Sala.objects.count(),
+        "total_itens": Item.objects.count(),
+        "total_contatos": Contato.objects.count(),
     }
-
     return render(request, "adm/dashboard.html", context)
+
+
+# ==============================================================================
+# INSTITUIÇÕES
+# ==============================================================================
 
 
 @superuser_required
 def nova_instituicao(request):
     if request.method == "POST":
-        # Cria uma cópia mutável do QueryDict
-        dados_post = request.POST.copy()
-
-        # Remove caracteres não numéricos
-        if "cnpj" in dados_post:
-            dados_post["cnpj"] = apenas_digitos(dados_post["cnpj"])
-        if "telefone" in dados_post:
-            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
-
-        # Instancia o formulário com os dados higienizados
+        dados_post = higienizar_dados_post(request.POST, campos=("cnpj", "telefone"))
         form = InstituicaoForm(dados_post)
 
         if form.is_valid():
             instituicao = form.save(commit=False)
             instituicao.ativo = True
-            instituicao = form.save()
+            instituicao.save()
             messages.success(request, f"Instituição '{instituicao.nome}' cadastrada com sucesso!")
             return redirect("lista_instituicoes")
 
         messages.error(request, "Por favor, corrija os erros abaixo.")
-
     else:
         form = InstituicaoForm()
 
@@ -88,29 +78,18 @@ def lista_instituicoes(request):
 
     if termo_busca:
         digitos_busca = apenas_digitos(termo_busca)
-        # Permite busca por texto no nome/endereço ou por dígitos no CNPJ
         filtro = Q(nome__icontains=termo_busca) | Q(endereco__icontains=termo_busca)
         if digitos_busca:
             filtro |= Q(cnpj__icontains=digitos_busca)
-
         instituicoes_query = instituicoes_query.filter(filtro)
 
-    # Paginação: 10 instituições por página
-    paginator = Paginator(instituicoes_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        instituicoes_paginadas = paginator.page(pagina)
-    except PageNotAnInteger:
-        instituicoes_paginadas = paginator.page(1)
-    except EmptyPage:
-        instituicoes_paginadas = paginator.page(paginator.num_pages)
+    instituicoes_paginadas = paginar_queryset(request, instituicoes_query, por_pagina=10)
 
     context = {
         "instituicoes": instituicoes_paginadas,
         "q": termo_busca,
         "page": instituicoes_paginadas.number,
-        "total_pages": paginator.num_pages,
+        "total_pages": instituicoes_paginadas.paginator.num_pages,
     }
     return render(request, "adm/instituicoes.html", context)
 
@@ -118,8 +97,7 @@ def lista_instituicoes(request):
 @superuser_required
 def detalhes_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
-    context = {"instituicao": instituicao}
-    return render(request, "adm/detalhes_instituicao.html", context)
+    return render(request, "adm/detalhes_instituicao.html", {"instituicao": instituicao})
 
 
 @superuser_required
@@ -127,17 +105,13 @@ def editar_instituicao(request, cnpj):
     instituicao = get_object_or_404(Instituicao, pk=cnpj)
 
     if request.method == "POST":
-        # Bloqueia alteração manual de CNPJ se for PK
-
         form = InstituicaoUpdateForm(request.POST, instance=instituicao)
         if form.is_valid():
             form.save()
             messages.success(request, f"Instituição '{instituicao.nome}' atualizada com sucesso!")
             return redirect("lista_instituicoes")
 
-        for campo, erros in form.errors.items():
-            for erro in erros:
-                messages.error(request, f"{campo.capitalize()}: {erro}")
+        exibir_erros_formulario(request, form)
     else:
         form = InstituicaoUpdateForm(instance=instituicao)
 
@@ -155,6 +129,11 @@ def excluir_instituicao(request, cnpj):
     return redirect("lista_instituicoes")
 
 
+# ==============================================================================
+# CATEGORIAS
+# ==============================================================================
+
+
 @superuser_required
 def lista_categorias(request):
     termo_busca = request.GET.get("q", "").strip()
@@ -167,22 +146,10 @@ def lista_categorias(request):
             | Q(descricao__icontains=termo_busca)
         )
 
-    # Paginação: 10 categorias por página
-    paginator = Paginator(categorias_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        categorias_paginadas = paginator.page(pagina)
-    except PageNotAnInteger:
-        categorias_paginadas = paginator.page(1)
-    except EmptyPage:
-        categorias_paginadas = paginator.page(paginator.num_pages)
-
     context = {
-        "categorias": categorias_paginadas,
+        "categorias": paginar_queryset(request, categorias_query, por_pagina=10),
         "q": termo_busca,
     }
-
     return render(request, "adm/categorias.html", context)
 
 
@@ -195,10 +162,7 @@ def nova_categoria(request):
             messages.success(request, f"Categoria '{categoria.nome}' cadastrada com sucesso!")
             return redirect("lista_categorias")
 
-        # Repassa os erros de validação via toast / alert messages
-        for campo, erros in form.errors.items():
-            for erro in erros:
-                messages.error(request, f"{campo.capitalize()}: {erro}")
+        exibir_erros_formulario(request, form)
     else:
         form = CategoriaForm()
 
@@ -211,33 +175,20 @@ def atualizar_categoria(request, codigo):
 
     if request.method == "POST":
         form = CategoriaForm(request.POST, instance=categoria)
-
         if form.is_valid():
             cat = form.save(commit=False)
-
-            # Mapeia o select name="ativo" (valores "1" ou "0") para o campo booleano 'ativa'
             cat.ativa = request.POST.get("ativo") == "1"
-
-            # Atualiza o slug se o nome tiver sido alterado
             cat.slug = gerar_slug_unico(Categoria, cat, campo_origem="nome", campo_slug="slug")
-
             cat.save()
 
             messages.success(request, f"Categoria '{cat.nome}' atualizada com sucesso!")
             return redirect("lista_categorias")
 
-        # Exibe mensagens com erros de validação
-        for campo, erros in form.errors.items():
-            for erro in erros:
-                messages.error(request, f"{campo.capitalize()}: {erro}")
+        exibir_erros_formulario(request, form)
     else:
         form = CategoriaForm(instance=categoria)
 
-    context = {
-        "form": form,
-        "categoria": categoria,
-    }
-    return render(request, "adm/editar_categoria.html", context)
+    return render(request, "adm/editar_categoria.html", {"form": form, "categoria": categoria})
 
 
 @superuser_required
@@ -264,6 +215,11 @@ def view_categoria(request, codigo):
     return render(request, "adm/detalhes_categoria.html", {"categoria": categoria})
 
 
+# ==============================================================================
+# CONTATOS
+# ==============================================================================
+
+
 @superuser_required
 def lista_contatos(request):
     termo_busca = request.GET.get("q", "").strip()
@@ -277,19 +233,8 @@ def lista_contatos(request):
             | Q(mensagem__icontains=termo_busca)
         )
 
-    # Paginação: 10 mensagens por página
-    paginator = Paginator(contatos_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        contatos_paginados = paginator.page(pagina)
-    except PageNotAnInteger:
-        contatos_paginados = paginator.page(1)
-    except EmptyPage:
-        contatos_paginados = paginator.page(paginator.num_pages)
-
     context = {
-        "contatos": contatos_paginados,
+        "contatos": paginar_queryset(request, contatos_query, por_pagina=10),
         "q": termo_busca,
     }
     return render(request, "adm/contatos.html", context)
@@ -310,23 +255,21 @@ def apagar_contato(request, pk):
     return redirect("lista_contatos")
 
 
+# ==============================================================================
+# USUÁRIOS (ADMINISTRAÇÃO)
+# ==============================================================================
+
+
 @superuser_required
 def novo_usuario(request):
-    # Restringe a criação de usuários a administradores
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Acesso não autorizado para cadastrar novos usuários.")
-        return redirecionar_por_perfil(request.user)
+    bloqueio = verificar_acesso_admin(
+        request, mensagem="Acesso não autorizado para cadastrar novos usuários."
+    )
+    if bloqueio:
+        return bloqueio
 
     if request.method == "POST":
-
-        dados_post = request.POST.copy()
-
-        if "cpf" in dados_post and dados_post["cpf"]:
-            dados_post["cpf"] = re.sub(r"\D", "", dados_post["cpf"])
-
-        if "telefone" in dados_post and dados_post["telefone"]:
-            dados_post["telefone"] = re.sub(r"\D", "", dados_post["telefone"])
-
+        dados_post = higienizar_dados_post(request.POST, campos=("cpf", "telefone"))
         form = NovoUsuarioForm(dados_post, request.FILES)
         if form.is_valid():
             usuario = form.save()
@@ -334,10 +277,10 @@ def novo_usuario(request):
                 request, f"Usuário '{usuario.nome or usuario.email}' cadastrado com sucesso!"
             )
             return redirect("lista_usuarios")
-        else:
-            messages.error(
-                request, "Não foi possível cadastrar o usuário. Corrija os erros apontados."
-            )
+
+        messages.error(
+            request, "Não foi possível cadastrar o usuário. Corrija os erros apontados."
+        )
     else:
         form = NovoUsuarioForm()
 
@@ -352,9 +295,9 @@ def novo_usuario(request):
 
 @superuser_required
 def lista_usuarios(request):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Acesso restrito a administradores.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request, mensagem="Acesso restrito a administradores.")
+    if bloqueio:
+        return bloqueio
 
     termo_busca = request.GET.get("q", "").strip()
     usuarios_query = Perfil.objects.all().order_by("-date_joined")
@@ -368,22 +311,10 @@ def lista_usuarios(request):
         )
         if digitos_cpf:
             filtro |= Q(cpf__icontains=digitos_cpf)
-
         usuarios_query = usuarios_query.filter(filtro)
 
-    # 10 usuários por página
-    paginator = Paginator(usuarios_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        usuarios_paginados = paginator.page(pagina)
-    except PageNotAnInteger:
-        usuarios_paginados = paginator.page(1)
-    except EmptyPage:
-        usuarios_paginados = paginator.page(paginator.num_pages)
-
     context = {
-        "usuarios": usuarios_paginados,
+        "usuarios": paginar_queryset(request, usuarios_query, por_pagina=10),
         "q": termo_busca,
     }
     return render(request, "adm/usuarios.html", context)
@@ -391,21 +322,15 @@ def lista_usuarios(request):
 
 @superuser_required
 def alternar_status_usuario(request, pk):
-    """
-    Alterna o status entre Ativo e Inativo.
-    Impede que o próprio administrador autenticado desative sua conta.
-    """
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     usuario = get_object_or_404(Perfil, pk=pk)
-
     if usuario == request.user:
         messages.warning(request, "Você não pode desativar seu próprio usuário logado.")
         return redirect("lista_usuarios")
 
-    # Inverte os status (tanto ativo de negócio quanto is_active do Django Auth)
     novo_status = not usuario.ativo
     usuario.ativo = novo_status
     usuario.is_active = novo_status
@@ -420,9 +345,9 @@ def alternar_status_usuario(request, pk):
 
 @superuser_required
 def ativar_usuario(request, pk):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     usuario = get_object_or_404(Perfil, pk=pk)
     usuario.ativo = True
@@ -434,9 +359,9 @@ def ativar_usuario(request, pk):
 
 @superuser_required
 def desativar_usuario(request, pk):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     usuario = get_object_or_404(Perfil, pk=pk)
     if usuario == request.user:
@@ -452,9 +377,9 @@ def desativar_usuario(request, pk):
 
 @superuser_required
 def excluir_usuario(request, pk):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     usuario = get_object_or_404(Perfil, pk=pk)
     if usuario == request.user:
@@ -473,11 +398,16 @@ def visualizar_usuario(request, pk):
     return render(request, "adm/detalhe_usuario.html", {"usuario": usuario})
 
 
+# ==============================================================================
+# SALAS E AMBIENTES
+# ==============================================================================
+
+
 @superuser_required
 def lista_salas(request):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Acesso restrito a administradores.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request, mensagem="Acesso restrito a administradores.")
+    if bloqueio:
+        return bloqueio
 
     termo_busca = request.GET.get("q", "").strip()
     salas_query = Sala.objects.all()
@@ -488,24 +418,12 @@ def lista_salas(request):
             | Q(predio__icontains=termo_busca)
             | Q(andar__icontains=termo_busca)
         )
-        # Se Sala tiver o campo 'codigo'
         if hasattr(Sala, "codigo"):
             filtro |= Q(codigo__icontains=termo_busca)
-
         salas_query = salas_query.filter(filtro)
 
-    paginator = Paginator(salas_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        salas_paginadas = paginator.page(pagina)
-    except PageNotAnInteger:
-        salas_paginadas = paginator.page(1)
-    except EmptyPage:
-        salas_paginadas = paginator.page(paginator.num_pages)
-
     context = {
-        "salas": salas_paginadas,
+        "salas": paginar_queryset(request, salas_query, por_pagina=10),
         "q": termo_busca,
     }
     return render(request, "adm/salas.html", context)
@@ -513,9 +431,9 @@ def lista_salas(request):
 
 @superuser_required
 def nova_sala(request):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     if request.method == "POST":
         form = SalaForm(request.POST)
@@ -532,27 +450,20 @@ def nova_sala(request):
 
 @superuser_required
 def detalhes_sala(request, codigo):
-    # Se a PK de Sala for 'codigo', usa-se pk=codigo; caso contrário, use id=codigo
     sala = get_object_or_404(Sala, pk=codigo)
-
-    # Servidores vinculados a esta sala
     servidores = Perfil.objects.filter(sala=sala, tipo=Perfil.TipoUsuario.SERVIDOR)
-
     return render(
         request,
         "adm/detalhes_sala.html",
-        {
-            "sala": sala,
-            "servidores": servidores,
-        },
+        {"sala": sala, "servidores": servidores},
     )
 
 
 @superuser_required
 def editar_sala(request, codigo):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     sala = get_object_or_404(Sala, pk=codigo)
 
@@ -569,22 +480,17 @@ def editar_sala(request, codigo):
     return render(
         request,
         "adm/editar_sala.html",
-        {
-            "form": form,
-            "sala": sala,
-            "acao": "Editar Sala",
-        },
+        {"form": form, "sala": sala, "acao": "Editar Sala"},
     )
 
 
 @superuser_required
 def alternar_status_sala(request, codigo):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     sala = get_object_or_404(Sala, pk=codigo)
-    # Suporta tanto o campo 'ativa' quanto 'ativo'
     campo_status = "ativa" if hasattr(sala, "ativa") else "ativo"
     status_atual = getattr(sala, campo_status, True)
     setattr(sala, campo_status, not status_atual)
@@ -597,12 +503,12 @@ def alternar_status_sala(request, codigo):
 
 @superuser_required
 def excluir_sala(request, codigo):
-    if request.user.tipo != Perfil.TipoUsuario.ADMINISTRADOR and not request.user.is_superuser:
-        messages.error(request, "Permissão negada.")
-        return redirect("usuario_home")
+    bloqueio = verificar_acesso_admin(request)
+    if bloqueio:
+        return bloqueio
 
     sala = get_object_or_404(Sala, pk=codigo)
-    nome_sala = f"Sala {sala.nome} - {sala.predio}"
+    nome_sala = f"Sala {sala.nome} ({sala.predio})"
 
     try:
         sala.delete()
@@ -617,10 +523,16 @@ def excluir_sala(request, codigo):
     return redirect("lista_salas")
 
 
+# ==============================================================================
+# ITENS
+# ==============================================================================
+
+
 @superuser_required
 def lista_itens(request):
     termo_busca = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
+
     itens_query = Item.objects.select_related("categoria", "instituicao", "local").order_by(
         "-data_registro"
     )
@@ -634,21 +546,11 @@ def lista_itens(request):
             | Q(cor__icontains=termo_busca)
         )
 
-    if status_filtro and status_filtro.isdigit():
+    if status_filtro.isdigit():
         itens_query = itens_query.filter(status=int(status_filtro))
 
-    paginator = Paginator(itens_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        itens_paginados = paginator.page(pagina)
-    except PageNotAnInteger:
-        itens_paginados = paginator.page(1)
-    except EmptyPage:
-        itens_paginados = paginator.page(paginator.num_pages)
-
     context = {
-        "itens": itens_paginados,
+        "itens": paginar_queryset(request, itens_query, por_pagina=10),
         "q": termo_busca,
         "status_filtro": status_filtro,
         "status_choices": Item.StatusItem.choices,
@@ -703,6 +605,12 @@ def apagar_item(request, uuid):
 
     return redirect("lista_itens")
 
+
+# ==============================================================================
+# REIVINDICAÇÕES
+# ==============================================================================
+
+
 @superuser_required
 def lista_reivindicacoes(request):
     termo_busca = request.GET.get("q", "").strip()
@@ -723,24 +631,13 @@ def lista_reivindicacoes(request):
         )
         if protocolo_limpo.isdigit():
             filtro_busca |= Q(protocolo=int(protocolo_limpo))
-
         reivindicacoes_query = reivindicacoes_query.filter(filtro_busca)
 
     if status_filtro.isdigit() and int(status_filtro) in Reivindicacao.StatusReivindicacao.values:
         reivindicacoes_query = reivindicacoes_query.filter(status=int(status_filtro))
 
-    paginator = Paginator(reivindicacoes_query, 10)
-    pagina = request.GET.get("page", 1)
-
-    try:
-        reivindicacoes_paginadas = paginator.page(pagina)
-    except PageNotAnInteger:
-        reivindicacoes_paginadas = paginator.page(1)
-    except EmptyPage:
-        reivindicacoes_paginadas = paginator.page(paginator.num_pages)
-
     context = {
-        "reivindicacoes": reivindicacoes_paginadas,
+        "reivindicacoes": paginar_queryset(request, reivindicacoes_query, por_pagina=10),
         "q": termo_busca,
         "status_filtro": status_filtro,
         "status_choices": Reivindicacao.StatusReivindicacao.choices,
@@ -768,11 +665,9 @@ def atualizar_reivindicacao(request, protocolo):
         if form.is_valid():
             reiv = form.save(commit=False)
 
-            # Atribui o administrador logado caso o campo não tenha sido selecionado manualmente
             if not reiv.responsavel_admin and request.user.tipo == Perfil.TipoUsuario.ADMINISTRADOR:
                 reiv.responsavel_admin = request.user
 
-            # Se a reivindicação for concluída/aprovada, sincroniza o status do item correspondente
             if reiv.status == Reivindicacao.StatusReivindicacao.CONCLUIDA:
                 reiv.item.status = Item.StatusItem.DEVOLVIDO
                 reiv.item.dono = reiv.autor
@@ -802,6 +697,11 @@ def apagar_reivindicacao(request, protocolo):
     return redirect("lista_reivindicacoes")
 
 
+# ==============================================================================
+# PERFIL DO ADMINISTRADOR
+# ==============================================================================
+
+
 @superuser_required
 def meu_perfil(request):
     return render(request, "adm/meu_perfil.html", {"usuario": request.user})
@@ -815,7 +715,6 @@ def editar_meu_perfil(request):
         if form.is_valid():
             usuario_salvo = form.save()
 
-            # Sincroniza os novos dados com a sessão do usuário
             request.session["username"] = usuario_salvo.username
             request.session["primeiro_nome"] = usuario_salvo.primeiro_nome
             request.session["foto_url"] = usuario_salvo.foto.url if usuario_salvo.foto else None
@@ -835,7 +734,6 @@ def trocar_minha_senha(request):
         form = TrocarMinhaSenhaForm(user=request.user, data=request.POST)
         if form.is_valid():
             user = form.save()
-            # Impede que o usuário seja desconectado após alterar a credencial
             update_session_auth_hash(request, user)
             messages.success(request, "Sua senha foi alterada com sucesso!")
             return redirect("meu_perfil")
@@ -846,10 +744,13 @@ def trocar_minha_senha(request):
     return render(request, "adm/trocar_senha.html", {"form": form})
 
 
+# ==============================================================================
+# AUTOCADASTRO PÚBLICO POR CONVITE ASSINADO
+# ==============================================================================
+
+
 def novo_usuario_instituicao(request, token):
-    """
-    Link público com token assinado para autocadastro de Usuários Comuns.
-    """
+    """Link público com token assinado para autocadastro de Usuários Comuns."""
     if request.user.is_authenticated:
         messages.info(request, "Você já está autenticado no sistema.")
         return redirect("login")
@@ -857,16 +758,10 @@ def novo_usuario_instituicao(request, token):
     instituicao = _obter_instituicao_por_token(token)
 
     if request.method == "POST":
-        dados_post = request.POST.copy()
-        if "cpf" in dados_post:
-            dados_post["cpf"] = apenas_digitos(dados_post["cpf"])
-        if "telefone" in dados_post:
-            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
-
+        dados_post = higienizar_dados_post(request.POST, campos=("cpf", "telefone"))
         form = AutoCadastroUsuarioForm(dados_post, instituicao=instituicao)
         if form.is_valid():
             form.save()
-
             messages.success(
                 request,
                 f"Cadastro realizado com sucesso na unidade {instituicao.nome}! "
@@ -890,9 +785,7 @@ def novo_usuario_instituicao(request, token):
 
 
 def novo_servidor_instituicao(request, token):
-    """
-    Link público com token assinado para autocadastro de Servidores (aguarda aprovação).
-    """
+    """Link público com token assinado para autocadastro de Servidores (aguarda aprovação)."""
     if request.user.is_authenticated:
         messages.info(request, "Você já está autenticado no sistema.")
         return redirect("login")
@@ -900,16 +793,10 @@ def novo_servidor_instituicao(request, token):
     instituicao = _obter_instituicao_por_token(token)
 
     if request.method == "POST":
-        dados_post = request.POST.copy()
-        if "cpf" in dados_post:
-            dados_post["cpf"] = apenas_digitos(dados_post["cpf"])
-        if "telefone" in dados_post:
-            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
-
+        dados_post = higienizar_dados_post(request.POST, campos=("cpf", "telefone"))
         form = AutoCadastroServidorForm(dados_post, instituicao=instituicao)
         if form.is_valid():
             form.save()
-
             messages.success(
                 request,
                 f"Solicitação de cadastro enviada com sucesso para {instituicao.nome}! "
