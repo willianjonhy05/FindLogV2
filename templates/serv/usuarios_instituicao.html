@@ -83,7 +83,7 @@
                 <select name="status" class="form-select form-select-custom h-100" style="border-radius: 8px; font-size: 0.9rem;">
                     <option value="">Todos Status</option>
                     <option value="ativo" {% if status_filtro == "ativo" %}selected{% endif %}>Ativo</option>
-                    <option value="inativo" {% if status_filtro == "inativo" %}selected{% endif %}>Pendente / Inativo</option>
+                    <option value="inativo" {% if status_filtro == "inativo" %}selected{% endif %}>Inativo</option>
                 </select>
             </div>
 
@@ -129,7 +129,7 @@
                         </span>
                     {% else %}
                         <span class="sala-badge sala-badge-inactive">
-                            <i class="bi bi-hourglass-split"></i> Pendente
+                            <i class="bi bi-hourglass-split"></i> Inativo
                         </span>
                     {% endif %}
                 </div>
@@ -165,25 +165,37 @@
                 <div class="sala-feed-card-footer">
                     <span class="text-secondary-custom small fw-semibold">Ações</span>
                     <div class="sala-actions-group">
-                        <a href="{% url 'servidor_visualizar_usuario' perfil.pk %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
+                        <a href="{% url 'servidor_visualizar_usuario' perfil.username %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
                             <i class="bi bi-eye"></i>
                         </a>
 
                         {% if perfil.pk != request.user.pk %}
                             {% if perfil.ativo %}
-                                <form method="POST" action="{% url 'servidor_desativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar o acesso deste perfil?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar acesso" aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
-                                        <i class="bi bi-slash-circle"></i>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        class="sala-action-icon sala-action-icon-deact btn-modal-status-usuario"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalStatusUsuario"
+                                        data-action="desativar"
+                                        data-url="{% url 'servidor_desativar_usuario' perfil.pk %}"
+                                        data-usuario-nome="{{ perfil.nome|default:perfil.username }}"
+                                        data-usuario-info="@{{ perfil.username }} • {{ perfil.get_tipo_display }}"
+                                        title="Desativar acesso"
+                                        aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
                             {% else %}
-                                <form method="POST" action="{% url 'servidor_ativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja aprovar / ativar este perfil?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar acesso" aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
-                                        <i class="bi bi-check-circle"></i>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        class="sala-action-icon sala-action-icon-act btn-modal-status-usuario"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalStatusUsuario"
+                                        data-action="ativar"
+                                        data-url="{% url 'servidor_ativar_usuario' perfil.pk %}"
+                                        data-usuario-nome="{{ perfil.nome|default:perfil.username }}"
+                                        data-usuario-info="@{{ perfil.username }} • {{ perfil.get_tipo_display }}"
+                                        title="Ativar acesso"
+                                        aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
                             {% endif %}
                         {% endif %}
                     </div>
@@ -266,31 +278,43 @@
                                 {% if perfil.ativo %}
                                     <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Ativo</span>
                                 {% else %}
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pendente</span>
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Inativo</span>
                                 {% endif %}
                             </td>
 
                             <td class="pe-4 text-end">
                                 <div class="sala-actions-group justify-content-end">
-                                    <a href="{% url 'servidor_visualizar_usuario' perfil.pk %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
+                                    <a href="{% url 'servidor_visualizar_usuario' perfil.username %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
 
                                     {% if perfil.pk != request.user.pk %}
                                         {% if perfil.ativo %}
-                                            <form method="POST" action="{% url 'servidor_desativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar o acesso deste perfil?');">
-                                                {% csrf_token %}
-                                                <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar acesso" aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
-                                                    <i class="bi bi-slash-circle"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button"
+                                                    class="sala-action-icon sala-action-icon-deact btn-modal-status-usuario"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalStatusUsuario"
+                                                    data-action="desativar"
+                                                    data-url="{% url 'servidor_desativar_usuario' perfil.pk %}"
+                                                    data-usuario-nome="{{ perfil.nome|default:perfil.username }}"
+                                                    data-usuario-info="@{{ perfil.username }} • {{ perfil.get_tipo_display }}"
+                                                    title="Desativar acesso"
+                                                    aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                                <i class="bi bi-slash-circle"></i>
+                                            </button>
                                         {% else %}
-                                            <form method="POST" action="{% url 'servidor_ativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja aprovar / ativar este perfil?');">
-                                                {% csrf_token %}
-                                                <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar acesso" aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button"
+                                                    class="sala-action-icon sala-action-icon-act btn-modal-status-usuario"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalStatusUsuario"
+                                                    data-action="ativar"
+                                                    data-url="{% url 'servidor_ativar_usuario' perfil.pk %}"
+                                                    data-usuario-nome="{{ perfil.nome|default:perfil.username }}"
+                                                    data-usuario-info="@{{ perfil.username }} • {{ perfil.get_tipo_display }}"
+                                                    title="Ativar acesso"
+                                                    aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
                                         {% endif %}
                                     {% endif %}
                                 </div>
@@ -367,4 +391,50 @@
     {% endif %}
 
 </div>
+
+<!-- ========================================================================
+     MODAL: ATIVAR / DESATIVAR ACESSO DE USUÁRIO (POST COM CSRF)
+     ======================================================================== -->
+<div class="modal fade" id="modalStatusUsuario" tabindex="-1" aria-labelledby="modalStatusUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalStatusUsuarioLabel">
+                    <i id="modalStatusUsuarioIcon" class="bi bi-slash-circle fs-5"></i>
+                    <span id="modalStatusUsuarioTitulo">Alterar Status de Acesso</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3" id="modalStatusUsuarioDescricao">
+                    Confirme a alteração de acesso deste membro na instituição:
+                </p>
+
+                <div class="p-3 rounded-3 bg-light border">
+                    <strong class="d-block text-dark fs-6" id="modalStatusUsuarioNome">Membro</strong>
+                    <small class="text-muted" id="modalStatusUsuarioInfo">@username</small>
+                </div>
+
+                <div class="alert alert-light border small text-secondary mt-3 mb-0" id="modalStatusUsuarioAviso">
+                    <i class="bi bi-info-circle me-1"></i> Perfis inativos ficam impedidos de acessar o sistema até nova aprovação.
+                </div>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="" id="formStatusUsuario" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" id="btnConfirmarStatusUsuario" class="btn btn-warning">
+                        <i class="bi bi-check-lg me-1"></i> Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/modal_status_usuario.js' %}"></script>
 {% endblock %}

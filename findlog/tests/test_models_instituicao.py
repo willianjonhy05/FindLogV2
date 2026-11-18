@@ -61,7 +61,7 @@ class InstituicaoModelTestCase(TestCase):
     def test_obter_por_token_instituicao_inativa(self):
         """Testa se o método retorna None se a instituição associada ao token estiver inativa."""
         instituicao = Instituicao.objects.create(
-            cnpj="98765432000110",
+            cnpj="74580881000101",
             nome="Instituição Inativa",
             endereco="Av. Central",
             email="inativa@ifpi.edu.br",
@@ -75,7 +75,7 @@ class InstituicaoModelTestCase(TestCase):
     def test_str_representation(self):
         """Testa o método __str__ da instituição."""
         instituicao = Instituicao.objects.create(
-            cnpj="11222333000144",
+            cnpj="08886436000131",
             nome="Reitoria IFPI",
             endereco="Praça da Liberdade",
             email="reitoria@ifpi.edu.br"

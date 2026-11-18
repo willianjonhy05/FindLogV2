@@ -128,7 +128,7 @@
                             {% if reivindicacao.autor.email %} &bull; {{ reivindicacao.autor.email }}{% endif %}
                         </span>
                     </div>
-                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.pk %}" class="btn btn-sm btn-outline-primary d-none d-sm-inline-flex">
+                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.username %}" class="btn btn-sm btn-outline-primary d-none d-sm-inline-flex">
                         <i class="bi bi-person me-1"></i> Perfil
                     </a>
                 </div>
@@ -363,7 +363,7 @@
                         </a>
                     {% endif %}
 
-                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.pk %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.username %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
                         <i class="bi bi-person-badge"></i>
                         <span>Detalhar Solicitante</span>
                     </a>

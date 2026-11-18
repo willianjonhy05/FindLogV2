@@ -22,7 +22,7 @@ class InstituicaoFormsTestCase(TestCase):
     def test_instituicao_form_valido(self):
         """Testa a criação de uma nova instituição com dados válidos e formatação limpa."""
         form_data = {
-            "cnpj": "98765432000110",
+            "cnpj": "90076149000147",
             "nome": "IFPI Campus Parnaíba",
             "endereco": "Av. São Sebastião",
             "telefone": "(86) 3322-1122",
@@ -35,7 +35,7 @@ class InstituicaoFormsTestCase(TestCase):
         instituicao = form.save()
         
         # Verifica se o CNPJ e o telefone foram salvos sem caracteres especiais (apenas dígitos)
-        self.assertEqual(instituicao.cnpj, "98765432000110")
+        self.assertEqual(instituicao.cnpj, "90076149000147")
         self.assertEqual(instituicao.telefone, "8633221122")
         self.assertEqual(instituicao.nome, "IFPI Campus Parnaíba")
 
@@ -58,7 +58,7 @@ class InstituicaoFormsTestCase(TestCase):
     def test_instituicao_form_telefone_opcional(self):
         """Testa se o formulário aceita telefone em branco/vazio sem disparar erros."""
         form_data = {
-            "cnpj": "11222333000144",
+            "cnpj": "33000167000101",
             "nome": "Campus Sem Telefone",
             "endereco": "Rua Principal",
             "telefone": "",  # Vazio

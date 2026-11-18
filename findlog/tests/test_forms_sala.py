@@ -15,7 +15,7 @@ class SalaFormsTestCase(TestCase):
             ativo=True
         )
         self.instituicao_inativa = Instituicao.objects.create(
-            cnpj="98765432000110",
+            cnpj="87261970000129",
             nome="IFPI Campus Inativo",
             endereco="Fora de Operação",
             email="inativo@ifpi.edu.br",

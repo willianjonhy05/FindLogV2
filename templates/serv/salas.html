@@ -4,7 +4,6 @@
 {% block title %}Salas e Ambientes | {{ instituicao.nome }}{% endblock %}
 
 {% block extra_head %}
-
 <link rel="stylesheet" href="{% static 'css/salas.css' %}">
 {% endblock %}
 
@@ -14,26 +13,6 @@
     <!-- ====================================================================
          1. CABEÇALHO DO MÓDULO (Header Institucional)
          ==================================================================== -->
-    <!-- <div class="sala-header-card mb-3 mb-md-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <div class="sala-header-icon">
-                <i class="bi bi-door-open-fill"></i>
-            </div>
-            <div>
-                <h1 class="sala-page-title mb-1">Salas e Ambientes</h1>
-                <p class="sala-page-subtitle mb-0">
-                    Gerenciando dependências de: <strong>{{ instituicao.nome }}</strong>
-                </p>
-            </div>
-        </div>
-        <div class="w-100 w-md-auto text-end">
-            <a href="{% url 'servidor_cadastrar_sala' %}" class="btn btn-primary-custom w-100 w-md-auto">
-                <i class="bi bi-plus-circle-fill me-1"></i> Nova Sala
-            </a>
-        </div>
-    </div> -->
-
-
     <section class="dash-hero-card mb-4">
         <div class="row align-items-center g-3">
             <div class="col-12 col-lg-7">
@@ -46,8 +25,7 @@
                             Salas e Ambientes
                         </h1>
                         <p class="dash-hero-subtitle">
-                            Gestão operacional de <strong>{{ request.session.instituicao_nome }}</strong>
-                           
+                            Gestão operacional de <strong>{{ request.session.instituicao_nome|default:instituicao.nome }}</strong>
                         </p>
                     </div>
                 </div>
@@ -56,9 +34,6 @@
             <!-- Botões de Ação Rápida no Hero -->
             <div class="col-12 col-lg-5 text-start text-lg-end">
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
-                    <!-- <a href="#" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
-                        <i class="bi bi-door-open"></i> Reivindicações
-                    </a> -->
                     <a href="{% url 'servidor_cadastrar_sala' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
                         <i class="bi bi-plus-circle-fill"></i> Nova Sala
                     </a>
@@ -68,7 +43,7 @@
     </section>
 
     <!-- ====================================================================
-         2. MENSAGENS FLASH (FALLBACK DE COMPATIBILIDADE)
+         2. MENSAGENS FLASH
          ==================================================================== -->
     {% if messages %}
         <div class="mb-3">
@@ -115,7 +90,6 @@
 
     <!-- ====================================================================
          4. VISUALIZAÇÃO 1: FEED CARDS NO MOBILE (< 768px)
-         Estilo Social Media Corporativo com Metadados em Chips
          ==================================================================== -->
     <div class="d-md-none">
         {% for sala in page_obj %}
@@ -156,10 +130,6 @@
                         <i class="bi bi-layers"></i>
                         <span>Andar: <strong>{{ sala.andar }}</strong></span>
                     </span>
-                    <span class="sala-meta-chip">
-                        <i class="bi bi-telephone"></i>
-                        <span>{{ sala.telefone|default:"Sem ramal" }}</span>
-                    </span>
                 </div>
 
                 <!-- Rodapé: Ações Rápidas Padronizadas -->
@@ -176,30 +146,47 @@
                             <i class="bi bi-pencil"></i>
                         </a>
 
-                        <!-- Alternar Status (POST) -->
+                        <!-- Alternar Status via Modal -->
                         {% if sala.ativa %}
-                            <form method="POST" action="{% url 'servidor_desativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
-                                {% csrf_token %}
-                                <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
-                                    <i class="bi bi-slash-circle"></i>
-                                </button>
-                            </form>
+                            <button type="button"
+                                    class="sala-action-icon sala-action-icon-deact btn-modal-status-sala"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalStatusSala"
+                                    data-action="desativar"
+                                    data-url="{% url 'servidor_desativar_sala' sala.codigo %}"
+                                    data-sala-nome="{{ sala.nome }}"
+                                    data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                    title="Desativar sala"
+                                    aria-label="Desativar sala {{ sala.nome }}">
+                                <i class="bi bi-slash-circle"></i>
+                            </button>
                         {% else %}
-                            <form method="POST" action="{% url 'servidor_ativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
-                                {% csrf_token %}
-                                <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
-                                    <i class="bi bi-check-circle"></i>
-                                </button>
-                            </form>
+                            <button type="button"
+                                    class="sala-action-icon sala-action-icon-act btn-modal-status-sala"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalStatusSala"
+                                    data-action="ativar"
+                                    data-url="{% url 'servidor_ativar_sala' sala.codigo %}"
+                                    data-sala-nome="{{ sala.nome }}"
+                                    data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                    title="Ativar sala"
+                                    aria-label="Ativar sala {{ sala.nome }}">
+                                <i class="bi bi-check-circle"></i>
+                            </button>
                         {% endif %}
 
-                        <!-- Excluir (POST) -->
-                        <form method="POST" action="{% url 'servidor_excluir_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
-                                <i class="bi bi-trash3"></i>
-                            </button>
-                        </form>
+                        <!-- Excluir via Modal -->
+                        <button type="button"
+                                class="sala-action-icon sala-action-icon-del btn-modal-excluir-sala"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalExcluirSala"
+                                data-url="{% url 'servidor_excluir_sala' sala.codigo %}"
+                                data-sala-nome="{{ sala.nome }}"
+                                data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                title="Excluir sala"
+                                aria-label="Excluir permanentemente sala {{ sala.nome }}">
+                            <i class="bi bi-trash3"></i>
+                        </button>
                     </div>
                 </div>
             </article>
@@ -230,7 +217,6 @@
                         <th class="ps-4">Código</th>
                         <th>Identificação / Nome</th>
                         <th>Localização</th>
-                        <th>Ramal / Contato</th>
                         <th>Status</th>
                         <th class="pe-4 text-end">Ações</th>
                     </tr>
@@ -265,17 +251,6 @@
                                 </small>
                             </td>
 
-                            <!-- Contato -->
-                            <td>
-                                {% if sala.telefone %}
-                                    <span class="text-nowrap small fw-medium">
-                                        <i class="bi bi-telephone text-muted me-1"></i>{{ sala.telefone }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted small">Não informado</span>
-                                {% endif %}
-                            </td>
-
                             <!-- Status -->
                             <td>
                                 {% if sala.ativa %}
@@ -291,7 +266,7 @@
 
                             <!-- Ações -->
                             <td class="pe-4 text-end">
-                                <div class="sala-actions-group">
+                                <div class="sala-actions-group justify-content-end">
                                     <a href="{% url 'servidor_detalhar_sala' codigo=sala.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
@@ -301,33 +276,50 @@
                                     </a>
 
                                     {% if sala.ativa %}
-                                        <form method="POST" action="{% url 'servidor_desativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
-                                                <i class="bi bi-slash-circle"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                class="sala-action-icon sala-action-icon-deact btn-modal-status-sala"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalStatusSala"
+                                                data-action="desativar"
+                                                data-url="{% url 'servidor_desativar_sala' sala.codigo %}"
+                                                data-sala-nome="{{ sala.nome }}"
+                                                data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                                title="Desativar sala"
+                                                aria-label="Desativar sala {{ sala.nome }}">
+                                            <i class="bi bi-slash-circle"></i>
+                                        </button>
                                     {% else %}
-                                        <form method="POST" action="{% url 'servidor_ativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                class="sala-action-icon sala-action-icon-act btn-modal-status-sala"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalStatusSala"
+                                                data-action="ativar"
+                                                data-url="{% url 'servidor_ativar_sala' sala.codigo %}"
+                                                data-sala-nome="{{ sala.nome }}"
+                                                data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                                title="Ativar sala"
+                                                aria-label="Ativar sala {{ sala.nome }}">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
                                     {% endif %}
 
-                                    <form method="POST" action="{% url 'servidor_excluir_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            class="sala-action-icon sala-action-icon-del btn-modal-excluir-sala"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalExcluirSala"
+                                            data-url="{% url 'servidor_excluir_sala' sala.codigo %}"
+                                            data-sala-nome="{{ sala.nome }}"
+                                            data-sala-local="Prédio {{ sala.predio }} • Andar {{ sala.andar }}"
+                                            title="Excluir sala"
+                                            aria-label="Excluir permanentemente sala {{ sala.nome }}">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="py-3">
                                     <i class="bi bi-door-closed fs-1 d-block mb-2 text-secondary opacity-50"></i>
                                     {% if termo_busca %}
@@ -349,7 +341,7 @@
     </div>
 
     <!-- ====================================================================
-         6. PAGINAÇÃO (Compartilhada e Fluida no Mobile e Desktop)
+         6. PAGINAÇÃO
          ==================================================================== -->
     {% if page_obj.has_other_pages %}
         <div class="sala-pagination-bar mt-3 mt-md-0 rounded-bottom-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
@@ -400,4 +392,93 @@
     {% endif %}
 
 </div>
+
+<!-- ========================================================================
+     MODAL 1: ATIVAR / DESATIVAR SALA (POST COM CSRF)
+     ======================================================================== -->
+<div class="modal fade" id="modalStatusSala" tabindex="-1" aria-labelledby="modalStatusSalaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalStatusSalaLabel">
+                    <i id="modalStatusSalaIcon" class="bi bi-slash-circle fs-5"></i>
+                    <span id="modalStatusSalaTitulo">Alterar Status da Sala</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3" id="modalStatusSalaDescricao">
+                    Confirme a alteração de disponibilidade deste ambiente:
+                </p>
+
+                <div class="p-3 rounded-3 bg-light border">
+                    <strong class="d-block text-dark fs-6" id="modalStatusSalaNome">Sala</strong>
+                    <small class="text-muted" id="modalStatusSalaLocal">Localização</small>
+                </div>
+
+                <div class="alert alert-light border small text-secondary mt-3 mb-0" id="modalStatusSalaAviso">
+                    <i class="bi bi-info-circle me-1"></i> Salas inativas não aparecem nas opções de novos cadastros de itens.
+                </div>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="" id="formStatusSala" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" id="btnConfirmarStatusSala" class="btn btn-warning">
+                        <i class="bi bi-check-lg me-1"></i> Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================
+     MODAL 2: EXCLUIR SALA PERMANENTEMENTE (POST COM CSRF)
+     ======================================================================== -->
+<div class="modal fade" id="modalExcluirSala" tabindex="-1" aria-labelledby="modalExcluirSalaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-danger fw-bold" id="modalExcluirSalaLabel">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3">
+                    Tem certeza de que deseja excluir permanentemente este ambiente da unidade?
+                </p>
+
+                <div class="p-3 rounded-3 bg-danger-subtle border border-danger-subtle">
+                    <strong class="d-block text-dark fs-6" id="modalExcluirSalaNome">Sala</strong>
+                    <small class="text-secondary" id="modalExcluirSalaLocal">Localização</small>
+                </div>
+
+                <small class="text-danger mt-3 d-block">
+                    <i class="bi bi-shield-exclamation me-1"></i>
+                    Esta ação não poderá ser desfeita. Caso existam itens ou servidores vinculados, a exclusão será bloqueada por segurança.
+                </small>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="" id="formExcluirSala" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger-custom">
+                        <i class="bi bi-trash3-fill me-1"></i> Sim, excluir sala
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/modais_salas.js' %}"></script>
 {% endblock %}

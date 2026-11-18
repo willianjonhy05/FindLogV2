@@ -5,14 +5,19 @@ from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 from django.urls import reverse
 
-from ..utils import gerar_qrcode_base64, apenas_digitos, _obter_perfil_servidor, _obter_instituicao_servidor
+from ..utils import (
+    gerar_qrcode_base64,
+    apenas_digitos,
+    _obter_perfil_servidor,
+    _obter_instituicao_servidor,
+    redirecionar_origem,
+)
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
 from ..forms.perfil import (
     ServidorCadastroColegaForm,
     ServidorAlterarSenhaForm,
     ServidorEditarUserForm,
-    ServidorEditarPerfilForm,
 )
 from ..forms.item import ServidorItemForm, ServidorAtualizarItemForm
 
@@ -40,18 +45,19 @@ def _obter_instituicao_ativa(request):
     return instituicao
 
 
-def _obter_perfil_da_instituicao(instituicao, pk):
+def _obter_perfil_da_instituicao(instituicao, username):
     """
-    Busca um usuário comum ou servidor vinculado à instituição informada,
+    Busca um usuário comum ou servidor pelo username vinculado à instituição informada,
     bloqueando o acesso a superusuários e administradores da plataforma.
     """
     return get_object_or_404(
         Perfil.objects.select_related("sala"),
-        pk=pk,
+        username=username,
         instituicao=instituicao,
         is_superuser=False,
         tipo__in=[Perfil.TipoUsuario.USUARIO, Perfil.TipoUsuario.SERVIDOR],
     )
+
 
 @servidor_required
 def servidor_painel(request):
@@ -113,6 +119,7 @@ def servidor_painel(request):
     }
 
     return render(request, "serv/index.html", context)
+
 
 @servidor_required
 def servidor_cadastrar_sala(request):
@@ -241,19 +248,23 @@ def servidor_editar_sala(request, codigo):
 @require_POST
 def servidor_alternar_status_sala(request, codigo):
     """
-    Alterna o status da sala (ativa/inativa) de forma atômica via requisição POST.
+    Alterna o status da sala (ativa/inativa) de forma atômica via requisição POST
+    e retorna para a página de origem.
     """
-    sala = get_object_or_404(Sala, codigo=codigo)
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
 
-    # Inverte o booleano atual
+    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
+
     sala.ativa = not sala.ativa
     sala.save(update_fields=["ativa"])
 
     status_str = "ativada" if sala.ativa else "desativada"
     messages.success(request, f"A sala '{sala.nome}' foi {status_str} com sucesso.")
 
-    # Redireciona de volta para a listagem ou para a página anterior
-    return redirect(request.META.get("HTTP_REFERER", "servidor_listar_salas"))
+    return redirecionar_origem(request, fallback="servidor_listar_salas")
 
 
 @servidor_required
@@ -264,7 +275,6 @@ def servidor_ativar_sala(request, codigo):
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
 
-    # Só altera se a sala pertencer à mesma unidade
     sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
 
     if not sala.ativa:
@@ -274,7 +284,7 @@ def servidor_ativar_sala(request, codigo):
     else:
         messages.info(request, f'A sala "{sala.nome}" já se encontra ativa.')
 
-    return redirect("servidor_listar_salas")
+    return redirecionar_origem(request, fallback="servidor_listar_salas")
 
 
 @servidor_required
@@ -294,7 +304,7 @@ def servidor_desativar_sala(request, codigo):
     else:
         messages.info(request, f'A sala "{sala.nome}" já está inativa.')
 
-    return redirect("servidor_detalhar_sala", codigo=sala.codigo)
+    return redirecionar_origem(request, fallback="servidor_detalhar_sala", codigo=sala.codigo)
 
 
 @servidor_required
@@ -326,6 +336,7 @@ def servidor_detalhar_sala(request, codigo):
     context = {"sala": sala}
 
     return render(request, "serv/detalhar_sala.html", context)
+
 
 @servidor_required
 def servidor_listar_itens(request):
@@ -390,6 +401,7 @@ def servidor_listar_itens(request):
         "total_itens": paginator.count,
     }
     return render(request, "serv/listar_itens.html", context)
+
 
 # ----------------------------------------------------------------------
 # 2. LISTAR ITENS POR SALA (Onde foi encontrado ou guardado)
@@ -565,7 +577,9 @@ def servidor_usuarios_instituicao(request):
         )
         .select_related("sala")
         .distinct()
-        .order_by("ativo", "-criado_em")  # Pendentes (ativo=False) aparecem no topo para fácil aprovação
+        .order_by(
+            "ativo", "-criado_em"
+        )  # Pendentes (ativo=False) aparecem no topo para fácil aprovação
     )
 
     # 1. Busca textual (nome, e-mail, username, código/matrícula, CPF e telefone)
@@ -617,27 +631,17 @@ def servidor_usuarios_instituicao(request):
 
 
 @servidor_required
-def servidor_visualizar_usuario(request, pk):
+def servidor_visualizar_usuario(request, username):
     """
     Exibe os detalhes cadastrais, histórico de reivindicações (se usuário)
     ou itens registrados (se servidor) dentro da instituição ativa.
     """
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = (
-        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-        if cnpj_sessao
-        else request.user.instituicao.filter(ativo=True).first()
-    )
-
-    if not instituicao:
-        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
-        return redirect("login")    
-    
+    instituicao = _obter_instituicao_servidor(request)
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
 
-    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
 
     # Histórico contextualizado na unidade atual
     reivindicacoes = (
@@ -662,26 +666,20 @@ def servidor_visualizar_usuario(request, pk):
     }
     return render(request, "serv/visualizar_usuario.html", context)
 
+
 @servidor_required
 @require_POST
-def servidor_ativar_usuario(request, pk):
+def servidor_ativar_usuario(request, username):
     """
     Ativa o acesso de um usuário ou aprova o cadastro pendente de um servidor
     vinculado à instituição ativa.
     """
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = (
-        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-        if cnpj_sessao
-        else request.user.instituicao.filter(ativo=True).first()
-    )
-
+    instituicao = _obter_instituicao_servidor(request)
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
 
-
-    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
 
     if perfil.pk == request.user.pk:
         messages.warning(request, "Você não pode alterar o status do seu próprio perfil.")
@@ -699,7 +697,6 @@ def servidor_ativar_usuario(request, pk):
             f"{papel} {perfil.nome or perfil.username} ativado(a) com sucesso!",
         )
 
-    # Volta para a página de origem (detalhes ou listagem)
     proxima_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
     if proxima_url:
         return redirect(proxima_url)
@@ -708,30 +705,26 @@ def servidor_ativar_usuario(request, pk):
 
 @servidor_required
 @require_POST
-def servidor_desativar_usuario(request, pk):
+def servidor_desativar_usuario(request, username):
     """
     Bloqueia temporariamente o acesso de um usuário ou servidor vinculado
     à instituição ativa.
     """
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = (
-        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-        if cnpj_sessao
-        else request.user.instituicao.filter(ativo=True).first()
-    )
-
+    instituicao = _obter_instituicao_servidor(request)
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
 
-    perfil = _obter_perfil_da_instituicao(instituicao, pk)
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
 
     if perfil.pk == request.user.pk:
         messages.error(request, "Operação bloqueada: você não pode desativar sua própria conta.")
         return redirect("servidor_usuarios_instituicao")
 
     if not perfil.ativo:
-        messages.info(request, f"O perfil de {perfil.nome or perfil.username} já encontra-se desativado.")
+        messages.info(
+            request, f"O perfil de {perfil.nome or perfil.username} já encontra-se desativado."
+        )
     else:
         perfil.ativo = False
         perfil.save(update_fields=["ativo"])
@@ -745,6 +738,7 @@ def servidor_desativar_usuario(request, pk):
     if proxima_url:
         return redirect(proxima_url)
     return redirect("servidor_usuarios_instituicao")
+
 
 @servidor_required
 def servidor_cadastra_item(request):
@@ -793,6 +787,7 @@ def servidor_cadastra_item(request):
         "instituicao": instituicao,
     }
     return render(request, "serv/cadastrar_item.html", context)
+
 
 @servidor_required
 def servidor_detalhes_item(request, uuid):
@@ -994,30 +989,27 @@ def servidor_atualizar_item(request, uuid):
     # Garante que o item existe e pertence à mesma instituição do servidor
     item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ServidorAtualizarItemForm(
-            request.POST,
-            request.FILES,
-            instance=item,
-            instituicao=instituicao
+            request.POST, request.FILES, instance=item, instituicao=instituicao
         )
         if form.is_valid():
             form.save()
-            messages.success(request, f'Os dados do item "{item.nome}" foram atualizados com sucesso.')
-            return redirect('servidor_detalhes_item', uuid=item.uuid)
+            messages.success(
+                request, f'Os dados do item "{item.nome}" foram atualizados com sucesso.'
+            )
+            return redirect("servidor_detalhes_item", uuid=item.uuid)
         else:
-            messages.error(request, 'Verifique os erros no formulário antes de salvar.')
+            messages.error(request, "Verifique os erros no formulário antes de salvar.")
     else:
-        form = ServidorAtualizarItemForm(
-            instance=item,
-            instituicao=instituicao
-        )
+        form = ServidorAtualizarItemForm(instance=item, instituicao=instituicao)
 
     context = {
-        'form': form,
-        'item': item,  # Enviado para exibir os campos somente leitura no template
+        "form": form,
+        "item": item,  # Enviado para exibir os campos somente leitura no template
     }
-    return render(request, 'serv/atualizar_item.html', context)
+    return render(request, "serv/atualizar_item.html", context)
+
 
 @servidor_required
 def servidor_listar_reivindicacoes(request):
@@ -1098,7 +1090,9 @@ def servidor_listar_reivindicacoes(request):
     page_obj = paginator.get_page(page_number)
 
     context = {
-        "titulo": "Reivindicações dos Meus Itens" if apenas_meus_itens else "Reivindicações da Unidade",
+        "titulo": (
+            "Reivindicações dos Meus Itens" if apenas_meus_itens else "Reivindicações da Unidade"
+        ),
         "subtitulo": f"Solicitações de devolução registradas em {instituicao.nome}",
         "instituicao": instituicao,
         "reivindicacoes": page_obj,
@@ -1144,6 +1138,7 @@ def servidor_visualizar_meu_perfil(request):
         "total_reivindicacoes_atendidas": total_reivindicacoes_atendidas,
     }
     return render(request, "serv/meu_perfil.html", context)
+
 
 @servidor_required
 def servidor_editar_meu_perfil(request):
@@ -1212,4 +1207,4 @@ def servidor_alterar_senha(request):
         "perfil": perfil,
         "form": form,
     }
-    return render(request, "serv/alterar_senha.html", context)    
+    return render(request, "serv/alterar_senha.html", context)

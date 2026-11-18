@@ -45,9 +45,9 @@ urlpatterns = [
 
     path("usuarios/", servidor_usuarios_instituicao, name="servidor_usuarios_instituicao"),
     path("usuarios/novo/", servidor_cadastrar_usuario, name="servidor_cadastrar_usuario"),
-    path("usuarios/<int:pk>/", servidor_visualizar_usuario, name="servidor_visualizar_usuario"),
-    path("usuarios/<int:pk>/ativar/", servidor_ativar_usuario, name="servidor_ativar_usuario"),
-    path("usuarios/<int:pk>/desativar/", servidor_desativar_usuario, name="servidor_desativar_usuario"),
+    path("usuarios/<str:username>/", servidor_visualizar_usuario, name="servidor_visualizar_usuario"),
+    path("usuarios/<str:username>/ativar/", servidor_ativar_usuario, name="servidor_ativar_usuario"),
+    path("usuarios/<str:username>/desativar/", servidor_desativar_usuario, name="servidor_desativar_usuario"),
 
     path("itens/", servidor_listar_itens, name="servidor_listar_itens"),
     path("itens/novo/", servidor_cadastra_item, name="servidor_cadastra_item"),

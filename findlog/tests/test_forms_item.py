@@ -15,7 +15,7 @@ class ItemFormsTestCase(TestCase):
             ativo=True
         )
         self.outra_instituicao = Instituicao.objects.create(
-            cnpj="98765432000110",
+            cnpj="11222333000181",
             nome="IFPI Campus Parnaíba",
             endereco="Beira Mar",
             email="parnaiba@ifpi.edu.br",

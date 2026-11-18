@@ -15,7 +15,7 @@ class ReivindicacaoFormsTestCase(TestCase):
             ativo=True
         )
         self.outra_instituicao = Instituicao.objects.create(
-            cnpj="98765432000110",
+            cnpj="49688059000103",
             nome="IFPI Campus Parnaíba",
             endereco="Beira Mar",
             email="parnaiba@ifpi.edu.br",

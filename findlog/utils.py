@@ -12,6 +12,9 @@ from django.shortcuts import redirect
 from django.http import Http404
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.utils.http import url_has_allowed_host_and_scheme
+
+
 
 
 def apenas_digitos(valor: str) -> str:
@@ -278,3 +281,18 @@ def _obter_instituicao_servidor(request):
         if inst:
             return inst
     return request.user.instituicao.filter(ativo=True).first()    
+
+
+def redirecionar_origem(request, fallback="servidor_listar_salas", **fallback_kwargs):
+    """
+    Retorna para a URL informada em POST['next'] ou HTTP_REFERER,
+    desde que pertença ao mesmo host. Caso contrário, vai para o fallback.
+    """
+    destino = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if destino and url_has_allowed_host_and_scheme(
+        url=destino,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(destino)
+    return redirect(fallback, **fallback_kwargs)
