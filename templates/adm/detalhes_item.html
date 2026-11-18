@@ -143,7 +143,11 @@
                         <span class="profile-data-label">Usuário que Registrou</span>
                         <div class="profile-data-value">
                             <i class="bi bi-person profile-info-icon"></i>
-                            <span>{{ item.usuario_registro.nome|default:item.usuario_registro.username|default:"Sistema" }}</span>
+                            {% if item.usuario_registro %}
+                                <span>{{ item.usuario_registro.nome }}</span>
+                            {% else %}
+                                <span class="text-muted">Sistema</span>
+                            {% endif %}
                         </div>
                     </div>
 
