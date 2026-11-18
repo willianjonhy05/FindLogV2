@@ -95,11 +95,35 @@ def gerar_slug_unico(model_class, instancia, campo_origem="nome", campo_slug="sl
 
 def validar_cnpj(valor):
     """
-    Exemplo de validador de CNPJ (mantenha sua implementação real aqui).
+    Valida um CNPJ brasileiro (aceitando formatado ou apenas dígitos)
+    verificando tamanho, sequências repetidas e dígitos verificadores.
+    Lança ValidationError caso seja inválido.
     """
+    if not valor:
+        return
+
     cnpj = apenas_digitos(valor)
+
     if len(cnpj) != 14:
         raise ValidationError("CNPJ inválido: deve conter 14 dígitos.")
+
+    # Bloqueia sequências inválidas de dígitos iguais (ex: 11.111.111/1111-11)
+    if len(set(cnpj)) == 1:
+        raise ValidationError("CNPJ inválido.")
+
+    def _calcular_digito(fatia_cnpj, pesos):
+        soma = sum(int(digito) * peso for digito, peso in zip(fatia_cnpj, pesos))
+        resto = soma % 11
+        return "0" if resto < 2 else str(11 - resto)
+
+    pesos_primeiro_digito = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    pesos_segundo_digito = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
+    digito_1 = _calcular_digito(cnpj[:12], pesos_primeiro_digito)
+    digito_2 = _calcular_digito(cnpj[:13], pesos_segundo_digito)
+
+    if cnpj[-2:] != f"{digito_1}{digito_2}":
+        raise ValidationError("CNPJ inválido: dígitos verificadores não conferem.")
 
 
 def gerar_codigo_aleatorio(
