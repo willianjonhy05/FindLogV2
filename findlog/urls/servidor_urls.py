@@ -48,8 +48,8 @@ urlpatterns = [
 
     path("itens/", servidor_listar_itens, name="servidor_listar_itens"),
     path("itens/novo/", servidor_cadastra_item, name="servidor_cadastra_item"),
-    path("itens/<str:codigo>/", servidor_detalhes_item, name="servidor_detalhes_item"),
-    path("itens/<str:codigo>/editar/", servidor_atualizar_item, name="servidor_atualizar_item"),
+    path("itens/<str:uuid>/", servidor_detalhes_item, name="servidor_detalhes_item"),
+    path("itens/<str:uuid>/editar/", servidor_atualizar_item, name="servidor_atualizar_item"),
 
     path("reividicacoes/", servidor_listar_reivindicacoes, name="servidor_listar_reivindicacoes"),
     path("reivindicacoes/<int:protocolo>/", servidor_detalhar_reivindicacao, name="servidor_detalhar_reivindicacao"),

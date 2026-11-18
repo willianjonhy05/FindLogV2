@@ -779,12 +779,12 @@ def servidor_cadastra_item(request):
     }
     return render(request, "serv/cadastrar_item.html", context)
 
-
 @servidor_required
-def servidor_detalhes_item(request, codigo):
+def servidor_detalhes_item(request, uuid):
     """
     Exibe os detalhes completos de um item da instituição ativa do servidor
-    e lista todas as reivindicações registradas para este objeto (com filtro por status e paginação).
+    (localizado pelo UUID) e lista todas as reivindicações registradas para
+    este objeto, com filtro por status e paginação.
     """
     usuario = request.user
     cnpj_sessao = request.session.get("instituicao_cnpj")
@@ -800,7 +800,7 @@ def servidor_detalhes_item(request, codigo):
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
 
-    # Busca o item garantindo que pertence à instituição do servidor
+    # Busca o item pelo UUID garantindo que pertence à instituição do servidor
     item = get_object_or_404(
         Item.objects.select_related(
             "categoria",
@@ -809,7 +809,7 @@ def servidor_detalhes_item(request, codigo):
             "usuario_registro",
             "dono",
         ),
-        codigo=codigo,
+        uuid=uuid,
         instituicao=instituicao,
     )
 
@@ -822,7 +822,7 @@ def servidor_detalhes_item(request, codigo):
 
     # Filtro opcional por status da reivindicação
     status_filtro = request.GET.get("status", "").strip()
-    if status_filtro.isdigit():
+    if status_filtro.isdigit() and int(status_filtro) in Reivindicacao.StatusReivindicacao.values:
         reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
 
     # Paginação das reivindicações (10 por página)
@@ -842,7 +842,7 @@ def servidor_detalhes_item(request, codigo):
 
     return render(request, "serv/detalhar_item.html", context)
 
-
+    
 @servidor_required
 def servidor_detalhar_reivindicacao(request, protocolo):
     """
@@ -953,12 +953,9 @@ def servidor_atualizar_item():
 @servidor_required
 def servidor_listar_reivindicacoes(request):
     """
-    Lista todas as reivindicações da instituição vinculada ao servidor autenticado,
-    ordenadas das mais recentes para as mais antigas, com suporte a:
-    - Busca por protocolo, nome/código do item, nome/CPF/e-mail do solicitante ou descrição do pedido
-    - Filtro por status da reivindicação
-    - Filtro para exibir apenas reivindicações de itens cadastrados pelo próprio servidor
-    - Paginação (12 itens por página)
+    Inicia exibindo por padrão apenas as reivindicações de itens cadastrados
+    pelo servidor autenticado, permitindo alternar para todas as reivindicações
+    da unidade através do filtro na interface.
     """
     usuario = request.user
     cnpj_sessao = request.session.get("instituicao_cnpj")
@@ -1010,8 +1007,19 @@ def servidor_listar_reivindicacoes(request):
     if status_filtro.isdigit():
         reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
 
-    # 3. Filtro: Apenas itens cadastrados pelo servidor autenticado (?meus_itens=1)
-    apenas_meus_itens = request.GET.get("meus_itens", "").strip() == "1"
+    # 3. Filtro: Inicia ativo por padrão (meus_itens=1).
+    # Só desativa quando o formulário for submetido com o switch desmarcado (filtrar=1 sem meus_itens=1)
+    # ou se ?meus_itens=0 for passado explicitamente na URL.
+    meus_itens_param = request.GET.get("meus_itens", "").strip()
+    foi_filtrado = request.GET.get("filtrar", "").strip() == "1"
+
+    if meus_itens_param == "0":
+        apenas_meus_itens = False
+    elif foi_filtrado:
+        apenas_meus_itens = meus_itens_param == "1"
+    else:
+        apenas_meus_itens = True
+
     if apenas_meus_itens:
         reivindicacoes_qs = reivindicacoes_qs.filter(item__usuario_registro=usuario)
 
@@ -1021,7 +1029,7 @@ def servidor_listar_reivindicacoes(request):
     page_obj = paginator.get_page(page_number)
 
     context = {
-        "titulo": "Reivindicações da Unidade",
+        "titulo": "Reivindicações dos Meus Itens" if apenas_meus_itens else "Reivindicações da Unidade",
         "subtitulo": f"Solicitações de devolução registradas em {instituicao.nome}",
         "instituicao": instituicao,
         "reivindicacoes": page_obj,
@@ -1035,12 +1043,6 @@ def servidor_listar_reivindicacoes(request):
 
     return render(request, "serv/listar_reivindicacoes.html", context)
 
-
-def servidor_detalhar_reivindicacao(request):
-    pass
-
-def servidor_listar_reivindicacoes(request):
-    pass
 
 def servidor_visualizar_meu_perfil(request):
     pass
