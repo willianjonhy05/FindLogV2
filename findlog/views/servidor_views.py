@@ -5,7 +5,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 from django.urls import reverse
 
-from ..utils import gerar_qrcode_base64, apenas_digitos, _obter_perfil_servidor
+from ..utils import gerar_qrcode_base64, apenas_digitos, _obter_perfil_servidor, _obter_instituicao_servidor
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
 from ..forms.perfil import (
@@ -1145,7 +1145,6 @@ def servidor_visualizar_meu_perfil(request):
     }
     return render(request, "serv/meu_perfil.html", context)
 
-
 @servidor_required
 def servidor_editar_meu_perfil(request):
     perfil = _obter_perfil_servidor(request)
@@ -1153,29 +1152,40 @@ def servidor_editar_meu_perfil(request):
         messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
         return redirect("servidor_painel")
 
-    if request.method == "POST":
-        user_form = ServidorEditarUserForm(request.POST, instance=request.user)
-        perfil_form = ServidorEditarPerfilForm(request.POST, request.FILES, instance=perfil)
+    instituicao = _obter_instituicao_servidor(request)
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição ativa associada à sua sessão.")
+        return redirect("servidor_painel")
 
-        if user_form.is_valid() and perfil_form.is_valid():
+    if request.method == "POST":
+        user_form = ServidorEditarUserForm(
+            request.POST,
+            request.FILES,
+            instance=perfil,
+            instituicao=instituicao,
+        )
+
+        if user_form.is_valid():
             with transaction.atomic():
-                user_form.save()
-                perfil_form.save()
+                perfil_salvo = user_form.save()
+
+            # Sincroniza os dados atualizados com a sessão (exibidos na topbar/painel)
+            request.session["primeiro_nome"] = perfil_salvo.primeiro_nome
+            request.session["foto_url"] = perfil_salvo.foto.url if perfil_salvo.foto else None
 
             messages.success(request, "Seus dados de perfil foram atualizados com sucesso.")
             return redirect("servidor_visualizar_meu_perfil")
-        else:
-            messages.error(request, "Corrija os erros destacados no formulário antes de salvar.")
+
+        messages.error(request, "Corrija os erros destacados no formulário antes de salvar.")
     else:
-        user_form = ServidorEditarUserForm(instance=request.user)
-        perfil_form = ServidorEditarPerfilForm(instance=perfil)
+        user_form = ServidorEditarUserForm(instance=perfil, instituicao=instituicao)
 
     context = {
         "perfil": perfil,
+        "instituicao": instituicao,
         "user_form": user_form,
-        "perfil_form": perfil_form,
     }
-    return render(request, "serv/editar_meu_perfil.html", context)    
+    return render(request, "serv/editar_meu_perfil.html", context)
 
 
 @servidor_required

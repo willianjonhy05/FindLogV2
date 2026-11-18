@@ -469,29 +469,79 @@ class ServidorAlterarSenhaForm(PasswordChangeForm):
             field.widget.attrs.update({"class": "form-control"})    
 
 
-User = get_user_model()
-
 
 class ServidorEditarUserForm(forms.ModelForm):
     class Meta:
-        model = User
-        fields = ["first_name", "last_name", "email"]
-        labels = {
-            "first_name": "Nome",
-            "last_name": "Sobrenome",
-            "email": "E-mail institucional / pessoal",
-        }
+        model = Perfil
+        fields = ["nome", "email", "data_nascimento", "telefone", "foto", "sala"]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
-            "last_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
-            "email": forms.EmailInput(attrs={"class": "form-control", "required": True}),
+            "nome": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "Seu nome completo",
+                "required": True,
+            }),
+            "email": forms.EmailInput(attrs={
+                "class": "form-control form-control-custom bg-light",
+                "readonly": True,
+            }),
+            "data_nascimento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "type": "date",
+                },
+            ),
+            "telefone": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "placeholder": "(00) 00000-0000",
+                "maxlength": "15",
+                "id": "telefone",
+            }),
+            "foto": forms.FileInput(attrs={
+                "class": "form-control form-control-custom",
+                "accept": "image/png, image/jpeg, image/webp",
+            }),
+            "sala": forms.Select(attrs={
+                "class": "form-select form-select-custom",
+            }),
         }
 
-    def clean_email(self):
-        email = self.cleaned_data.get("email", "").strip().lower()
-        if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("Este e-mail já está em uso por outra conta.")
-        return email
+    def __init__(self, *args, instituicao=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 1. Bloqueia alteração do e-mail no HTML e no processamento do Django
+        self.fields["email"].disabled = True
+        self.fields["email"].required = False
+
+        # 2. Resolve a instituição vinculada (prioriza a instituição ativa passada pela view)
+        if instituicao is None and self.instance and self.instance.pk:
+            instituicao = self.instance.instituicao.filter(ativo=True).first()
+
+        # 3. Filtra o select de salas apenas para as salas ativas da instituição do servidor
+        if instituicao:
+            self.fields["sala"].queryset = Sala.objects.filter(
+                instituicao=instituicao,
+                ativa=True,
+            ).order_by("predio", "nome")
+        else:
+            self.fields["sala"].queryset = Sala.objects.none()
+
+        self.fields["sala"].empty_label = "Selecione a sua sala/setor de atuação (Opcional)"
+
+    def clean_telefone(self):
+        telefone = self.cleaned_data.get("telefone")
+        if not telefone:
+            return ""
+
+        somente_numeros = apenas_digitos(telefone)
+
+        if len(somente_numeros) not in (10, 11):
+            raise forms.ValidationError(
+                "Informe um telefone válido com DDD (10 ou 11 dígitos)."
+            )
+
+        return somente_numeros
+
 
 
 class ServidorEditarPerfilForm(forms.ModelForm):
@@ -504,6 +554,6 @@ class ServidorEditarPerfilForm(forms.ModelForm):
             "foto",
         ]
         widgets = {
-            "telefone": forms.TextInput(attrs={"class": "form-control", "placeholder": "(86) 99999-9999"}),
+            "telefone": forms.TextInput(attrs={"class": "form-control", "placeholder": "(86) 99999-9999", "id": "telefone"}),
             "foto": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
         }            

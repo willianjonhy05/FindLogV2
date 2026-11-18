@@ -23,7 +23,7 @@
                     <div>
                         <h1 class="dash-hero-title mb-1">Editar Meu Perfil</h1>
                         <p class="dash-hero-subtitle mb-0">
-                            Atualize seus dados de contato e fotografia em <strong>{{ instituicao.nome }}</strong>
+                            Atualize seus dados de contato, setor e fotografia em <strong>{{ instituicao.nome }}</strong>
                         </p>
                     </div>
                 </div>
@@ -56,12 +56,9 @@
         </div>
     {% endif %}
 
-    {% if user_form.non_field_errors or perfil_form.non_field_errors %}
+    {% if user_form.non_field_errors %}
         <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
             {% for erro in user_form.non_field_errors %}
-                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
-            {% endfor %}
-            {% for erro in perfil_form.non_field_errors %}
                 <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
             {% endfor %}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -76,7 +73,7 @@
             <div class="sala-feed-card p-4">
                 <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
                     <h2 class="h5 fw-bold text-dark mb-0">
-                        <i class="bi bi-person-lines-fill me-2 text-primary"></i>Dados de Contato
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i>Dados Pessoais & Contato
                     </h2>
                     <span class="text-muted small">Campos com <span class="text-danger">*</span> são obrigatórios</span>
                 </div>
@@ -85,37 +82,45 @@
                     {% csrf_token %}
 
                     <div class="row g-3 mb-4">
-                        <div class="col-12 col-md-6">
-                            <label for="{{ user_form.first_name.id_for_label }}" class="form-label form-label-custom">Nome <span class="text-danger">*</span></label>
-                            {{ user_form.first_name }}
-                            {% for erro in user_form.first_name.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        <div class="col-12">
+                            <label for="{{ user_form.nome.id_for_label }}" class="form-label form-label-custom">Nome Completo <span class="text-danger">*</span></label>
+                            {{ user_form.nome }}
+                            {% for erro in user_form.nome.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <label for="{{ user_form.last_name.id_for_label }}" class="form-label form-label-custom">Sobrenome <span class="text-danger">*</span></label>
-                            {{ user_form.last_name }}
-                            {% for erro in user_form.last_name.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="{{ user_form.email.id_for_label }}" class="form-label form-label-custom">E-mail <span class="text-danger">*</span></label>
+                            <label for="{{ user_form.email.id_for_label }}" class="form-label form-label-custom">
+                                E-mail <span class="badge bg-light text-muted border fw-normal ms-1">Somente leitura</span>
+                            </label>
                             {{ user_form.email }}
                             {% for erro in user_form.email.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <label for="{{ perfil_form.telefone.id_for_label }}" class="form-label form-label-custom">Telefone / WhatsApp</label>
-                            {{ perfil_form.telefone }}
-                            {% for erro in perfil_form.telefone.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                            <label for="{{ user_form.telefone.id_for_label }}" class="form-label form-label-custom">Telefone / WhatsApp</label>
+                            {{ user_form.telefone }}
+                            {% for erro in user_form.telefone.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ user_form.data_nascimento.id_for_label }}" class="form-label form-label-custom">Data de Nascimento</label>
+                            {{ user_form.data_nascimento }}
+                            {% for erro in user_form.data_nascimento.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ user_form.sala.id_for_label }}" class="form-label form-label-custom">Sala / Setor de Atuação</label>
+                            {{ user_form.sala }}
+                            {% for erro in user_form.sala.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                         </div>
 
                         <div class="col-12">
-                            <label for="{{ perfil_form.foto.id_for_label }}" class="form-label form-label-custom">
+                            <label for="{{ user_form.foto.id_for_label }}" class="form-label form-label-custom">
                                 <i class="bi bi-camera-fill me-1 text-primary"></i>Foto de Perfil
                             </label>
-                            {{ perfil_form.foto }}
-                            <div class="form-text small text-muted">Envie uma nova imagem para substituir a atual.</div>
-                            {% for erro in perfil_form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                            {{ user_form.foto }}
+                            <div class="form-text small text-muted">Formatos aceitos: PNG, JPG ou WEBP. Envie uma nova imagem para substituir a atual.</div>
+                            {% for erro in user_form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                         </div>
                     </div>
 
@@ -174,18 +179,17 @@
                     <span class="text-dark">@{{ perfil.username }}</span>
                 </div>
 
-                <div class="mb-3">
-                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Instituição</span>
-                    <span class="text-dark">{{ instituicao.nome }}</span>
-                </div>
-
-                <div class="mb-0">
-                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Sala / Setor</span>
-                    <span class="text-dark">{{ perfil.sala.nome|default:"Não vinculada" }}</span>
+                <div>
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">E-mail Institucional</span>
+                    <span class="text-dark">{{ perfil.email }}</span>
                 </div>
             </div>
         </div>
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/mascara.js' %}"></script>
 {% endblock %}

@@ -244,3 +244,13 @@ def _obter_perfil_servidor(request):
     if not perfil.is_authenticated or perfil.tipo != Perfil.TipoUsuario.SERVIDOR:
         return None
     return perfil
+
+
+def _obter_instituicao_servidor(request):
+    """Retorna a instituição ativa da sessão validada contra o vínculo do servidor."""
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    if cnpj_sessao:
+        inst = request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+        if inst:
+            return inst
+    return request.user.instituicao.filter(ativo=True).first()    
