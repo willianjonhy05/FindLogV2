@@ -120,3 +120,46 @@ class ServidorItemForm(forms.ModelForm):
 
         self.fields["local"].empty_label = "Digite para buscar onde foi encontrado... (Opcional)"
         self.fields["local_guardado"].empty_label = "Digite para buscar onde está guardado... (Opcional)"
+
+
+class ServidorAtualizarItemForm(forms.ModelForm):
+    class Meta:
+        model = Item
+        fields = [
+            'categoria',
+            'nome',
+            'dono',
+            'cor',
+            'tamanho',
+            'material',
+            'marca_modelo',
+            'local',
+            'local_guardado',
+            'foto',
+            'descricao',
+        ]
+        widgets = {
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'dono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome ou matrícula (se identificado)'}),
+            'cor': forms.TextInput(attrs={'class': 'form-control'}),
+            'tamanho': forms.TextInput(attrs={'class': 'form-control'}),
+            'material': forms.TextInput(attrs={'class': 'form-control'}),
+            'marca_modelo': forms.TextInput(attrs={'class': 'form-control'}),
+            'local': forms.Select(attrs={'class': 'form-select'}),
+            'local_guardado': forms.Select(attrs={'class': 'form-select'}),
+            'foto': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        instituicao = kwargs.pop('instituicao', None)
+        super().__init__(*args, **kwargs)
+
+        # Filtra as opções de locais/salas apenas para a instituição do servidor logado
+        # (Caso 'local' e 'local_guardado' sejam ForeignKeys para Sala/Local)
+        if instituicao:
+            if 'local' in self.fields and hasattr(self.fields['local'], 'queryset'):
+                self.fields['local'].queryset = Sala.objects.filter(instituicao=instituicao, ativa=True)
+            if 'local_guardado' in self.fields and hasattr(self.fields['local_guardado'], 'queryset'):
+                self.fields['local_guardado'].queryset = Sala.objects.filter(instituicao=instituicao, ativa=True)        

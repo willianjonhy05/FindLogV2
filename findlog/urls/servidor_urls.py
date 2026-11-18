@@ -21,7 +21,9 @@ from ..views.servidor_views import (
     servidor_excluir_sala,
     servidor_detalhar_reivindicacao,
     servidor_listar_reivindicacoes,
-    servidor_visualizar_meu_perfil
+    servidor_visualizar_meu_perfil,
+    servidor_apagar_item,
+    servidor_editar_meu_perfil
 )
 
 urlpatterns = [
@@ -36,7 +38,7 @@ urlpatterns = [
     path("salas/<str:sala_codigo>/itens/", servidor_itens_por_sala, name="servidor_itens_por_sala"),
 
     path("meu-perfil/", servidor_visualizar_meu_perfil, name="servidor_visualizar_meu_perfil"),
-    path("meu-perfil/editar/", servidor_visualizar_meu_perfil, name="servidor_editar_meu_perfil"),
+    path("meu-perfil/editar/", servidor_editar_meu_perfil, name="servidor_editar_meu_perfil"),
     path("meu-perfil/alterar-senha/", servidor_visualizar_meu_perfil, name="servidor_alterar_senha"),
 
 
@@ -50,6 +52,7 @@ urlpatterns = [
     path("itens/novo/", servidor_cadastra_item, name="servidor_cadastra_item"),
     path("itens/<str:uuid>/", servidor_detalhes_item, name="servidor_detalhes_item"),
     path("itens/<str:uuid>/editar/", servidor_atualizar_item, name="servidor_atualizar_item"),
+    path('itens/<uuid:uuid>/apagar/', servidor_apagar_item, name='servidor_apagar_item'),
 
     path("reividicacoes/", servidor_listar_reivindicacoes, name="servidor_listar_reivindicacoes"),
     path("reivindicacoes/<int:protocolo>/", servidor_detalhar_reivindicacao, name="servidor_detalhar_reivindicacao"),

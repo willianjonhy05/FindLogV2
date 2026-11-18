@@ -2,6 +2,7 @@ from django import forms
 from ..models import Instituicao, VinculoInstituicao, Sala, Perfil
 from ..utils import apenas_digitos, validar_cpf
 from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import get_user_model
 
 import re
 
@@ -457,3 +458,54 @@ class TrocarMinhaSenhaForm(PasswordChangeForm):
             field.widget.attrs.pop("autofocus", None)        
 
     
+class ServidorAlterarSenhaForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["old_password"].label = "Senha atual"
+        self.fields["new_password1"].label = "Nova senha"
+        self.fields["new_password2"].label = "Confirmar nova senha"
+
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-control"})    
+
+
+User = get_user_model()
+
+
+class ServidorEditarUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        labels = {
+            "first_name": "Nome",
+            "last_name": "Sobrenome",
+            "email": "E-mail institucional / pessoal",
+        }
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "last_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "required": True}),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip().lower()
+        if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Este e-mail já está em uso por outra conta.")
+        return email
+
+
+class ServidorEditarPerfilForm(forms.ModelForm):
+    class Meta:
+        model = Perfil
+        # Ajuste os campos abaixo conforme os atributos exatos do seu model Perfil
+        # Campos críticos como 'tipo', 'instituicao', 'ativo' ou 'matricula/siape' ficam fora para não serem editados pelo próprio servidor
+        fields = [
+            "telefone",
+            "cargo",
+            "foto",
+        ]
+        widgets = {
+            "telefone": forms.TextInput(attrs={"class": "form-control", "placeholder": "(86) 99999-9999"}),
+            "cargo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex.: Técnico Administrativo / Recepção"}),
+            "foto": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
+        }            

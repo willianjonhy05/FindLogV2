@@ -234,3 +234,11 @@ def exibir_erros_formulario(request, form):
         prefixo = "" if campo == "__all__" else f"{campo.capitalize()}: "
         for erro in erros:
             messages.error(request, f"{prefixo}{erro}")    
+
+
+def _obter_perfil_servidor(request):
+    """Helper interno para validar se o usuário logado possui perfil de SERVIDOR."""
+    perfil = getattr(request.user, "perfil", None)
+    if not perfil or perfil.tipo != "SERVIDOR":
+        return None
+    return perfil            

@@ -3,11 +3,11 @@ from django.utils import timezone
 from django.contrib import messages
 from django.urls import reverse
 
-from ..utils import gerar_qrcode_base64, apenas_digitos
+from ..utils import gerar_qrcode_base64, apenas_digitos, _obter_perfil_servidor
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
-from ..forms.perfil import ServidorCadastroColegaForm
-from ..forms.item import ServidorItemForm
+from ..forms.perfil import ServidorCadastroColegaForm, ServidorAlterarSenhaForm, ServidorEditarUserForm
+from ..forms.item import ServidorItemForm, ServidorAtualizarItemForm
 
 
 from ..models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
@@ -842,7 +842,31 @@ def servidor_detalhes_item(request, uuid):
 
     return render(request, "serv/detalhar_item.html", context)
 
-    
+
+@login_required
+@require_POST
+def servidor_apagar_item(request, uuid):
+    # Garante que o usuário tem perfil de servidor e pega a instituição dele
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil or perfil.tipo != 'SERVIDOR':
+        messages.error(request, 'Acesso negado. Apenas servidores podem realizar esta ação.')
+        return redirect('dashboard')  # Ajuste para o nome da sua rota principal
+
+    # Busca o item pelo UUID e restringe à instituição do servidor logado
+    item = get_object_or_404(Item, uuid=uuid, instituicao=perfil.instituicao)
+
+    # Trava opcional de segurança: impede apagar itens já devolvidos para não perder histórico
+    if item.status == 'DEVOLVIDO':
+        messages.warning(request, 'Não é possível apagar um item que já foi devolvido.')
+        return redirect('servidor_detalhes_item', uuid=item.uuid)
+
+    nome_item = item.titulo  # ou item.nome, conforme o campo do seu model
+    item.delete()
+
+    messages.success(request, f'O item "{nome_item}" foi removido com sucesso.')
+    return redirect('servidor_listar_itens')  # Ajuste para o nome da sua rota de listagem    
+
+
 @servidor_required
 def servidor_detalhar_reivindicacao(request, protocolo):
     """
@@ -946,9 +970,40 @@ def servidor_detalhar_reivindicacao(request, protocolo):
     return render(request, "serv/detalhar_reivindicacao.html", context)
 
 
-def servidor_atualizar_item():
-    pass
+@login_required
+def servidor_atualizar_item(request, uuid):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil or perfil.tipo != 'SERVIDOR':
+        messages.error(request, 'Acesso negado. Apenas servidores podem realizar esta ação.')
+        return redirect('dashboard')  # Ajuste para a rota principal do seu projeto
 
+    # Garante que o item existe e pertence à mesma instituição do servidor
+    item = get_object_or_404(Item, uuid=uuid, instituicao=perfil.instituicao)
+
+    if request.method == 'POST':
+        form = ServidorAtualizarItemForm(
+            request.POST,
+            request.FILES,
+            instance=item,
+            instituicao=perfil.instituicao
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Os dados do item "{item.nome}" foram atualizados com sucesso.')
+            return redirect('servidor_detalhes_item', uuid=item.uuid)
+        else:
+            messages.error(request, 'Verifique os erros no formulário antes de salvar.')
+    else:
+        form = ServidorAtualizarItemForm(
+            instance=item,
+            instituicao=perfil.instituicao
+        )
+
+    context = {
+        'form': form,
+        'item': item,  # Enviado para exibir os campos somente leitura no template
+    }
+    return render(request, 'serv/atualizar_item.html', context)
 
 @servidor_required
 def servidor_listar_reivindicacoes(request):
@@ -1044,5 +1099,87 @@ def servidor_listar_reivindicacoes(request):
     return render(request, "serv/listar_reivindicacoes.html", context)
 
 
+@servidor_required
 def servidor_visualizar_meu_perfil(request):
-    pass
+    perfil = _obter_perfil_servidor(request)
+    if not perfil:
+        messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
+        return redirect("login")
+
+    # Resumo rápido de atividade do servidor para exibir no card do perfil
+    total_itens_registrados = Item.objects.filter(
+        instituicao=perfil.instituicao,
+        cadastrado_por=perfil,  # Ajuste para o nome do campo FK no seu model Item, se diferente
+    ).count()
+
+    total_reivindicacoes_atendidas = Reivindicacao.objects.filter(
+        instituicao=perfil.instituicao,
+        responsavel_admin=perfil,
+    ).count()
+
+    context = {
+        "perfil": perfil,
+        "usuario": request.user,
+        "total_itens_registrados": total_itens_registrados,
+        "total_reivindicacoes_atendidas": total_reivindicacoes_atendidas,
+    }
+    return render(request, "serv/meu_perfil.html", context)
+
+
+@servidor_required
+def servidor_editar_meu_perfil(request):
+    perfil = _obter_perfil_servidor(request)
+    if not perfil:
+        messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        user_form = ServidorEditarUserForm(request.POST, instance=request.user)
+        perfil_form = ServidorEditarPerfilForm(request.POST, request.FILES, instance=perfil)
+
+        if user_form.is_valid() and perfil_form.is_valid():
+            with transaction.atomic():
+                user_form.save()
+                perfil_form.save()
+
+            messages.success(request, "Seus dados de perfil foram atualizados com sucesso.")
+            return redirect("servidor_visualizar_meu_perfil")
+        else:
+            messages.error(request, "Corrija os erros destacados no formulário antes de salvar.")
+    else:
+        user_form = ServidorEditarUserForm(instance=request.user)
+        perfil_form = ServidorEditarPerfilForm(instance=perfil)
+
+    context = {
+        "perfil": perfil,
+        "user_form": user_form,
+        "perfil_form": perfil_form,
+    }
+    return render(request, "serv/editar_meu_perfil.html", context)    
+
+
+@servidor_required
+def servidor_alterar_senha(request):
+    perfil = _obter_perfil_servidor(request)
+    if not perfil:
+        messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        form = ServidorAlterarSenhaForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Mantém a sessão ativa após a troca de senha
+            update_session_auth_hash(request, user)
+            messages.success(request, "Sua senha foi alterada com sucesso.")
+            return redirect("servidor_visualizar_meu_perfil")
+        else:
+            messages.error(request, "Não foi possível alterar a senha. Verifique os erros abaixo.")
+    else:
+        form = ServidorAlterarSenhaForm(user=request.user)
+
+    context = {
+        "perfil": perfil,
+        "form": form,
+    }
+    return render(request, "serv/alterar_senha.html", context)    
