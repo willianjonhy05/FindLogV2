@@ -113,7 +113,7 @@
                     </a>
                     {% endif %}
 
-                    <a href="{% url 'apagar_contato' contato.pk %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}">
+                    <a href="{% url 'apagar_contato' contato.uuid %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 btn-delete" data-nome="a mensagem de {{ contato.nome|default:'contato anônimo' }}">
                         <i class="bi bi-trash"></i>
                         <span>Excluir Mensagem</span>
                     </a>
@@ -161,7 +161,7 @@
             </div>
             <div class="modal-footer border-top-0 pt-0">
                 <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
-                <a href="{% url 'apagar_contato' contato.pk %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
+                <a href="{% url 'apagar_contato' contato.uuid %}" id="modalBtnConfirmar" class="btn btn-danger-custom">
                     <i class="bi bi-trash-fill me-1"></i> Sim, excluir
                 </a>
             </div>

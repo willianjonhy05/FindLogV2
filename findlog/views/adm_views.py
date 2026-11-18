@@ -247,8 +247,8 @@ def view_contato(request, uuid):
 
 
 @superuser_required
-def apagar_contato(request, pk):
-    contato = get_object_or_404(Contato, pk=pk)
+def apagar_contato(request, uuid):
+    contato = get_object_or_404(Contato, uuid=uuid)
     nome = contato.nome or "Contato anônimo"
     contato.delete()
     messages.success(request, f"Mensagem de '{nome}' excluída com sucesso.")
