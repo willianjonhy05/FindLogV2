@@ -1,3 +1,239 @@
-!!!!!
+{% extends "serv/base.html" %}
+{% load static %}
 
-Implementar HTML
+{% block title %}Editar Item {{ item.codigo }} | {{ item.instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO MÓDULO
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="sala-badge-code">
+                                <i class="bi bi-tag-fill me-1 text-muted"></i>{{ item.codigo|default:"S/ CÓDIGO" }}
+                            </span>
+                            <span class="sala-badge bg-secondary-subtle text-secondary">
+                                <i class="bi bi-box-seam"></i> {{ item.get_status_display }}
+                            </span>
+                        </div>
+                        <h1 class="dash-hero-title mb-1">
+                            Editar Item: {{ item.nome|default:"Sem identificação" }}
+                        </h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            Unidade: <strong>{{ item.instituicao.nome }}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-eye"></i> Detalhes
+                    </a>
+                    <a href="{% url 'servidor_listar_itens' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Voltar aos Itens
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH E ERROS GLOBAIS
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+            {% for erro in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. FORMULÁRIO DE EDIÇÃO
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-box-seam me-2 text-primary"></i>Dados do Item
+                    </h2>
+                    <span class="text-muted small">Campos com <span class="text-danger">*</span> são obrigatórios</span>
+                </div>
+
+                <form method="POST" action="{% url 'servidor_atualizar_item' item.uuid %}" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-5">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label form-label-custom">Identificação / Nome do Item <span class="text-danger">*</span></label>
+                            {{ form.nome }}
+                            {% for erro in form.nome.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label for="{{ form.categoria.id_for_label }}" class="form-label form-label-custom">Categoria <span class="text-danger">*</span></label>
+                            {{ form.categoria }}
+                            {% for erro in form.categoria.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.dono.id_for_label }}" class="form-label form-label-custom">Dono do Item</label>
+                            {{ form.dono }}
+                            {% for erro in form.dono.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.local.id_for_label }}" class="form-label form-label-custom">Local onde foi Encontrado</label>
+                            {{ form.local }}
+                            {% for erro in form.local.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.local_guardado.id_for_label }}" class="form-label form-label-custom">Local onde está Guardado</label>
+                            {{ form.local_guardado }}
+                            {% for erro in form.local_guardado.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 hr-custom">
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.marca_ou_modelo.id_for_label }}" class="form-label form-label-custom">Marca ou Modelo</label>
+                            {{ form.marca_ou_modelo }}
+                            {% for erro in form.marca_ou_modelo.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.cor.id_for_label }}" class="form-label form-label-custom">Cor Predominante</label>
+                            {{ form.cor }}
+                            {% for erro in form.cor.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.tamanho.id_for_label }}" class="form-label form-label-custom">Tamanho / Dimensões</label>
+                            {{ form.tamanho }}
+                            {% for erro in form.tamanho.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="{{ form.material.id_for_label }}" class="form-label form-label-custom">Material</label>
+                            {{ form.material }}
+                            {% for erro in form.material.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.foto.id_for_label }}" class="form-label form-label-custom">
+                                <i class="bi bi-camera-fill me-1 text-primary"></i>Fotografia do Objeto
+                            </label>
+                            {{ form.foto }}
+                            <div class="form-text small text-muted">Envie uma nova imagem para substituir a atual.</div>
+                            {% for erro in form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label form-label-custom">Descrição Detalhada</label>
+                            {{ form.descricao }}
+                            {% for erro in form.descricao.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-25">
+
+                    <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="btn btn-secondary-custom">Cancelar</a>
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-circle-fill me-1"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. PAINEL LATERAL: DADOS IMUTÁVEIS
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-lock me-2 text-primary"></i>Dados Não Editáveis
+                </h2>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Código</span>
+                    <span class="sala-badge-code">{{ item.codigo|default:"—" }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Status Físico</span>
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ item.get_status_display }}</span>
+                    <div class="form-text small text-muted mt-1">O status é alterado pela análise das reivindicações.</div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Instituição</span>
+                    <span class="text-dark fw-medium">{{ item.instituicao.nome }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Registrado em</span>
+                    <span class="text-dark">{{ item.data_registro|date:"d/m/Y \à\s H:i" }}</span>
+                </div>
+
+                <div class="mb-0">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Responsável pelo Registro</span>
+                    <span class="text-dark">
+                        {% if item.usuario_registro %}
+                            {{ item.usuario_registro.nome|default:item.usuario_registro.username }}
+                        {% else %}
+                            Não informado
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4 mt-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-shield-exclamation text-warning fs-5"></i>
+                    <h6 class="fw-bold mb-0 text-dark">Atenção</h6>
+                </div>
+                <p class="mb-0 text-muted small">
+                    A alteração do dono ou dos locais impacta diretamente o histórico de busca e devolução deste objeto. Confirme os dados antes de salvar.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

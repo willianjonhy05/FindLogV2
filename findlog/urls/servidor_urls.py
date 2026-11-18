@@ -23,7 +23,8 @@ from ..views.servidor_views import (
     servidor_listar_reivindicacoes,
     servidor_visualizar_meu_perfil,
     servidor_apagar_item,
-    servidor_editar_meu_perfil
+    servidor_editar_meu_perfil,
+    servidor_alterar_senha,
 )
 
 urlpatterns = [
@@ -39,7 +40,7 @@ urlpatterns = [
 
     path("meu-perfil/", servidor_visualizar_meu_perfil, name="servidor_visualizar_meu_perfil"),
     path("meu-perfil/editar/", servidor_editar_meu_perfil, name="servidor_editar_meu_perfil"),
-    path("meu-perfil/alterar-senha/", servidor_visualizar_meu_perfil, name="servidor_alterar_senha"),
+    path("meu-perfil/alterar-senha/", servidor_alterar_senha, name="servidor_alterar_senha"),
 
 
     path("usuarios/", servidor_usuarios_instituicao, name="servidor_usuarios_instituicao"),
@@ -57,6 +58,6 @@ urlpatterns = [
     path("reividicacoes/", servidor_listar_reivindicacoes, name="servidor_listar_reivindicacoes"),
     path("reivindicacoes/<int:protocolo>/", servidor_detalhar_reivindicacao, name="servidor_detalhar_reivindicacao"),
 
-    path("categorias/<int:categoria_id>/itens/", servidor_itens_por_categoria, name="servidor_itens_por_categoria"),
+    path("categorias/<str:categoria_id>/itens/", servidor_itens_por_categoria, name="servidor_itens_por_categoria"),
 
 ]

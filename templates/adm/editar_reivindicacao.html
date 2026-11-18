@@ -99,7 +99,7 @@
                                 {% for sala in form.fields.local_devolucao.queryset %}
                                     <option value="{{ sala.pk }}" 
                                         {% if form.local_devolucao.value|stringformat:"s" == sala.pk|stringformat:"s" or reivindicacao.local_devolucao.pk == sala.pk and not form.local_devolucao.value %}selected{% endif %}>
-                                        Sala {{ sala.numero }} - {{ sala.predio }}
+                                        Sala {{ sala.nome }} - {{ sala.predio }}
                                     </option>
                                 {% endfor %}
                             </select>

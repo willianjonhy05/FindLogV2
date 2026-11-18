@@ -1,21 +1,43 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.db import transaction
 from django.urls import reverse
 
 from ..utils import gerar_qrcode_base64, apenas_digitos, _obter_perfil_servidor
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
-from ..forms.perfil import ServidorCadastroColegaForm, ServidorAlterarSenhaForm, ServidorEditarUserForm
+from ..forms.perfil import (
+    ServidorCadastroColegaForm,
+    ServidorAlterarSenhaForm,
+    ServidorEditarUserForm,
+    ServidorEditarPerfilForm,
+)
 from ..forms.item import ServidorItemForm, ServidorAtualizarItemForm
 
 
-from ..models import Perfil, Sala, Categoria, Item, Reivindicacao, Instituicao
+from ..models import Perfil, Sala, Categoria, Item, Reivindicacao
 from ..decorators import servidor_required
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 import re
+
+
+def _obter_instituicao_ativa(request):
+    """Retorna a instituição ativa da sessão ou o primeiro vínculo ativo do usuário."""
+    cnpj_sessao = request.session.get("instituicao_cnpj")
+    usuario = request.user
+
+    instituicao = None
+    if cnpj_sessao:
+        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
+
+    if not instituicao:
+        instituicao = usuario.instituicao.filter(ativo=True).first()
+
+    return instituicao
 
 
 def _obter_perfil_da_instituicao(instituicao, pk):
@@ -189,8 +211,7 @@ def servidor_listar_salas(request):
 
 @servidor_required
 def servidor_editar_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = _obter_instituicao_ativa(request)
 
     if not instituicao:
         messages.error(request, "Vínculo institucional não encontrado para este usuário.")
@@ -238,8 +259,7 @@ def servidor_alternar_status_sala(request, codigo):
 @servidor_required
 @require_POST
 def servidor_ativar_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
@@ -260,8 +280,7 @@ def servidor_ativar_sala(request, codigo):
 @servidor_required
 @require_POST
 def servidor_desativar_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.filter(cnpj=cnpj_sessao).first()
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
@@ -281,8 +300,7 @@ def servidor_desativar_sala(request, codigo):
 @servidor_required
 @require_POST
 def servidor_excluir_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.filter(cnpj=cnpj_sessao).first()
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
@@ -297,8 +315,7 @@ def servidor_excluir_sala(request, codigo):
 
 @servidor_required
 def servidor_detalhar_sala(request, codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = _obter_instituicao_ativa(request)
 
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
@@ -341,8 +358,8 @@ def servidor_listar_itens(request):
 
     # Filtro opcional por Categoria
     categoria_filtro = request.GET.get("categoria", "").strip()
-    if categoria_filtro.isdigit():
-        itens_qs = itens_qs.filter(categoria_id=int(categoria_filtro))
+    if categoria_filtro:
+        itens_qs = itens_qs.filter(categoria_id=categoria_filtro)
 
     # Filtro opcional por Status
     status_filtro = request.GET.get("status", "").strip()
@@ -379,8 +396,7 @@ def servidor_listar_itens(request):
 # ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_sala(request, sala_codigo):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = _obter_instituicao_ativa(request)
 
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
@@ -427,8 +443,7 @@ def servidor_itens_por_sala(request, sala_codigo):
 # ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_categoria(request, categoria_id):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = Instituicao.objects.get(cnpj=cnpj_sessao)
+    instituicao = _obter_instituicao_ativa(request)
 
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
@@ -506,7 +521,7 @@ def servidor_cadastrar_usuario(request):
                 request,
                 f"{tipo_label} '{novo_usuario.nome or novo_usuario.username}' cadastrado(a) com sucesso!",
             )
-            return redirect("servidor_listar_usuarios")
+            return redirect("servidor_usuarios_instituicao")
 
         messages.error(request, "Verifique os erros nos campos antes de continuar.")
     else:
@@ -843,28 +858,27 @@ def servidor_detalhes_item(request, uuid):
     return render(request, "serv/detalhar_item.html", context)
 
 
-@login_required
+@servidor_required
 @require_POST
 def servidor_apagar_item(request, uuid):
-    # Garante que o usuário tem perfil de servidor e pega a instituição dele
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil or perfil.tipo != 'SERVIDOR':
-        messages.error(request, 'Acesso negado. Apenas servidores podem realizar esta ação.')
-        return redirect('dashboard')  # Ajuste para o nome da sua rota principal
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
 
     # Busca o item pelo UUID e restringe à instituição do servidor logado
-    item = get_object_or_404(Item, uuid=uuid, instituicao=perfil.instituicao)
+    item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
 
-    # Trava opcional de segurança: impede apagar itens já devolvidos para não perder histórico
-    if item.status == 'DEVOLVIDO':
-        messages.warning(request, 'Não é possível apagar um item que já foi devolvido.')
-        return redirect('servidor_detalhes_item', uuid=item.uuid)
+    # Trava de segurança: impede apagar itens já devolvidos para não perder histórico
+    if item.status == Item.StatusItem.DEVOLVIDO:
+        messages.warning(request, "Não é possível apagar um item que já foi devolvido.")
+        return redirect("servidor_detalhes_item", uuid=item.uuid)
 
-    nome_item = item.titulo  # ou item.nome, conforme o campo do seu model
+    nome_item = item.nome or item.codigo
     item.delete()
 
     messages.success(request, f'O item "{nome_item}" foi removido com sucesso.')
-    return redirect('servidor_listar_itens')  # Ajuste para o nome da sua rota de listagem    
+    return redirect("servidor_listar_itens")
 
 
 @servidor_required
@@ -970,22 +984,22 @@ def servidor_detalhar_reivindicacao(request, protocolo):
     return render(request, "serv/detalhar_reivindicacao.html", context)
 
 
-@login_required
+@servidor_required
 def servidor_atualizar_item(request, uuid):
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil or perfil.tipo != 'SERVIDOR':
-        messages.error(request, 'Acesso negado. Apenas servidores podem realizar esta ação.')
-        return redirect('dashboard')  # Ajuste para a rota principal do seu projeto
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
 
     # Garante que o item existe e pertence à mesma instituição do servidor
-    item = get_object_or_404(Item, uuid=uuid, instituicao=perfil.instituicao)
+    item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
 
     if request.method == 'POST':
         form = ServidorAtualizarItemForm(
             request.POST,
             request.FILES,
             instance=item,
-            instituicao=perfil.instituicao
+            instituicao=instituicao
         )
         if form.is_valid():
             form.save()
@@ -996,7 +1010,7 @@ def servidor_atualizar_item(request, uuid):
     else:
         form = ServidorAtualizarItemForm(
             instance=item,
-            instituicao=perfil.instituicao
+            instituicao=instituicao
         )
 
     context = {
@@ -1106,18 +1120,24 @@ def servidor_visualizar_meu_perfil(request):
         messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
         return redirect("login")
 
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
+        return redirect("login")
+
     # Resumo rápido de atividade do servidor para exibir no card do perfil
     total_itens_registrados = Item.objects.filter(
-        instituicao=perfil.instituicao,
-        cadastrado_por=perfil,  # Ajuste para o nome do campo FK no seu model Item, se diferente
+        instituicao=instituicao,
+        usuario_registro=perfil,
     ).count()
 
     total_reivindicacoes_atendidas = Reivindicacao.objects.filter(
-        instituicao=perfil.instituicao,
+        instituicao=instituicao,
         responsavel_admin=perfil,
     ).count()
 
     context = {
+        "instituicao": instituicao,
         "perfil": perfil,
         "usuario": request.user,
         "total_itens_registrados": total_itens_registrados,
@@ -1131,7 +1151,7 @@ def servidor_editar_meu_perfil(request):
     perfil = _obter_perfil_servidor(request)
     if not perfil:
         messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
-        return redirect("dashboard")
+        return redirect("servidor_painel")
 
     if request.method == "POST":
         user_form = ServidorEditarUserForm(request.POST, instance=request.user)
@@ -1163,7 +1183,7 @@ def servidor_alterar_senha(request):
     perfil = _obter_perfil_servidor(request)
     if not perfil:
         messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
-        return redirect("dashboard")
+        return redirect("servidor_painel")
 
     if request.method == "POST":
         form = ServidorAlterarSenhaForm(user=request.user, data=request.POST)

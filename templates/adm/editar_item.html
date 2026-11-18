@@ -156,7 +156,7 @@
                         <option value="">Selecione a sala...</option>
                         {% for sala in form.fields.local.queryset %}
                             <option value="{{ sala.pk }}" {% if form.local.value|stringformat:"s" == sala.pk|stringformat:"s" or item.local.pk == sala.pk and not form.local.value %}selected{% endif %}>
-                                Sala {{ sala.numero }} - {{ sala.predio }}
+                                Sala {{ sala.nome }} - {{ sala.predio }}
                             </option>
                         {% endfor %}
                     </select>
@@ -169,7 +169,7 @@
                         <option value="">Selecione a sala...</option>
                         {% for sala in form.fields.local_guardado.queryset %}
                             <option value="{{ sala.pk }}" {% if form.local_guardado.value|stringformat:"s" == sala.pk|stringformat:"s" or item.local_guardado.pk == sala.pk and not form.local_guardado.value %}selected{% endif %}>
-                                Sala {{ sala.numero }} - {{ sala.predio }}
+                                Sala {{ sala.nome }} - {{ sala.predio }}
                             </option>
                         {% endfor %}
                     </select>

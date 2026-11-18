@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "serv/base.html" %}
 
 {% block title %}Cadastrar Usuário / Servidor{% endblock %}
 
@@ -121,7 +121,7 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_scripts %}
 <script>
     // Alterna a exibição da Sala conforme o tipo de usuário selecionado
     document.addEventListener("DOMContentLoaded", function () {

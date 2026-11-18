@@ -153,7 +153,7 @@
                             <option value="" disabled {% if not form.sala_codigo.value %}selected{% endif %}>Selecione a sala vinculada...</option>
                             {% for sala in salas %}
                                 <option value="{{ sala.pk }}" {% if form.sala_codigo.value|stringformat:"s" == sala.pk|stringformat:"s" %}selected{% endif %}>
-                                    Sala {{ sala.numero }} - Bloco/Prédio {{ sala.predio }}
+                                    Sala {{ sala.nome }} - Bloco/Prédio {{ sala.predio }}
                                 </option>
                             {% endfor %}
                         </select>

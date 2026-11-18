@@ -501,11 +501,9 @@ class ServidorEditarPerfilForm(forms.ModelForm):
         # Campos críticos como 'tipo', 'instituicao', 'ativo' ou 'matricula/siape' ficam fora para não serem editados pelo próprio servidor
         fields = [
             "telefone",
-            "cargo",
             "foto",
         ]
         widgets = {
             "telefone": forms.TextInput(attrs={"class": "form-control", "placeholder": "(86) 99999-9999"}),
-            "cargo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex.: Técnico Administrativo / Recepção"}),
             "foto": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
         }            

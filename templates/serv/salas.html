@@ -167,25 +167,25 @@
                     <span class="text-secondary-custom small fw-semibold">Ações</span>
                     <div class="sala-actions-group">
                         <!-- Visualizar -->
-                        <a href="#" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
+                        <a href="{% url 'servidor_detalhar_sala' codigo=sala.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar detalhes da sala {{ sala.nome }}">
                             <i class="bi bi-eye"></i>
                         </a>
 
                         <!-- Editar -->
-                        <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar sala" aria-label="Editar sala {{ sala.nome }}">
+                        <a href="{% url 'servidor_editar_sala' codigo=sala.codigo %}" class="sala-action-icon sala-action-icon-edit" title="Editar sala" aria-label="Editar sala {{ sala.nome }}">
                             <i class="bi bi-pencil"></i>
                         </a>
 
                         <!-- Alternar Status (POST) -->
                         {% if sala.ativa %}
-                            <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
+                            <form method="POST" action="{% url 'servidor_desativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
                                 {% csrf_token %}
                                 <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
                                     <i class="bi bi-slash-circle"></i>
                                 </button>
                             </form>
                         {% else %}
-                            <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
+                            <form method="POST" action="{% url 'servidor_ativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
                                 {% csrf_token %}
                                 <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
                                     <i class="bi bi-check-circle"></i>
@@ -194,7 +194,7 @@
                         {% endif %}
 
                         <!-- Excluir (POST) -->
-                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
+                        <form method="POST" action="{% url 'servidor_excluir_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
                             {% csrf_token %}
                             <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
                                 <i class="bi bi-trash3"></i>
@@ -301,14 +301,14 @@
                                     </a>
 
                                     {% if sala.ativa %}
-                                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
+                                        <form method="POST" action="{% url 'servidor_desativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar esta sala?');">
                                             {% csrf_token %}
                                             <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar sala" aria-label="Desativar sala {{ sala.nome }}">
                                                 <i class="bi bi-slash-circle"></i>
                                             </button>
                                         </form>
                                     {% else %}
-                                        <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
+                                        <form method="POST" action="{% url 'servidor_ativar_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente reativar esta sala?');">
                                             {% csrf_token %}
                                             <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar sala" aria-label="Ativar sala {{ sala.nome }}">
                                                 <i class="bi bi-check-circle"></i>
@@ -316,7 +316,7 @@
                                         </form>
                                     {% endif %}
 
-                                    <form method="POST" action="#" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
+                                    <form method="POST" action="{% url 'servidor_excluir_sala' sala.codigo %}" class="d-inline m-0 p-0" onsubmit="return confirm('ATENÇÃO: Deseja realmente excluir permanentemente a sala {{ sala.nome }}?');">
                                         {% csrf_token %}
                                         <button type="submit" class="sala-action-icon sala-action-icon-del" title="Excluir sala" aria-label="Excluir permanentemente sala {{ sala.nome }}">
                                             <i class="bi bi-trash3"></i>

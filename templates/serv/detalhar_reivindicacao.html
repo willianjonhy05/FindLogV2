@@ -1,11 +1,376 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body>
-</html>
+{% extends "serv/base.html" %}
+{% load static %}
+
+{% block title %}Reivindicação #{{ reivindicacao.protocolo }} | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DA REIVINDICAÇÃO
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-person-raised-hand"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="sala-badge-code">
+                                <i class="bi bi-hash me-1 text-muted"></i>Protocolo {{ reivindicacao.protocolo }}
+                            </span>
+                            {% if reivindicacao.status == 1 %}
+                                <span class="sala-badge" style="background: rgba(245, 158, 11, 0.12); color: #b45309;">
+                                    <i class="bi bi-clock-history"></i> Pendente
+                                </span>
+                            {% elif reivindicacao.status == 2 %}
+                                <span class="sala-badge bg-info-subtle text-info">
+                                    <i class="bi bi-search"></i> Em Análise
+                                </span>
+                            {% elif reivindicacao.status == 3 %}
+                                <span class="sala-badge sala-badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Aprovada
+                                </span>
+                            {% elif reivindicacao.status == 4 %}
+                                <span class="sala-badge sala-badge-inactive">
+                                    <i class="bi bi-x-circle-fill"></i> Rejeitada
+                                </span>
+                            {% elif reivindicacao.status == 5 %}
+                                <span class="sala-badge bg-secondary-subtle text-secondary">
+                                    <i class="bi bi-box-arrow-right"></i> Concluída
+                                </span>
+                            {% else %}
+                                <span class="sala-badge bg-secondary-subtle text-secondary">{{ reivindicacao.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                        <h1 class="dash-hero-title mb-1">
+                            Reivindicação #{{ reivindicacao.protocolo }}
+                        </h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            Item: <strong>{{ item.nome|default:item.codigo }}</strong> &bull; {{ reivindicacao.data|date:"d/m/Y \à\s H:i" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_listar_reivindicacoes' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Voltar à Lista
+                    </a>
+                    <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-box-seam-fill"></i> Ver Item
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH E ERROS GLOBAIS
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+            {% for erro in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. COLUNA ESQUERDA: DADOS DA SOLICITAÇÃO
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-info-square me-2 text-primary"></i>Dados da Solicitação
+                    </h2>
+                    <span class="text-muted small font-monospace">#{{ reivindicacao.protocolo }}</span>
+                </div>
+
+                <!-- Solicitante -->
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3 bg-light border mb-4">
+                    {% if reivindicacao.autor.foto %}
+                        <img src="{{ reivindicacao.autor.foto.url }}" alt="{{ reivindicacao.autor.nome|default:reivindicacao.autor.username }}"
+                             class="rounded-circle border object-fit-cover" style="width: 56px; height: 56px;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                            <i class="bi bi-person-fill fs-4"></i>
+                        </div>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <h3 class="h6 fw-bold text-dark mb-0">{{ reivindicacao.autor.nome|default:reivindicacao.autor.username }}</h3>
+                        <span class="small text-muted">
+                            @{{ reivindicacao.autor.username }}
+                            {% if reivindicacao.autor.email %} &bull; {{ reivindicacao.autor.email }}{% endif %}
+                        </span>
+                    </div>
+                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.pk %}" class="btn btn-sm btn-outline-primary d-none d-sm-inline-flex">
+                        <i class="bi bi-person me-1"></i> Perfil
+                    </a>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Item Reivindicado</span>
+                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="fw-semibold text-decoration-none">
+                            {{ item.nome|default:"Item sem nome" }}
+                        </a>
+                        <small class="text-muted font-monospace d-block">Cód: {{ item.codigo|default:"—" }}</small>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Status Atual</span>
+                        {% if reivindicacao.status == 1 %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendente</span>
+                        {% elif reivindicacao.status == 2 %}
+                            <span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>Em Análise</span>
+                        {% elif reivindicacao.status == 3 %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Aprovada</span>
+                        {% elif reivindicacao.status == 4 %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Rejeitada</span>
+                        {% elif reivindicacao.status == 5 %}
+                            <span class="badge bg-secondary"><i class="bi bi-box-arrow-right me-1"></i>Concluída</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark border">{{ reivindicacao.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data da Solicitação</span>
+                        <p class="text-dark mb-0">
+                            <i class="bi bi-calendar-event text-muted me-1"></i>{{ reivindicacao.data|date:"d/m/Y \à\s H:i" }}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Responsável pelo Atendimento</span>
+                        <p class="text-dark mb-0">
+                            {% if reivindicacao.responsavel_admin %}
+                                <i class="bi bi-person-check text-muted me-1"></i>{{ reivindicacao.responsavel_admin.nome|default:reivindicacao.responsavel_admin.username }}
+                            {% else %}
+                                <span class="text-muted small">Ainda não atribuído</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Local de Devolução</span>
+                        <p class="text-dark mb-0">
+                            {% if reivindicacao.local_devolucao %}
+                                <i class="bi bi-geo-alt text-muted me-1"></i>{{ reivindicacao.local_devolucao.nome }}
+                                <small class="d-block text-muted">{{ reivindicacao.local_devolucao.predio }} &bull; {{ reivindicacao.local_devolucao.andar }}</small>
+                            {% else %}
+                                <span class="text-muted small">Não definido</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data de Devolução</span>
+                        <p class="text-dark mb-0">
+                            {% if reivindicacao.data_devolucao %}
+                                <i class="bi bi-check2-circle text-success me-1"></i>{{ reivindicacao.data_devolucao|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span class="text-muted small">Ainda não concluída</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12"><hr class="my-1 opacity-25"></div>
+
+                    <!-- Pedido / Provas -->
+                    <div class="col-12">
+                        <span class="text-uppercase text-primary fw-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-shield-check me-1"></i>Descrição do Pedido e Provas Apresentadas
+                        </span>
+                        <div class="p-3 rounded-3 bg-light border text-secondary-custom text-break" style="font-size: 0.925rem;">
+                            {{ reivindicacao.pedido|linebreaksbr }}
+                        </div>
+                    </div>
+
+                    {% if reivindicacao.anexos %}
+                        <div class="col-12">
+                            <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-paperclip me-1"></i>Documentos / Fotos Anexadas
+                            </span>
+                            <a href="{{ reivindicacao.anexos.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-file-earmark-arrow-down fs-5"></i>
+                                <span>Baixar Anexo da Solicitação</span>
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if reivindicacao.resposta_admin %}
+                        <div class="col-12">
+                            <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-chat-left-text me-1"></i>Parecer Atual
+                            </span>
+                            <div class="p-3 rounded-3 border" style="background-color: #fff8e1; border-left: 4px solid #ffc107 !important; font-size: 0.925rem;">
+                                {{ reivindicacao.resposta_admin|linebreaksbr }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Outras reivindicações concorrentes -->
+            {% if outras_reivindicacoes %}
+                <div class="sala-feed-card p-4 mt-4">
+                    <div class="border-bottom pb-3 mb-3">
+                        <h2 class="h5 fw-bold text-dark mb-1">
+                            <i class="bi bi-people me-2 text-primary"></i>Outras Reivindicações deste Item
+                        </h2>
+                        <span class="text-secondary-custom small">Solicitações concorrentes para o mesmo objeto, úteis para comparação das provas.</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table sala-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Protocolo</th>
+                                    <th>Solicitante</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th class="pe-3 text-end">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for outra in outras_reivindicacoes %}
+                                    <tr>
+                                        <td class="ps-3"><strong class="font-monospace text-dark">#{{ outra.protocolo }}</strong></td>
+                                        <td>{{ outra.autor.nome|default:outra.autor.username }}</td>
+                                        <td><span class="small text-secondary-custom">{{ outra.data|date:"d/m/Y H:i" }}</span></td>
+                                        <td>
+                                            {% if outra.status == 1 %}
+                                                <span class="badge bg-warning text-dark">Pendente</span>
+                                            {% elif outra.status == 2 %}
+                                                <span class="badge bg-info text-dark">Em Análise</span>
+                                            {% elif outra.status == 3 %}
+                                                <span class="badge bg-success">Aprovada</span>
+                                            {% elif outra.status == 4 %}
+                                                <span class="badge bg-danger">Rejeitada</span>
+                                            {% elif outra.status == 5 %}
+                                                <span class="badge bg-secondary">Concluída</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark border">{{ outra.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="pe-3 text-end">
+                                            <a href="{% url 'servidor_detalhar_reivindicacao' outra.protocolo %}" class="sala-action-icon sala-action-icon-view" title="Analisar reivindicação" aria-label="Analisar reivindicação #{{ outra.protocolo }}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ================================================================
+             4. COLUNA DIREITA: FORMULÁRIO DE ANÁLISE
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h5 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-clipboard-check me-2 text-primary"></i>Analisar Solicitação
+                </h2>
+                <p class="text-secondary-custom small mb-4">
+                    Atualize o status, defina o local de retirada e registre o parecer para o solicitante.
+                </p>
+
+                <form method="POST" action="{% url 'servidor_detalhar_reivindicacao' reivindicacao.protocolo %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label form-label-custom">Status da Reivindicação <span class="text-danger">*</span></label>
+                        {{ form.status }}
+                        {% for erro in form.status.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.local_devolucao.id_for_label }}" class="form-label form-label-custom">Local de Devolução</label>
+                        {{ form.local_devolucao }}
+                        <div class="form-text small text-muted">Obrigatório quando a solicitação for aprovada.</div>
+                        {% for erro in form.local_devolucao.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.resposta_admin.id_for_label }}" class="form-label form-label-custom">Parecer / Resposta ao Solicitante</label>
+                        {{ form.resposta_admin }}
+                        <div class="form-text small text-muted">Obrigatório quando a solicitação for rejeitada.</div>
+                        {% for erro in form.resposta_admin.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-circle-fill me-1"></i> Salvar Análise
+                        </button>
+                    </div>
+                </form>
+
+                <div class="alert alert-warning border-0 small mt-4 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Ao marcar como <strong>Concluída</strong>, o item é vinculado ao solicitante e passa para o status <strong>Devolvido</strong>. As demais reivindicações abertas para o mesmo item são rejeitadas automaticamente.
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4 mt-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-person-lines-fill me-2 text-primary"></i>Contato do Solicitante
+                </h2>
+                <div class="d-grid gap-2">
+                    {% if reivindicacao.autor.email %}
+                        <a href="mailto:{{ reivindicacao.autor.email }}?subject=FindLog - Reivindicação #{{ reivindicacao.protocolo }}"
+                           class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                            <i class="bi bi-envelope-fill"></i>
+                            <span>Enviar E-mail</span>
+                        </a>
+                    {% endif %}
+
+                    {% if reivindicacao.autor.telefone %}
+                        <a href="https://wa.me/55{{ reivindicacao.autor.telefone }}?text=Ol%C3%A1%20{{ reivindicacao.autor.primeiro_nome|urlencode }},%20entramos%20em%20contato%20sobre%20sua%20reivindica%C3%A7%C3%A3o%20%23{{ reivindicacao.protocolo }}%20no%20FindLog."
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2">
+                            <i class="bi bi-whatsapp"></i>
+                            <span>WhatsApp do Autor</span>
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'servidor_visualizar_usuario' reivindicacao.autor.pk %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Detalhar Solicitante</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

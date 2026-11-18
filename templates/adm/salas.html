@@ -75,7 +75,7 @@
                 <tbody>
                     {% for sala in salas %}
                     <tr>
-                        <td class="fw-bold text-dark">Sala {{ sala.numero }}</td>
+                        <td class="fw-bold text-dark">Sala {{ sala.nome }}</td>
                         <td class="text-secondary">{{ sala.predio }}</td>
                         <td class="text-secondary">{{ sala.andar|default:"-" }}</td>
                         <td class="text-center">
@@ -111,7 +111,7 @@
                                     <i class="bi {% if sala.ativa or sala.ativo %}bi-toggle-on fs-5{% else %}bi-toggle-off fs-5{% endif %}"></i>
                                 </a>
 
-                                <a href="{% url 'excluir_sala' sala.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="Sala {{ sala.numero }} ({{ sala.predio }})" title="Excluir sala">
+                                <a href="{% url 'excluir_sala' sala.pk %}" class="btn-action btn-action-delete btn-delete" data-nome="Sala {{ sala.nome }} ({{ sala.predio }})" title="Excluir sala">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>

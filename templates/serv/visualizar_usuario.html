@@ -1,11 +1,357 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body>
-</html>
+{% extends "serv/base.html" %}
+{% load static %}
+
+{% block title %}{{ perfil.nome|default:perfil.username }} | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO PERFIL
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-8">
+                <div class="d-flex align-items-center gap-3">
+                    {% if perfil.foto %}
+                        <img src="{{ perfil.foto.url }}" alt="{{ perfil.nome|default:perfil.username }}"
+                             class="rounded-circle border border-2 border-white object-fit-cover" style="width: 64px; height: 64px;">
+                    {% else %}
+                        <div class="dash-hero-icon d-none d-sm-grid">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            {% if perfil.tipo == 3 %}
+                                <span class="sala-badge bg-success-subtle text-success">
+                                    <i class="bi bi-person-badge"></i> Servidor
+                                </span>
+                            {% else %}
+                                <span class="sala-badge bg-primary-subtle text-primary">
+                                    <i class="bi bi-person"></i> Usuário
+                                </span>
+                            {% endif %}
+
+                            {% if perfil.ativo %}
+                                <span class="sala-badge sala-badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Ativo
+                                </span>
+                            {% else %}
+                                <span class="sala-badge sala-badge-inactive">
+                                    <i class="bi bi-hourglass-split"></i> Pendente / Inativo
+                                </span>
+                            {% endif %}
+                        </div>
+                        <h1 class="dash-hero-title mb-1">{{ perfil.nome|default:perfil.username }}</h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            @{{ perfil.username }} &bull; {{ instituicao.nome }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_usuarios_instituicao' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Voltar à Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. COLUNA ESQUERDA: DADOS CADASTRAIS E HISTÓRICO
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-card-list me-2 text-primary"></i>Dados Cadastrais
+                    </h2>
+                    <span class="text-muted small font-monospace">ID: {{ perfil.pk }}</span>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Nome Completo</span>
+                        <p class="fw-semibold text-dark mb-0">{{ perfil.nome|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Nome de Usuário</span>
+                        <p class="text-dark mb-0">@{{ perfil.username }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">E-mail</span>
+                        <p class="text-dark mb-0 text-break">{{ perfil.email|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Telefone</span>
+                        <p class="text-dark mb-0">{{ perfil.telefone_formatado|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">CPF</span>
+                        <p class="text-dark font-monospace mb-0">{{ perfil.cpf_formatado|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data de Nascimento</span>
+                        <p class="text-dark mb-0">
+                            {% if perfil.data_nascimento %}
+                                {{ perfil.data_nascimento|date:"d/m/Y" }}
+                                {% if perfil.idade is not None %}<small class="text-muted">({{ perfil.idade }} anos)</small>{% endif %}
+                            {% else %}
+                                <span class="text-muted small">Não informada</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Matrícula / Código</span>
+                        <p class="text-dark mb-0">{{ perfil.codigo|default:"Não informada" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Sala / Setor</span>
+                        <p class="text-dark mb-0">
+                            {% if perfil.sala %}
+                                {{ perfil.sala.nome }}
+                                <small class="d-block text-muted">{{ perfil.sala.predio }} &bull; {{ perfil.sala.andar }}</small>
+                            {% else %}
+                                <span class="text-muted small">Não vinculada</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Vínculo desde</span>
+                        <p class="text-dark mb-0">{{ perfil.criado_em|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reivindicações do perfil -->
+            <div class="sala-feed-card p-4 mt-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                    <h2 class="h6 fw-bold text-dark mb-0">
+                        <i class="bi bi-person-raised-hand me-2 text-primary"></i>Últimas Reivindicações
+                    </h2>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ reivindicacoes|length }}</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table sala-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Protocolo</th>
+                                <th>Item</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                                <th class="pe-3 text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reiv in reivindicacoes %}
+                                <tr>
+                                    <td class="ps-3"><strong class="font-monospace text-dark">#{{ reiv.protocolo }}</strong></td>
+                                    <td>
+                                        <a href="{% url 'servidor_detalhes_item' reiv.item.uuid %}" class="text-decoration-none text-dark">
+                                            {{ reiv.item.nome|default:reiv.item.codigo }}
+                                        </a>
+                                    </td>
+                                    <td><span class="small text-secondary-custom">{{ reiv.data|date:"d/m/Y H:i" }}</span></td>
+                                    <td>
+                                        {% if reiv.status == 1 %}
+                                            <span class="badge bg-warning text-dark">Pendente</span>
+                                        {% elif reiv.status == 2 %}
+                                            <span class="badge bg-info text-dark">Em Análise</span>
+                                        {% elif reiv.status == 3 %}
+                                            <span class="badge bg-success">Aprovada</span>
+                                        {% elif reiv.status == 4 %}
+                                            <span class="badge bg-danger">Rejeitada</span>
+                                        {% elif reiv.status == 5 %}
+                                            <span class="badge bg-secondary">Concluída</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border">{{ reiv.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 text-end">
+                                        <a href="{% url 'servidor_detalhar_reivindicacao' reiv.protocolo %}" class="sala-action-icon sala-action-icon-view" title="Analisar reivindicação" aria-label="Analisar reivindicação #{{ reiv.protocolo }}">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0 text-secondary-custom small">Nenhuma reivindicação registrada por este perfil nesta unidade.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Itens registrados pelo perfil -->
+            <div class="sala-feed-card p-4 mt-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                    <h2 class="h6 fw-bold text-dark mb-0">
+                        <i class="bi bi-box-seam me-2 text-primary"></i>Itens Registrados
+                    </h2>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ itens_registrados|length }}</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table sala-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Item</th>
+                                <th>Categoria</th>
+                                <th>Registro</th>
+                                <th>Status</th>
+                                <th class="pe-3 text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in itens_registrados %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ item.nome|default:"Item sem nome" }}
+                                        </a>
+                                        <span class="sala-badge-code d-block mt-1">{{ item.codigo|default:"—" }}</span>
+                                    </td>
+                                    <td><span class="small text-dark">{{ item.categoria.nome|default:"Sem categoria" }}</span></td>
+                                    <td><span class="small text-secondary-custom">{{ item.data_registro|date:"d/m/Y H:i" }}</span></td>
+                                    <td>
+                                        {% if item.status == 1 %}
+                                            <span class="badge bg-danger">Perdido</span>
+                                        {% elif item.status == 2 %}
+                                            <span class="badge bg-warning text-dark">Encontrado</span>
+                                        {% elif item.status == 3 %}
+                                            <span class="badge bg-success">Devolvido</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Outro</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 text-end">
+                                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-action-icon sala-action-icon-view" title="Visualizar item" aria-label="Visualizar item {{ item.nome }}">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0 text-secondary-custom small">Nenhum item registrado por este perfil nesta unidade.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. COLUNA DIREITA: AÇÕES E CONTATO
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-sliders me-2 text-primary"></i>Gerenciar Vínculo
+                </h2>
+
+                <div class="d-grid gap-2">
+                    <a href="mailto:{{ perfil.email }}" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2 {% if not perfil.email %}disabled{% endif %}">
+                        <i class="bi bi-envelope-fill"></i>
+                        <span>Enviar E-mail</span>
+                    </a>
+
+                    {% if perfil.telefone %}
+                        <a href="https://wa.me/55{{ perfil.telefone }}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2">
+                            <i class="bi bi-whatsapp"></i>
+                            <span>WhatsApp</span>
+                        </a>
+                    {% endif %}
+
+                    {% if perfil.pk != request.user.pk %}
+                        <hr class="my-2 opacity-25">
+                        {% if perfil.ativo %}
+                            <form method="POST" action="{% url 'servidor_desativar_usuario' perfil.pk %}" class="m-0" onsubmit="return confirm('Deseja realmente desativar o acesso deste perfil?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 py-2">
+                                    <i class="bi bi-slash-circle"></i>
+                                    <span>Desativar Acesso</span>
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{% url 'servidor_ativar_usuario' perfil.pk %}" class="m-0" onsubmit="return confirm('Deseja aprovar / ativar este perfil?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success w-100 d-flex align-items-center justify-content-center gap-2 py-2">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span>Aprovar / Ativar Acesso</span>
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info border-0 small mb-0">
+                            <i class="bi bi-info-circle me-1"></i> Este é o seu próprio perfil. O status da sua conta não pode ser alterado por aqui.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4 mt-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-graph-up me-2 text-primary"></i>Resumo de Atividade
+                </h2>
+
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="small text-secondary-custom">Reivindicações registradas</span>
+                    <strong class="text-dark">{{ reivindicacoes|length }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="small text-secondary-custom">Itens registrados</span>
+                    <strong class="text-dark">{{ itens_registrados|length }}</strong>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                    Exibindo os 10 registros mais recentes de cada categoria.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

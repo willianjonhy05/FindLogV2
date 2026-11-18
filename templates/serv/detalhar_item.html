@@ -1,0 +1,488 @@
+{% extends "serv/base.html" %}
+{% load static %}
+
+{% block title %}{{ item.nome|default:"Detalhes do Item" }} | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO ITEM
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="sala-badge-code">
+                                <i class="bi bi-tag-fill me-1 text-muted"></i>{{ item.codigo|default:"S/ CÓDIGO" }}
+                            </span>
+                            {% if item.status == 1 %}
+                                <span class="sala-badge sala-badge-inactive">
+                                    <i class="bi bi-exclamation-circle-fill"></i> Perdido
+                                </span>
+                            {% elif item.status == 2 %}
+                                <span class="sala-badge" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                                    <i class="bi bi-box-arrow-in-down"></i> Encontrado
+                                </span>
+                            {% elif item.status == 3 %}
+                                <span class="sala-badge sala-badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Devolvido
+                                </span>
+                            {% else %}
+                                <span class="sala-badge bg-secondary-subtle text-secondary">
+                                    <i class="bi bi-question-circle"></i> Outro
+                                </span>
+                            {% endif %}
+                        </div>
+                        <h1 class="dash-hero-title mb-1">
+                            {{ item.nome|default:"Item sem identificação" }}
+                        </h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            Unidade: <strong>{{ instituicao.nome }}</strong>
+                            {% if item.categoria %} &bull; {{ item.categoria.nome }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_listar_itens' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Voltar aos Itens
+                    </a>
+                    <a href="{% url 'servidor_atualizar_item' item.uuid %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-pencil-square"></i> Editar Item
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. COLUNA ESQUERDA: DADOS DO ITEM
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-info-square me-2 text-primary"></i>Ficha do Objeto
+                    </h2>
+                    <span class="text-muted small font-monospace">UUID: {{ item.uuid }}</span>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Foto -->
+                    <div class="col-12 col-md-4">
+                        {% if item.foto %}
+                            <img src="{{ item.foto.url }}" alt="{{ item.nome|default:'Item' }}"
+                                 class="img-fluid rounded-3 border object-fit-cover w-100" style="max-height: 240px;">
+                        {% else %}
+                            <div class="rounded-3 bg-light border d-flex flex-column align-items-center justify-content-center text-muted w-100" style="min-height: 180px;">
+                                <i class="bi bi-image fs-1"></i>
+                                <span class="small mt-2">Sem fotografia</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Especificações -->
+                    <div class="col-12 col-md-8">
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Nome do Item</span>
+                                <p class="fw-semibold text-dark mb-0">{{ item.nome|default:"Não informado" }}</p>
+                            </div>
+
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Categoria</span>
+                                <p class="text-dark fw-medium mb-0">{{ item.categoria.nome|default:"Não classificada" }}</p>
+                            </div>
+
+                            <div class="col-6 col-sm-4">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Marca / Modelo</span>
+                                <p class="text-dark mb-0">{{ item.marca_ou_modelo|default:"—" }}</p>
+                            </div>
+
+                            <div class="col-6 col-sm-4">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Cor</span>
+                                <p class="text-dark mb-0">{{ item.cor|default:"—" }}</p>
+                            </div>
+
+                            <div class="col-6 col-sm-4">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Tamanho</span>
+                                <p class="text-dark mb-0">{{ item.tamanho|default:"—" }}</p>
+                            </div>
+
+                            <div class="col-6 col-sm-4">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Material</span>
+                                <p class="text-dark mb-0">{{ item.material|default:"—" }}</p>
+                            </div>
+
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Local Encontrado</span>
+                                <p class="text-dark mb-0">
+                                    {% if item.local %}
+                                        <i class="bi bi-geo-alt text-muted me-1"></i>{{ item.local.nome }}
+                                        <small class="text-muted d-block">{{ item.local.predio }} &bull; {{ item.local.andar }}</small>
+                                    {% else %}
+                                        <span class="text-muted small">Não informado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Local Guardado</span>
+                                <p class="text-dark mb-0">
+                                    {% if item.local_guardado %}
+                                        <i class="bi bi-archive text-muted me-1"></i>{{ item.local_guardado.nome }}
+                                        <small class="text-muted d-block">{{ item.local_guardado.predio }} &bull; {{ item.local_guardado.andar }}</small>
+                                    {% else %}
+                                        <span class="text-muted small">Não informado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="col-12"><hr class="my-1 opacity-25"></div>
+
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Registrado em</span>
+                                <p class="text-dark mb-0">
+                                    <i class="bi bi-calendar3 text-muted me-1"></i>{{ item.data_registro|date:"d/m/Y \à\s H:i" }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 col-sm-6">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Responsável pelo Registro</span>
+                                <p class="text-dark mb-0">
+                                    {% if item.usuario_registro %}
+                                        <i class="bi bi-person-check text-muted me-1"></i>{{ item.usuario_registro.nome|default:item.usuario_registro.username }}
+                                    {% else %}
+                                        <span class="text-muted small">Não informado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            {% if item.dono %}
+                                <div class="col-12">
+                                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Devolvido a</span>
+                                    <p class="text-dark mb-0">
+                                        <i class="bi bi-person-heart text-success me-1"></i>{{ item.dono.nome|default:item.dono.username }}
+                                    </p>
+                                </div>
+                            {% endif %}
+
+                            {% if item.data_devolucao %}
+                                <div class="col-12 col-sm-6">
+                                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data de Devolução</span>
+                                    <p class="text-dark mb-0">{{ item.data_devolucao|date:"d/m/Y H:i" }}</p>
+                                </div>
+                            {% endif %}
+
+                            <div class="col-12">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Descrição</span>
+                                {% if item.descricao %}
+                                    <div class="p-3 rounded-3 bg-light border text-secondary-custom" style="font-size: 0.925rem;">
+                                        {{ item.descricao|linebreaksbr }}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted small fst-italic mb-0">Nenhuma descrição cadastrada para este item.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. COLUNA DIREITA: GERENCIAMENTO
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h5 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-sliders me-2 text-primary"></i>Gerenciar Item
+                </h2>
+                <p class="text-secondary-custom small mb-4">
+                    Ações operacionais disponíveis para este objeto na unidade <strong>{{ instituicao.nome }}</strong>.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'servidor_atualizar_item' item.uuid %}" class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Atualizar Dados do Item</span>
+                    </a>
+
+                    <a href="{% url 'servidor_listar_reivindicacoes' %}?q={{ item.codigo }}" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-person-raised-hand"></i>
+                        <span>Ver Reivindicações</span>
+                    </a>
+
+                    <a href="{% url 'servidor_listar_itens' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Listar Todos os Itens</span>
+                    </a>
+
+                    {% if item.status != 3 %}
+                        <hr class="my-2 opacity-25">
+                        <button type="button"
+                                class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalApagarItem">
+                            <i class="bi bi-trash3"></i>
+                            <span>Apagar Item</span>
+                        </button>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4 p-3 rounded-3 bg-light border">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-semibold text-secondary-custom">Reivindicações recebidas</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ total_reivindicacoes }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         5. REIVINDICAÇÕES VINCULADAS AO ITEM
+         ==================================================================== -->
+    <div class="sala-feed-card p-4 mt-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 border-bottom pb-3 mb-3">
+            <div>
+                <h2 class="h5 fw-bold text-dark mb-1">
+                    <i class="bi bi-person-raised-hand me-2 text-primary"></i>Reivindicações deste Item
+                </h2>
+                <span class="text-secondary-custom small">Total de <strong>{{ total_reivindicacoes }}</strong> solicitações registradas.</span>
+            </div>
+
+            <form method="GET" action="{% url 'servidor_detalhes_item' item.uuid %}" class="d-flex align-items-center gap-2">
+                <label for="filtroStatusReivindicacoes" class="small fw-semibold text-nowrap mb-0">Status:</label>
+                <select name="status" id="filtroStatusReivindicacoes" class="form-select form-select-custom" style="border-radius: 8px; font-size: 0.9rem; min-width: 170px;" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    {% for valor, label in status_choices %}
+                        <option value="{{ valor }}" {% if status_filtro == valor|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if status_filtro %}
+                    <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-btn-clear" title="Limpar filtro" aria-label="Limpar filtro">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Mobile -->
+        <div class="d-md-none">
+            {% for reiv in page_obj %}
+                <div class="border rounded-3 p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div>
+                            <a href="{% url 'servidor_detalhar_reivindicacao' reiv.protocolo %}" class="fw-bold text-dark text-decoration-none">
+                                #{{ reiv.protocolo }}
+                            </a>
+                            <small class="d-block text-muted">{{ reiv.data|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        {% if reiv.status == 1 %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                        {% elif reiv.status == 2 %}
+                            <span class="badge bg-info text-dark">Em Análise</span>
+                        {% elif reiv.status == 3 %}
+                            <span class="badge bg-success">Aprovada</span>
+                        {% elif reiv.status == 4 %}
+                            <span class="badge bg-danger">Rejeitada</span>
+                        {% elif reiv.status == 5 %}
+                            <span class="badge bg-secondary">Concluída</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark border">{{ reiv.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="small text-secondary-custom">
+                        <div><i class="bi bi-person me-1"></i>{{ reiv.autor.nome|default:reiv.autor.username }}</div>
+                        <div class="text-truncate mt-1"><i class="bi bi-chat-left-text me-1"></i>{{ reiv.pedido|truncatechars:90 }}</div>
+                    </div>
+                    <a href="{% url 'servidor_detalhar_reivindicacao' reiv.protocolo %}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        <i class="bi bi-eye me-1"></i>Analisar Solicitação
+                    </a>
+                </div>
+            {% empty %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                    <p class="mb-0 text-secondary-custom">Nenhuma reivindicação registrada para este item.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Desktop -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table sala-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Protocolo</th>
+                        <th>Solicitante</th>
+                        <th>Data</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reiv in page_obj %}
+                        <tr>
+                            <td class="ps-4">
+                                <strong class="text-dark font-monospace">#{{ reiv.protocolo }}</strong>
+                            </td>
+                            <td>
+                                <span class="d-block text-dark">{{ reiv.autor.nome|default:reiv.autor.username }}</span>
+                                <small class="text-muted">{{ reiv.autor.email }}</small>
+                            </td>
+                            <td>
+                                <span class="small text-nowrap text-secondary-custom">{{ reiv.data|date:"d/m/Y H:i" }}</span>
+                            </td>
+                            <td>
+                                {% if reiv.status == 1 %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendente</span>
+                                {% elif reiv.status == 2 %}
+                                    <span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>Em Análise</span>
+                                {% elif reiv.status == 3 %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Aprovada</span>
+                                {% elif reiv.status == 4 %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Rejeitada</span>
+                                {% elif reiv.status == 5 %}
+                                    <span class="badge bg-secondary"><i class="bi bi-box-arrow-right me-1"></i>Concluída</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">{{ reiv.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="sala-actions-group justify-content-end">
+                                    <a href="{% url 'servidor_detalhar_reivindicacao' reiv.protocolo %}" class="sala-action-icon sala-action-icon-view" title="Analisar reivindicação" aria-label="Analisar reivindicação #{{ reiv.protocolo }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                <p class="mb-0 text-secondary-custom">Nenhuma reivindicação registrada para este item.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <div class="sala-pagination-bar mt-3 rounded-bottom-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+                <span class="text-secondary-custom small text-center text-sm-start">
+                    Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong> de <strong>{{ total_reivindicacoes }}</strong> reivindicações
+                </span>
+
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination pagination-sm m-0 gap-1">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item sala-page-item">
+                                <a class="page-link sala-page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Página anterior">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item sala-page-item disabled">
+                                <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item sala-page-item active" aria-current="page">
+                                    <span class="page-link sala-page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item sala-page-item">
+                                    <a class="page-link sala-page-link" href="?page={{ num }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item sala-page-item">
+                                <a class="page-link sala-page-link" href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Próxima página">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item sala-page-item disabled">
+                                <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ====================================================================
+     MODAL: APAGAR ITEM
+     ==================================================================== -->
+{% if item.status != 3 %}
+    <div class="modal fade" id="modalApagarItem" tabindex="-1" aria-labelledby="modalApagarItemLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold text-dark" id="modalApagarItemLabel">Apagar Item</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body py-3 text-secondary-custom">
+                    Você está prestes a apagar o item <strong class="text-dark">{{ item.nome|default:item.codigo }}</strong> ({{ item.codigo }}).
+                    <div class="alert alert-danger border-0 small mt-3 mb-0">
+                        <strong>Atenção:</strong> Esta ação não poderá ser desfeita. O histórico de reivindicações deste item também será removido.
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="POST" action="{% url 'servidor_apagar_item' item.uuid %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger fw-semibold">
+                            <i class="bi bi-trash3 me-1"></i> Sim, Apagar Item
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,11 +1,370 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-</body>
-</html>
+{% extends "serv/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} | {{ instituicao.nome }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO MÓDULO
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <h1 class="dash-hero-title">{{ titulo }}</h1>
+                        <p class="dash-hero-subtitle">{{ subtitulo }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_cadastrar_usuario' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-person-plus-fill"></i> Novo Membro
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- ====================================================================
+         3. BARRA DE PESQUISA E FILTROS
+         ==================================================================== -->
+    <div class="sala-search-container mb-3 mb-md-4">
+        <form method="GET" action="{% url 'servidor_usuarios_instituicao' %}" class="row g-2 align-items-center m-0">
+            <div class="col-12 col-lg-5 px-0">
+                <div class="input-group sala-search-input-group align-items-center">
+                    <span class="sala-search-icon-addon">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control sala-search-field"
+                           placeholder="Nome, e-mail, usuário, matrícula, CPF ou telefone..."
+                           value="{{ termo_busca }}">
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-2 px-0 ps-lg-2">
+                <select name="tipo" class="form-select form-select-custom h-100" style="border-radius: 8px; font-size: 0.9rem;">
+                    <option value="">Todos os Tipos</option>
+                    {% for valor, label in tipos_choices %}
+                        <option value="{{ valor }}" {% if tipo_filtro == valor|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-lg-2 px-0 ps-2">
+                <select name="status" class="form-select form-select-custom h-100" style="border-radius: 8px; font-size: 0.9rem;">
+                    <option value="">Todos Status</option>
+                    <option value="ativo" {% if status_filtro == "ativo" %}selected{% endif %}>Ativo</option>
+                    <option value="inativo" {% if status_filtro == "inativo" %}selected{% endif %}>Pendente / Inativo</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-lg-3 px-0 ps-lg-2 d-flex gap-1">
+                <button type="submit" class="sala-btn-search flex-grow-1" title="Filtrar">
+                    <i class="bi bi-filter"></i>
+                    <span>Filtrar</span>
+                </button>
+                {% if termo_busca or tipo_filtro or status_filtro %}
+                    <a href="{% url 'servidor_usuarios_instituicao' %}" class="sala-btn-clear" title="Limpar filtros" aria-label="Limpar filtros">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- ====================================================================
+         4. FEED CARDS NO MOBILE (< 768px)
+         ==================================================================== -->
+    <div class="d-md-none">
+        {% for perfil in page_obj %}
+            <article class="sala-feed-card">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        {% if perfil.foto %}
+                            <img src="{{ perfil.foto.url }}" alt="{{ perfil.nome|default:perfil.username }}"
+                                 class="rounded-circle border object-fit-cover" style="width: 44px; height: 44px;">
+                        {% else %}
+                            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                <i class="bi bi-person-fill fs-5"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="sala-feed-card-title mb-0">{{ perfil.nome|default:perfil.username }}</h2>
+                            <small class="text-muted">@{{ perfil.username }}</small>
+                        </div>
+                    </div>
+
+                    {% if perfil.ativo %}
+                        <span class="sala-badge sala-badge-active">
+                            <i class="bi bi-check-circle-fill"></i> Ativo
+                        </span>
+                    {% else %}
+                        <span class="sala-badge sala-badge-inactive">
+                            <i class="bi bi-hourglass-split"></i> Pendente
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-2 d-flex flex-wrap gap-1">
+                    <span class="sala-badge-code">
+                        <i class="bi bi-person-badge me-1 text-muted"></i>{{ perfil.get_tipo_display }}
+                    </span>
+                    {% if perfil.pk == request.user.pk %}
+                        <span class="sala-badge-code text-primary">
+                            <i class="bi bi-person-check-fill me-1"></i>Você
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="sala-meta-grid">
+                    <span class="sala-meta-chip">
+                        <i class="bi bi-envelope"></i>
+                        <span class="text-truncate">{{ perfil.email|default:"Sem e-mail" }}</span>
+                    </span>
+                    <span class="sala-meta-chip">
+                        <i class="bi bi-telephone"></i>
+                        <span>{{ perfil.telefone_formatado|default:"Sem telefone" }}</span>
+                    </span>
+                    {% if perfil.sala %}
+                        <span class="sala-meta-chip">
+                            <i class="bi bi-door-open"></i>
+                            <span>{{ perfil.sala.nome }}</span>
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="sala-feed-card-footer">
+                    <span class="text-secondary-custom small fw-semibold">Ações</span>
+                    <div class="sala-actions-group">
+                        <a href="{% url 'servidor_visualizar_usuario' perfil.pk %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
+                            <i class="bi bi-eye"></i>
+                        </a>
+
+                        {% if perfil.pk != request.user.pk %}
+                            {% if perfil.ativo %}
+                                <form method="POST" action="{% url 'servidor_desativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar o acesso deste perfil?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar acesso" aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="POST" action="{% url 'servidor_ativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja aprovar / ativar este perfil?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar acesso" aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div class="sala-feed-card text-center py-5">
+                <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                {% if termo_busca or tipo_filtro or status_filtro %}
+                    <p class="mb-0 text-secondary-custom">Nenhum perfil encontrado para os filtros selecionados.</p>
+                {% else %}
+                    <p class="mb-0 text-secondary-custom">Nenhum perfil vinculado a esta unidade até o momento.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ====================================================================
+         5. TABELA NO DESKTOP (>= 768px)
+         ==================================================================== -->
+    <div class="sala-table-container d-none d-md-block">
+        <div class="table-responsive">
+            <table class="table sala-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Membro</th>
+                        <th>Tipo</th>
+                        <th>Contato</th>
+                        <th>Sala / Setor</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for perfil in page_obj %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if perfil.foto %}
+                                        <img src="{{ perfil.foto.url }}" alt="{{ perfil.nome|default:perfil.username }}"
+                                             class="rounded-circle border object-fit-cover" style="width: 40px; height: 40px;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block text-dark">{{ perfil.nome|default:perfil.username }}</strong>
+                                        <small class="text-muted">@{{ perfil.username }}</small>
+                                        {% if perfil.pk == request.user.pk %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">Você</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                {% if perfil.tipo == 3 %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ perfil.get_tipo_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ perfil.get_tipo_display }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <span class="d-block small text-dark">{{ perfil.email|default:"—" }}</span>
+                                <small class="text-muted">{{ perfil.telefone_formatado|default:"Sem telefone" }}</small>
+                            </td>
+
+                            <td>
+                                {% if perfil.sala %}
+                                    <span class="small text-dark">{{ perfil.sala.nome }}</span>
+                                    <small class="d-block text-muted">{{ perfil.sala.predio }} &bull; {{ perfil.sala.andar }}</small>
+                                {% else %}
+                                    <span class="text-muted small">Não vinculada</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if perfil.ativo %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pendente</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="pe-4 text-end">
+                                <div class="sala-actions-group justify-content-end">
+                                    <a href="{% url 'servidor_visualizar_usuario' perfil.pk %}" class="sala-action-icon sala-action-icon-view" title="Visualizar perfil" aria-label="Visualizar perfil de {{ perfil.nome|default:perfil.username }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    {% if perfil.pk != request.user.pk %}
+                                        {% if perfil.ativo %}
+                                            <form method="POST" action="{% url 'servidor_desativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja realmente desativar o acesso deste perfil?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="sala-action-icon sala-action-icon-deact" title="Desativar acesso" aria-label="Desativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                                    <i class="bi bi-slash-circle"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="POST" action="{% url 'servidor_ativar_usuario' perfil.pk %}" class="d-inline m-0 p-0" onsubmit="return confirm('Deseja aprovar / ativar este perfil?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="sala-action-icon sala-action-icon-act" title="Ativar acesso" aria-label="Ativar acesso de {{ perfil.nome|default:perfil.username }}">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-3">
+                                    <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                    {% if termo_busca or tipo_filtro or status_filtro %}
+                                        <p class="mb-0 text-secondary-custom">Nenhum perfil encontrado para os filtros selecionados.</p>
+                                    {% else %}
+                                        <p class="mb-0 text-secondary-custom">Nenhum perfil vinculado a esta unidade até o momento.</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         6. PAGINAÇÃO
+         ==================================================================== -->
+    {% if page_obj.has_other_pages %}
+        <div class="sala-pagination-bar mt-3 mt-md-0 rounded-bottom-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+            <span class="text-secondary-custom small text-center text-sm-start">
+                Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong> de <strong>{{ total_perfis }}</strong> perfis
+            </span>
+
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination pagination-sm m-0 gap-1">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item sala-page-item">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.previous_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Página anterior">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item sala-page-item disabled">
+                            <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item sala-page-item active" aria-current="page">
+                                <span class="page-link sala-page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item sala-page-item">
+                                <a class="page-link sala-page-link" href="?page={{ num }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item sala-page-item">
+                            <a class="page-link sala-page-link" href="?page={{ page_obj.next_page_number }}{% if termo_busca %}&q={{ termo_busca }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}" aria-label="Próxima página">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item sala-page-item disabled">
+                            <span class="page-link sala-page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,4 +1,235 @@
-!!!!
+{% extends "serv/base.html" %}
+{% load static %}
 
+{% block title %}Meu Perfil | {{ instituicao.nome }}{% endblock %}
 
-Implementar
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO PERFIL
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-8">
+                <div class="d-flex align-items-center gap-3">
+                    {% if usuario.foto %}
+                        <img src="{{ usuario.foto.url }}" alt="{{ usuario.nome|default:usuario.username }}"
+                             class="rounded-circle border border-2 border-white object-fit-cover" style="width: 72px; height: 72px;">
+                    {% else %}
+                        <div class="dash-hero-icon d-none d-sm-grid">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="sala-badge bg-success-subtle text-success">
+                                <i class="bi bi-person-badge"></i> Servidor
+                            </span>
+                            {% if usuario.ativo %}
+                                <span class="sala-badge sala-badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Conta Ativa
+                                </span>
+                            {% else %}
+                                <span class="sala-badge sala-badge-inactive">
+                                    <i class="bi bi-dash-circle-fill"></i> Conta Inativa
+                                </span>
+                            {% endif %}
+                        </div>
+                        <h1 class="dash-hero-title mb-1">{{ usuario.nome|default:usuario.username }}</h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            @{{ usuario.username }} &bull; {{ instituicao.nome }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_editar_meu_perfil' %}" class="dash-btn-hero btn-primary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-pencil-square"></i> Editar Perfil
+                    </a>
+                    <a href="{% url 'servidor_alterar_senha' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-shield-lock"></i> Alterar Senha
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. COLUNA ESQUERDA: DADOS PESSOAIS
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-person-vcard me-2 text-primary"></i>Dados Pessoais
+                    </h2>
+                    <a href="{% url 'servidor_editar_meu_perfil' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i> Editar
+                    </a>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Nome Completo</span>
+                        <p class="fw-semibold text-dark mb-0">{{ usuario.nome|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Nome de Usuário</span>
+                        <p class="text-dark mb-0">@{{ usuario.username }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">E-mail</span>
+                        <p class="text-dark mb-0 text-break">{{ usuario.email|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Telefone</span>
+                        <p class="text-dark mb-0">{{ usuario.telefone_formatado|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">CPF</span>
+                        <p class="text-dark font-monospace mb-0">{{ usuario.cpf_formatado|default:"Não informado" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data de Nascimento</span>
+                        <p class="text-dark mb-0">
+                            {% if usuario.data_nascimento %}
+                                {{ usuario.data_nascimento|date:"d/m/Y" }}
+                                {% if usuario.idade is not None %}<small class="text-muted">({{ usuario.idade }} anos)</small>{% endif %}
+                            {% else %}
+                                <span class="text-muted small">Não informada</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4 mt-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-building me-2 text-primary"></i>Atuação Institucional
+                    </h2>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Instituição</span>
+                        <p class="fw-semibold text-dark mb-0">{{ instituicao.nome }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Sala / Setor de Atuação</span>
+                        <p class="text-dark mb-0">
+                            {% if usuario.sala %}
+                                {{ usuario.sala.nome }}
+                                <small class="d-block text-muted">{{ usuario.sala.predio }} &bull; {{ usuario.sala.andar }}</small>
+                            {% else %}
+                                <span class="text-muted small">Não vinculada</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Matrícula / Código</span>
+                        <p class="text-dark mb-0">{{ usuario.codigo|default:"Não informada" }}</p>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Vínculo desde</span>
+                        <p class="text-dark mb-0">{{ usuario.criado_em|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. COLUNA DIREITA: RESUMO E ATALHOS
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="dash-stat-card mb-3">
+                <div class="dash-stat-header">
+                    <span class="dash-stat-icon-wrapper dash-stat-icon-blue">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </span>
+                    <span class="badge bg-light text-dark border small fw-normal">Total</span>
+                </div>
+                <div>
+                    <div class="dash-stat-value">{{ total_itens_registrados|default:0 }}</div>
+                    <p class="dash-stat-label">Itens Registrados por Mim</p>
+                </div>
+            </div>
+
+            <div class="dash-stat-card mb-3">
+                <div class="dash-stat-header">
+                    <span class="dash-stat-icon-wrapper dash-stat-icon-orange">
+                        <i class="bi bi-clipboard-check-fill"></i>
+                    </span>
+                    <span class="badge bg-light text-dark border small fw-normal">Total</span>
+                </div>
+                <div>
+                    <div class="dash-stat-value">{{ total_reivindicacoes_atendidas|default:0 }}</div>
+                    <p class="dash-stat-label">Reivindicações Atendidas</p>
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-lightning-charge me-2 text-primary"></i>Atalhos
+                </h2>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'servidor_listar_itens' %}?meus_itens=1" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Meus Itens Registrados</span>
+                    </a>
+
+                    <a href="{% url 'servidor_listar_reivindicacoes' %}" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-folder-check"></i>
+                        <span>Minhas Reivindicações</span>
+                    </a>
+
+                    <a href="{% url 'servidor_editar_meu_perfil' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar Meus Dados</span>
+                    </a>
+
+                    <a href="{% url 'servidor_alterar_senha' %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Alterar Minha Senha</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

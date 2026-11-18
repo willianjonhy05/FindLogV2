@@ -238,7 +238,9 @@ def exibir_erros_formulario(request, form):
 
 def _obter_perfil_servidor(request):
     """Helper interno para validar se o usuário logado possui perfil de SERVIDOR."""
-    perfil = getattr(request.user, "perfil", None)
-    if not perfil or perfil.tipo != "SERVIDOR":
+    from .models import Perfil
+
+    perfil = request.user
+    if not perfil.is_authenticated or perfil.tipo != Perfil.TipoUsuario.SERVIDOR:
         return None
-    return perfil            
+    return perfil

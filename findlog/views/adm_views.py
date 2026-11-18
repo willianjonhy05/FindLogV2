@@ -414,7 +414,7 @@ def lista_salas(request):
 
     if termo_busca:
         filtro = (
-            Q(numero__icontains=termo_busca)
+            Q(nome__icontains=termo_busca)
             | Q(predio__icontains=termo_busca)
             | Q(andar__icontains=termo_busca)
         )

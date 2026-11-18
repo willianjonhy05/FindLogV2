@@ -196,13 +196,13 @@
                 <div class="sala-feed-card-footer">
                     <span class="text-secondary-custom small fw-semibold">Ações</span>
                     <div class="sala-actions-group">
-                        <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes do item" aria-label="Visualizar item {{ item.nome }}">
+                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes do item" aria-label="Visualizar item {{ item.nome }}">
                             <i class="bi bi-eye"></i>
                         </a>
-                        <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
+                        <a href="{% url 'servidor_atualizar_item' item.uuid %}" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Ver reivindicações" aria-label="Reivindicações de {{ item.nome }}">
+                        <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Ver reivindicações" aria-label="Reivindicações de {{ item.nome }}">
                             <i class="bi bi-person-raised-hand"></i>
                         </a>
                     </div>
@@ -314,13 +314,13 @@
                             <!-- Ações -->
                             <td class="pe-4 text-end">
                                 <div class="sala-actions-group justify-content-end">
-                                    <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar item {{ item.nome }}">
+                                    <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-action-icon sala-action-icon-view" title="Visualizar detalhes" aria-label="Visualizar item {{ item.nome }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="#" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
+                                    <a href="{% url 'servidor_atualizar_item' item.uuid %}" class="sala-action-icon sala-action-icon-edit" title="Editar item" aria-label="Editar item {{ item.nome }}">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="{% url 'servidor_detalhes_item' item.codigo %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Reivindicações do item" aria-label="Reivindicações de {{ item.nome }}">
+                                    <a href="{% url 'servidor_detalhes_item' item.uuid %}" class="sala-action-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.08);" title="Reivindicações do item" aria-label="Reivindicações de {{ item.nome }}">
                                         <i class="bi bi-person-raised-hand"></i>
                                     </a>
                                 </div>

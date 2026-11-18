@@ -39,7 +39,7 @@
                             {{ sala.nome }}
                         </h1>
                         <p class="dash-hero-subtitle mb-0">
-                            Unidade: <strong>{{ sala.instituicao.nome|default:request.session.instituicao_nome }}</strong>
+                            Unidade: <strong>{% firstof sala.instituicao.nome request.session.instituicao_nome %}</strong>
                         </p>
                     </div>
                 </div>

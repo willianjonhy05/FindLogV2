@@ -339,6 +339,7 @@ def trocar_senha(request):
     return render(request, "usuario/trocar_senha.html", {"form": form})
 
 
+@usuario_required
 def minhas_reivindicacoes(request):
     """
     Exibe as reivindicações feitas pelo usuário autenticado na instituição ativa,

@@ -1,5 +1,6 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .instituicao import Instituicao
 from .sala import Sala

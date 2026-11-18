@@ -1,4 +1,191 @@
-!!!!!!
+{% extends "serv/base.html" %}
+{% load static %}
 
+{% block title %}Editar Meu Perfil | {{ instituicao.nome }}{% endblock %}
 
-Implementar
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/salas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- ====================================================================
+         1. HERO CARD DO MÓDULO
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-person-gear"></i>
+                    </div>
+                    <div>
+                        <h1 class="dash-hero-title mb-1">Editar Meu Perfil</h1>
+                        <p class="dash-hero-subtitle mb-0">
+                            Atualize seus dados de contato e fotografia em <strong>{{ instituicao.nome }}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_visualizar_meu_perfil' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Meu Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH E ERROS GLOBAIS
+         ==================================================================== -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if user_form.non_field_errors or perfil_form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+            {% for erro in user_form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            {% for erro in perfil_form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- ================================================================
+             3. FORMULÁRIO DE EDIÇÃO
+             ================================================================ -->
+        <div class="col-12 col-lg-8">
+            <div class="sala-feed-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i>Dados de Contato
+                    </h2>
+                    <span class="text-muted small">Campos com <span class="text-danger">*</span> são obrigatórios</span>
+                </div>
+
+                <form method="POST" action="{% url 'servidor_editar_meu_perfil' %}" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label for="{{ user_form.first_name.id_for_label }}" class="form-label form-label-custom">Nome <span class="text-danger">*</span></label>
+                            {{ user_form.first_name }}
+                            {% for erro in user_form.first_name.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ user_form.last_name.id_for_label }}" class="form-label form-label-custom">Sobrenome <span class="text-danger">*</span></label>
+                            {{ user_form.last_name }}
+                            {% for erro in user_form.last_name.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ user_form.email.id_for_label }}" class="form-label form-label-custom">E-mail <span class="text-danger">*</span></label>
+                            {{ user_form.email }}
+                            {% for erro in user_form.email.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ perfil_form.telefone.id_for_label }}" class="form-label form-label-custom">Telefone / WhatsApp</label>
+                            {{ perfil_form.telefone }}
+                            {% for erro in perfil_form.telefone.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="{{ perfil_form.foto.id_for_label }}" class="form-label form-label-custom">
+                                <i class="bi bi-camera-fill me-1 text-primary"></i>Foto de Perfil
+                            </label>
+                            {{ perfil_form.foto }}
+                            <div class="form-text small text-muted">Envie uma nova imagem para substituir a atual.</div>
+                            {% for erro in perfil_form.foto.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-25">
+
+                    <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+                        <a href="{% url 'servidor_visualizar_meu_perfil' %}" class="btn btn-secondary-custom">Cancelar</a>
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-circle-fill me-1"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             4. PAINEL LATERAL: FOTO ATUAL E DADOS FIXOS
+             ================================================================ -->
+        <div class="col-12 col-lg-4">
+            <div class="sala-feed-card p-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-image me-2 text-primary"></i>Foto Atual
+                </h2>
+
+                <div class="text-center mb-3">
+                    {% if perfil.foto %}
+                        <img src="{{ perfil.foto.url }}" alt="{{ perfil.nome|default:perfil.username }}"
+                             class="rounded-circle border object-fit-cover" style="width: 120px; height: 120px;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                            <i class="bi bi-person-fill" style="font-size: 3rem;"></i>
+                        </div>
+                    {% endif %}
+                    <p class="fw-semibold text-dark mb-0 mt-2">{{ perfil.nome|default:perfil.username }}</p>
+                    <span class="small text-muted">@{{ perfil.username }}</span>
+                </div>
+
+                <div class="alert alert-light border small mb-0">
+                    <i class="bi bi-info-circle text-primary me-1"></i>
+                    A foto é opcional e será exibida no topo do sistema e nos seus registros.
+                </div>
+            </div>
+
+            <div class="sala-feed-card p-4 mt-4">
+                <h2 class="h6 fw-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="bi bi-lock me-2 text-primary"></i>Dados Não Editáveis
+                </h2>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">CPF</span>
+                    <span class="text-dark font-monospace">{{ perfil.cpf_formatado|default:"Não informado" }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Nome de Usuário</span>
+                    <span class="text-dark">@{{ perfil.username }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Instituição</span>
+                    <span class="text-dark">{{ instituicao.nome }}</span>
+                </div>
+
+                <div class="mb-0">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Sala / Setor</span>
+                    <span class="text-dark">{{ perfil.sala.nome|default:"Não vinculada" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
