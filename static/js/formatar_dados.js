@@ -1,9 +1,19 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Função para formatar CNPJ: 00.000.000/0000-00
+  // Função para formatar CNPJ progressivamente ou completo: 00.000.000/0000-00
   function formatarCNPJ(cnpj) {
-    const valor = String(cnpj).replace(/\D/g, "");
-    if (valor.length !== 14) return cnpj;
-    return valor.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+    const valor = String(cnpj).replace(/\D/g, "").slice(0, 14);
+
+    if (valor.length > 12) {
+      return valor.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})$/, "$1.$2.$3/$4-$5");
+    } else if (valor.length > 8) {
+      return valor.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})$/, "$1.$2.$3/$4");
+    } else if (valor.length > 5) {
+      return valor.replace(/^(\d{2})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+    } else if (valor.length > 2) {
+      return valor.replace(/^(\d{2})(\d{1,3})$/, "$1.$2");
+    }
+
+    return valor;
   }
 
   // Função para formatar Data: AAAA-MM-DD -> DD/MM/AAAA
@@ -21,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Função para formatar CPF progressivamente ou completo: 000.000.000-00
   function formatarCPF(cpf) {
-    let valor = String(cpf).replace(/\D/g, "").slice(0, 11);
+    const valor = String(cpf).replace(/\D/g, "").slice(0, 11);
 
     if (valor.length > 9) {
       return valor.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, "$1.$2.$3-$4");
@@ -47,40 +57,31 @@ document.addEventListener("DOMContentLoaded", function () {
     return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7, 11)}`;
   }
 
-  // 1. Formatação em elementos de texto estático (tabelas, cards, spans)
-  document.querySelectorAll(".cnpj-format").forEach(function (el) {
-    if (el.textContent.trim()) {
-      el.textContent = formatarCNPJ(el.textContent.trim());
-    }
-  });
+  // Helper: aplica a função tanto em texto estático (td/span) quanto em <input> (inicial + digitação)
+  function vincularFormatacao(seletor, fnFormatadora) {
+    document.querySelectorAll(seletor).forEach(function (el) {
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        if (el.value) {
+          el.value = fnFormatadora(el.value);
+        }
+        el.addEventListener("input", function () {
+          this.value = fnFormatadora(this.value);
+        });
+      } else if (el.textContent.trim()) {
+        el.textContent = fnFormatadora(el.textContent.trim());
+      }
+    });
+  }
 
-  document.querySelectorAll(".telefone-format").forEach(function (el) {
-    if (el.textContent.trim()) {
-      el.textContent = formatarTelefone(el.textContent.trim());
-    }
-  });
+  // 1. Aplica por classes (.cnpj-format, .telefone-format, .cpf-format) em textos e inputs
+  vincularFormatacao(".cnpj-format", formatarCNPJ);
+  vincularFormatacao(".cpf-format", formatarCPF);
+  vincularFormatacao('.telefone-format, #telefone, #id_telefone, input[name="telefone"]', formatarTelefone);
 
-  document.querySelectorAll(".cpf-format").forEach(function (el) {
-    if (el.textContent.trim()) {
-      el.textContent = formatarCPF(el.textContent.trim());
-    }
-  });
-
+  // 2. Formatação de datas estáticas (YYYY-MM-DD -> DD/MM/YYYY)
   document.querySelectorAll(".data").forEach(function (el) {
     if (el.textContent.trim()) {
       el.textContent = formataData(el.textContent.trim());
     }
   });
-
-  // 2. Máscara dinâmica e inicial para o campo <input id="id_telefone">
-  const inputTelefone = document.getElementById("telefone");
-  if (inputTelefone) {
-    if (inputTelefone.value) {
-      inputTelefone.value = formatarTelefone(inputTelefone.value);
-    }
-
-    inputTelefone.addEventListener("input", function () {
-      this.value = formatarTelefone(this.value);
-    });
-  }
 });

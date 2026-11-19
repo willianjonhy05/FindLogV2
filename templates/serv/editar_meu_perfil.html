@@ -23,7 +23,7 @@
                     <div>
                         <h1 class="dash-hero-title mb-1">Editar Meu Perfil</h1>
                         <p class="dash-hero-subtitle mb-0">
-                            Atualize seus dados de contato, setor e fotografia em <strong>{{ instituicao.nome }}</strong>
+                            Atualize seus dados de contato, setor e fotografia em <strong>{{ request.session.instituicao_nome|default:instituicao.nome }}</strong>
                         </p>
                     </div>
                 </div>
@@ -111,6 +111,11 @@
                         <div class="col-12 col-md-6">
                             <label for="{{ user_form.sala.id_for_label }}" class="form-label form-label-custom">Sala / Setor de Atuação</label>
                             {{ user_form.sala }}
+                            <datalist id="lista-salas-servidor">
+                                {% for rotulo in user_form.opcoes_datalist_salas %}
+                                    <option value="{{ rotulo }}"></option>
+                                {% endfor %}
+                            </datalist>
                             {% for erro in user_form.sala.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                         </div>
 
@@ -148,9 +153,13 @@
                 <div class="text-center mb-3">
                     {% if perfil.foto %}
                         <img src="{{ perfil.foto.url }}" alt="{{ perfil.nome|default:perfil.username }}"
+                             id="preview-foto-perfil"
                              class="rounded-circle border object-fit-cover" style="width: 120px; height: 120px;">
                     {% else %}
-                        <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                        <img src="" alt="Pré-visualização da foto"
+                             id="preview-foto-perfil"
+                             class="rounded-circle border object-fit-cover d-none" style="width: 120px; height: 120px;">
+                        <div id="placeholder-foto-perfil" class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
                             <i class="bi bi-person-fill" style="font-size: 3rem;"></i>
                         </div>
                     {% endif %}
@@ -181,7 +190,7 @@
 
                 <div>
                     <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">E-mail Institucional</span>
-                    <span class="text-dark">{{ perfil.email }}</span>
+                    <span class="text-dark text-break">{{ perfil.email }}</span>
                 </div>
             </div>
         </div>
@@ -192,4 +201,27 @@
 
 {% block extra_scripts %}
 <script src="{% static 'js/formatar_dados.js' %}"></script>
+<script>
+    // Pré-visualiza a nova foto selecionada no painel lateral antes do envio
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputFoto = document.getElementById("{{ user_form.foto.id_for_label }}");
+        const previewImg = document.getElementById("preview-foto-perfil");
+        const placeholder = document.getElementById("placeholder-foto-perfil");
+
+        if (inputFoto && previewImg) {
+            inputFoto.addEventListener("change", function () {
+                const arquivo = this.files && this.files[0];
+                if (!arquivo) return;
+
+                const leitor = new FileReader();
+                leitor.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove("d-none");
+                    if (placeholder) placeholder.classList.add("d-none");
+                };
+                leitor.readAsDataURL(arquivo);
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -37,9 +37,12 @@ class ServidorAnaliseReivindicacaoForm(forms.ModelForm):
                 "class": "form-select form-select-custom",
                 "id": "id_status_reivindicacao",
             }),
-            "local_devolucao": forms.Select(attrs={
-                "class": "form-select form-select-custom",
+            "local_devolucao": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
                 "id": "id_local_devolucao",
+                "list": "lista-salas-devolucao",
+                "placeholder": "Digite para buscar a sala de retirada...",
+                "autocomplete": "off",
             }),
             "resposta_admin": forms.Textarea(attrs={
                 "class": "form-control form-control-custom",
@@ -50,16 +53,51 @@ class ServidorAnaliseReivindicacaoForm(forms.ModelForm):
 
     def __init__(self, *args, instituicao=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.instituicao = instituicao
 
         if instituicao:
-            self.fields["local_devolucao"].queryset = Sala.objects.filter(
+            self.salas_disponiveis = Sala.objects.filter(
                 instituicao=instituicao,
                 ativa=True,
             ).order_by("predio", "nome")
         else:
-            self.fields["local_devolucao"].queryset = Sala.objects.none()
+            self.salas_disponiveis = Sala.objects.none()
 
-        self.fields["local_devolucao"].empty_label = "Selecione a sala para retirada/devolução..."
+        self.fields["local_devolucao"].queryset = self.salas_disponiveis
+        self.fields["local_devolucao"].required = False
+
+        # Mapeia "Nome - Prédio" (ou nome da sala) -> objeto Sala
+        self._mapa_salas = {}
+        for sala in self.salas_disponiveis:
+            rotulo = self._formatar_rotulo_sala(sala)
+            self._mapa_salas[rotulo.lower()] = sala
+            # Também aceita caso o servidor digite apenas o nome exato da sala (se único)
+            self._mapa_salas.setdefault(sala.nome.strip().lower(), sala)
+
+        # Exibe o texto legível no input ao abrir uma reivindicação que já possui local_devolucao
+        if not self.is_bound and self.instance and self.instance.pk and self.instance.local_devolucao:
+            self.initial["local_devolucao"] = self._formatar_rotulo_sala(self.instance.local_devolucao)
+
+    @staticmethod
+    def _formatar_rotulo_sala(sala):
+        return f"{sala.nome} - {sala.predio}" if sala.predio else sala.nome
+
+    @property
+    def opcoes_datalist_salas(self):
+        """Retorna a lista de rótulos formatados para renderizar no <datalist> da template."""
+        return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
+
+    def clean_local_devolucao(self):
+        valor = self.data.get(self.add_prefix("local_devolucao"), "").strip()
+        if not valor:
+            return None
+
+        sala = self._mapa_salas.get(valor.lower())
+        if not sala:
+            raise forms.ValidationError(
+                "Selecione uma sala válida da lista de sugestões da instituição."
+            )
+        return sala
 
     def clean(self):
         cleaned_data = super().clean()
@@ -81,6 +119,6 @@ class ServidorAnaliseReivindicacaoForm(forms.ModelForm):
                 "É obrigatório informar o motivo da rejeição para o solicitante.",
             )
 
-        return cleaned_data    
+        return cleaned_data
 
 

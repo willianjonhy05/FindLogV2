@@ -1,35 +1,71 @@
 {% extends "serv/base.html" %}
+{% load static %}
 
-{% block title %}Cadastrar Usuário / Servidor{% endblock %}
+{% block title %}Cadastrar Membro | {{ instituicao.nome }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-0">
 
-    <div class="welcome-card mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-        <div>
-            <h1 class="welcome-title"><i class="bi bi-person-plus-fill me-2"></i>Cadastrar Membro</h1>
-            <p class="welcome-subtitle">Vínculo institucional automático: <strong>{{ instituicao.nome }}</strong></p>
-        </div>
-        <div>
-            <a href="{% url 'servidor_painel' %}" class="btn btn-secondary-custom">
-                <i class="bi bi-arrow-left me-1"></i> Voltar ao Painel
-            </a>
-        </div>
-    </div>
+    <!-- ====================================================================
+         1. CABEÇALHO HERO
+         ==================================================================== -->
+    <section class="dash-hero-card mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dash-hero-icon d-none d-sm-grid">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <div>
+                        <h1 class="dash-hero-title">Cadastrar Membro</h1>
+                        <p class="dash-hero-subtitle">
+                            Vínculo institucional automático: <strong>{{ request.session.instituicao_nome|default:instituicao.nome }}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
 
+            <div class="col-12 col-lg-5 text-start text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'servidor_usuarios_instituicao' %}" class="dash-btn-hero btn-secondary-custom flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left"></i> Listar Membros
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================================
+         2. MENSAGENS FLASH E ERROS GLOBAIS
+         ==================================================================== -->
     {% if messages %}
         <div class="mb-3">
             {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>{{ message }}</span>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+            {% for erro in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- ====================================================================
+         3. FORMULÁRIO DE CADASTRO
+         ==================================================================== -->
     <div class="card table-card p-4">
-        <form method="POST" action="{% url 'servidor_cadastrar_usuario' %}">
+        <form method="POST" action="{% url 'servidor_cadastrar_usuario' %}" novalidate>
             {% csrf_token %}
 
             <div class="form-section-header mb-3">
@@ -46,7 +82,12 @@
                 <div class="col-12 col-md-6" id="container-sala">
                     <label for="id_sala" class="form-label form-label-custom">Sala de Atribuição <span class="text-danger">*</span></label>
                     {{ form.sala }}
-                    <small class="text-muted d-block mt-1">Obrigatório para perfis do tipo Servidor.</small>
+                    <datalist id="lista-salas-colega">
+                        {% for rotulo in form.opcoes_datalist_salas %}
+                            <option value="{{ rotulo }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <small class="text-muted d-block mt-1">Digite para buscar uma sala ativa da unidade (obrigatório para Servidor).</small>
                     {% for erro in form.sala.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
             </div>
@@ -110,7 +151,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-                <a href="{% url 'servidor_painel' %}" class="btn btn-secondary-custom">Cancelar</a>
+                <a href="{% url 'servidor_usuarios_instituicao' %}" class="btn btn-secondary-custom">Cancelar</a>
                 <button type="submit" class="btn btn-primary-custom">
                     <i class="bi bi-check-circle-fill me-1"></i> Confirmar Cadastro
                 </button>
@@ -122,23 +163,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    // Alterna a exibição da Sala conforme o tipo de usuário selecionado
-    document.addEventListener("DOMContentLoaded", function () {
-        const selectTipo = document.getElementById("id_tipo");
-        const containerSala = document.getElementById("container-sala");
-
-        function ajustarCampoDeSala() {
-            // Valor 3 corresponde a Servidor
-            if (selectTipo.value === "3") {
-                containerSala.style.display = "block";
-            } else {
-                containerSala.style.display = "none";
-            }
-        }
-
-        selectTipo.addEventListener("change", ajustarCampoDeSala);
-        ajustarCampoDeSala();
-    });
-</script>
+<script src="{% static 'js/cadastrar_usuario_servidor.js' %}"></script>
 {% endblock %}

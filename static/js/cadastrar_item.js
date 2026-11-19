@@ -15,29 +15,10 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        // 1. Abre o modal de orientações imediatamente com o fundo escurecido
+        // 1. Abre o modal de orientações imediatamente (exceto quando retorna com erros de validação)
         abrirModalOrientacao();
 
-        // 2. Ativa busca digitável nos selects de Categoria, Local e Local Guardado (Tom Select)
-        if (typeof TomSelect !== "undefined") {
-            document.querySelectorAll("select.select-pesquisavel").forEach(function (selectEl) {
-                new TomSelect(selectEl, {
-                    create: false,
-                    allowEmptyOption: true,
-                    sortField: {
-                        field: "text",
-                        direction: "asc",
-                    },
-                    render: {
-                        no_results: function () {
-                            return '<div class="no-results p-2 text-muted small">Nenhuma opção encontrada.</div>';
-                        },
-                    },
-                });
-            });
-        }
-
-        // 3. Pré-visualização imediata da foto capturada pela câmera ou selecionada
+        // 2. Pré-visualização imediata da foto capturada pela câmera ou selecionada
         const inputFoto = document.getElementById("id_foto");
         const previewContainer = document.getElementById("previewFotoContainer");
         const previewImg = document.getElementById("previewFotoImg");
@@ -60,7 +41,7 @@
         }
     });
 
-    // Fallback: se o script do Bootstrap terminar de carregar no window.onload, garante a abertura
+    // Fallback: garante abertura caso o bundle do Bootstrap termine de carregar no window.onload
     window.addEventListener("load", function () {
         const modalAlertaEl = document.getElementById("modalOrientacaoCadastroItem");
         if (modalAlertaEl && !modalAlertaEl.classList.contains("show")) {

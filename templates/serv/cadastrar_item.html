@@ -4,8 +4,6 @@
 {% block title %}Cadastrar Item | {{ instituicao.nome }}{% endblock %}
 
 {% block extra_head %}
-<!-- Tom Select (Bootstrap 5 Theme) para busca digitável nos selects -->
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/cadastrar_item.css' %}">
 {% endblock %}
 
@@ -48,7 +46,7 @@
         </div>
     </section>
 
-    <!-- MENSAGENS FLASH -->
+    <!-- MENSAGENS FLASH E ERROS GLOBAIS -->
     {% if messages %}
         <div class="mb-3">
             {% for message in messages %}
@@ -60,69 +58,90 @@
         </div>
     {% endif %}
 
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            {% for erro in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ erro }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
     <!-- FORMULÁRIO -->
     <div class="card table-card p-4">
-        <form method="POST" action="{% url 'servidor_cadastra_item' %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'servidor_cadastra_item' %}" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
 
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-6">
-                    <label for="id_nome" class="form-label form-label-custom">Identificação / Nome do Item <span class="text-danger">*</span></label>
+                    <label for="{{ form.nome.id_for_label }}" class="form-label form-label-custom">Identificação / Nome do Item <span class="text-danger">*</span></label>
                     {{ form.nome }}
                     {% for erro in form.nome.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label for="id_categoria" class="form-label form-label-custom">Categoria <span class="text-danger">*</span></label>
+                    <label for="{{ form.categoria.id_for_label }}" class="form-label form-label-custom">Categoria <span class="text-danger">*</span></label>
                     {{ form.categoria }}
+                    <datalist id="lista-categorias-item">
+                        {% for nome_cat in form.opcoes_datalist_categorias %}
+                            <option value="{{ nome_cat }}"></option>
+                        {% endfor %}
+                    </datalist>
                     {% for erro in form.categoria.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label for="id_status" class="form-label form-label-custom">Status Inicial <span class="text-danger">*</span></label>
+                    <label for="{{ form.status.id_for_label }}" class="form-label form-label-custom">Status Inicial <span class="text-danger">*</span></label>
                     {{ form.status }}
                     {% for erro in form.status.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label for="id_local" class="form-label form-label-custom">Local onde foi Encontrado</label>
+                    <label for="{{ form.local.id_for_label }}" class="form-label form-label-custom">Local onde foi Encontrado</label>
                     {{ form.local }}
                     {% for erro in form.local.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label for="id_local_guardado" class="form-label form-label-custom">Local onde está Guardado</label>
+                    <label for="{{ form.local_guardado.id_for_label }}" class="form-label form-label-custom">Local onde está Guardado</label>
                     {{ form.local_guardado }}
                     {% for erro in form.local_guardado.errors %}<div class="invalid-feedback d-block">{{ erro }}</div>{% endfor %}
                 </div>
+
+                <!-- Datalist compartilhado para Local Encontrado e Local Guardado -->
+                <datalist id="lista-salas-item">
+                    {% for rotulo_sala in form.opcoes_datalist_salas %}
+                        <option value="{{ rotulo_sala }}"></option>
+                    {% endfor %}
+                </datalist>
             </div>
 
             <hr class="my-4 hr-custom">
 
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-3">
-                    <label for="id_marca_ou_modelo" class="form-label form-label-custom">Marca ou Modelo</label>
+                    <label for="{{ form.marca_ou_modelo.id_for_label }}" class="form-label form-label-custom">Marca ou Modelo</label>
                     {{ form.marca_ou_modelo }}
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label for="id_cor" class="form-label form-label-custom">Cor Predominante</label>
+                    <label for="{{ form.cor.id_for_label }}" class="form-label form-label-custom">Cor Predominante</label>
                     {{ form.cor }}
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label for="id_tamanho" class="form-label form-label-custom">Tamanho / Dimensões</label>
+                    <label for="{{ form.tamanho.id_for_label }}" class="form-label form-label-custom">Tamanho / Dimensões</label>
                     {{ form.tamanho }}
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label for="id_material" class="form-label form-label-custom">Material</label>
+                    <label for="{{ form.material.id_for_label }}" class="form-label form-label-custom">Material</label>
                     {{ form.material }}
                 </div>
 
                 <!-- Fotografia com suporte à câmera traseira no celular -->
                 <div class="col-12 col-md-6">
-                    <label for="id_foto" class="form-label form-label-custom">
+                    <label for="{{ form.foto.id_for_label }}" class="form-label form-label-custom">
                         <i class="bi bi-camera-fill me-1 text-primary"></i> Fotografia do Objeto
                     </label>
                     {{ form.foto }}
@@ -138,7 +157,7 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <label for="id_descricao" class="form-label form-label-custom">Descrição Detalhada / Avarias</label>
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label form-label-custom">Descrição Detalhada / Avarias</label>
                     {{ form.descricao }}
                     <div class="form-text small text-muted">
                         Evite expor senhas, números de documentos ou marcas exclusivas que servirão de prova na reivindicação.
@@ -206,6 +225,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="{% static 'js/cadastrar_item.js' %}"></script>
 {% endblock %}

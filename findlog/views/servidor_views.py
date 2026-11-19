@@ -739,30 +739,26 @@ def servidor_desativar_usuario(request, username):
         return redirect(proxima_url)
     return redirect("servidor_usuarios_instituicao")
 
-
 @servidor_required
 def servidor_cadastra_item(request):
     usuario = request.user
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    # Resolução da instituição ativa
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
+    instituicao = _obter_instituicao_servidor(request)
 
     if not instituicao:
         messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
         return redirect("login")
 
     if request.method == "POST":
-        form = ServidorItemForm(request.POST, request.FILES, instituicao=instituicao)
+        form = ServidorItemForm(
+            request.POST,
+            request.FILES,
+            instituicao=instituicao,
+            user=usuario,
+        )
         if form.is_valid():
             item = form.save(commit=False)
-            item.instituicao = instituicao  # Garante o vínculo com a instituição ativa
-            item.usuario_registro = usuario  # Servidor responsável pelo cadastro
+            item.instituicao = instituicao
+            item.usuario_registro = usuario
             item.save()
 
             messages.success(
@@ -773,20 +769,25 @@ def servidor_cadastra_item(request):
 
         messages.error(request, "Por favor, corrija os erros apontados no formulário.")
     else:
-        # Sugere por padrão o status ENCONTRADO (2) e a própria sala do servidor como local guardado
         dados_iniciais = {
             "status": Item.StatusItem.ENCONTRADO,
         }
-        if usuario.sala and usuario.sala.instituicao == instituicao:
-            dados_iniciais["local_guardado"] = usuario.sala
+        # Formata a sala no mesmo padrão esperado pelo <datalist>
+        if usuario.sala and usuario.sala.instituicao == instituicao and usuario.sala.ativa:
+            dados_iniciais["local_guardado"] = ServidorItemForm._formatar_rotulo_sala(usuario.sala)
 
-        form = ServidorItemForm(initial=dados_iniciais, instituicao=instituicao)
+        form = ServidorItemForm(
+            initial=dados_iniciais,
+            instituicao=instituicao,
+            user=usuario,
+        )
 
     context = {
         "form": form,
         "instituicao": instituicao,
     }
     return render(request, "serv/cadastrar_item.html", context)
+
 
 
 @servidor_required
@@ -978,39 +979,51 @@ def servidor_detalhar_reivindicacao(request, protocolo):
 
     return render(request, "serv/detalhar_reivindicacao.html", context)
 
-
 @servidor_required
 def servidor_atualizar_item(request, uuid):
-    instituicao = _obter_instituicao_ativa(request)
+    instituicao = _obter_instituicao_servidor(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
 
-    # Garante que o item existe e pertence à mesma instituição do servidor
-    item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
+    item = get_object_or_404(
+        Item.objects.select_related("categoria", "local", "local_guardado", "dono"),
+        uuid=uuid,
+        instituicao=instituicao,
+    )
 
     if request.method == "POST":
         form = ServidorAtualizarItemForm(
-            request.POST, request.FILES, instance=item, instituicao=instituicao
+            request.POST,
+            request.FILES,
+            instance=item,
+            instituicao=instituicao,
+            user=request.user,
         )
         if form.is_valid():
-            form.save()
+            item_atualizado = form.save()
             messages.success(
-                request, f'Os dados do item "{item.nome}" foram atualizados com sucesso.'
+                request,
+                f'Os dados do item "{item_atualizado.nome or item_atualizado.codigo}" foram atualizados com sucesso.',
             )
-            return redirect("servidor_detalhes_item", uuid=item.uuid)
-        else:
-            messages.error(request, "Verifique os erros no formulário antes de salvar.")
+            return redirect("servidor_detalhes_item", uuid=item_atualizado.uuid)
+
+        messages.error(request, "Verifique os erros no formulário antes de salvar.")
     else:
-        form = ServidorAtualizarItemForm(instance=item, instituicao=instituicao)
+        form = ServidorAtualizarItemForm(
+            instance=item,
+            instituicao=instituicao,
+            user=request.user,
+        )
 
     context = {
         "form": form,
-        "item": item,  # Enviado para exibir os campos somente leitura no template
+        "item": item,
+        "instituicao": instituicao,
     }
     return render(request, "serv/atualizar_item.html", context)
 
-
+    
 @servidor_required
 def servidor_listar_reivindicacoes(request):
     """

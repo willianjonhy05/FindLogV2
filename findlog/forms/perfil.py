@@ -312,24 +312,20 @@ class AutoCadastroServidorForm(AutoCadastroBaseForm):
                 )
         return servidor        
 
-
 class ServidorCadastroColegaForm(forms.ModelForm):
     senha = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom", "placeholder": "Senha inicial"}),
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control form-control-custom", "placeholder": "Senha inicial"}
+        ),
         min_length=6,
-        label="Senha Provisória"
+        label="Senha Provisória",
     )
     confirmar_senha = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control form-control-custom", "placeholder": "Repita a senha"}),
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control form-control-custom", "placeholder": "Repita a senha"}
+        ),
         min_length=6,
-        label="Confirmar Senha"
-    )
-    sala = forms.ModelChoiceField(
-        queryset=Sala.objects.none(),
-        required=False,
-        empty_label="Selecione a sala de responsabilidade...",
-        widget=forms.Select(attrs={"class": "form-select form-select-custom", "id": "id_sala"}),
-        label="Sala Responsável"
+        label="Confirmar Senha",
     )
 
     class Meta:
@@ -344,12 +340,42 @@ class ServidorCadastroColegaForm(forms.ModelForm):
             "sala",
         ]
         widgets = {
-            "nome": forms.TextInput(attrs={"class": "form-control form-control-custom", "placeholder": "Nome completo"}),
-            "username": forms.TextInput(attrs={"class": "form-control form-control-custom", "placeholder": "nome.sobrenome"}),
-            "cpf": forms.TextInput(attrs={"class": "form-control form-control-custom cpf-format", "placeholder": "000.000.000-00"}),
-            "email": forms.EmailInput(attrs={"class": "form-control form-control-custom", "placeholder": "usuario@instituicao.edu.br"}),
-            "telefone": forms.TextInput(attrs={"class": "form-control form-control-custom telefone-format", "placeholder": "(00) 00000-0000"}),
-            "tipo": forms.Select(attrs={"class": "form-select form-select-custom", "id": "id_tipo"}),
+            "nome": forms.TextInput(
+                attrs={"class": "form-control form-control-custom", "placeholder": "Nome completo"}
+            ),
+            "username": forms.TextInput(
+                attrs={"class": "form-control form-control-custom", "placeholder": "nome.sobrenome"}
+            ),
+            "cpf": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom cpf-format",
+                    "placeholder": "000.000.000-00",
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "placeholder": "usuario@instituicao.edu.br",
+                }
+            ),
+            "telefone": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom telefone-format",
+                    "placeholder": "(00) 00000-0000",
+                }
+            ),
+            "tipo": forms.Select(
+                attrs={"class": "form-select form-select-custom", "id": "id_tipo"}
+            ),
+            "sala": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-custom",
+                    "id": "id_sala",
+                    "list": "lista-salas-colega",
+                    "placeholder": "Digite para buscar a sala de responsabilidade...",
+                    "autocomplete": "off",
+                }
+            ),
         }
 
     def __init__(self, *args, instituicao=None, **kwargs):
@@ -363,12 +389,49 @@ class ServidorCadastroColegaForm(forms.ModelForm):
         ]
         self.fields["tipo"].choices = tipos_permitidos
 
-        # 2. Filtra estritamente as salas da instituição ativa
+        # 2. Filtra estritamente as salas ativas da instituição ativa
         if self.instituicao:
-            self.fields["sala"].queryset = Sala.objects.filter(
-                instituicao=self.instituicao, 
-                ativa=True
+            self.salas_disponiveis = Sala.objects.filter(
+                instituicao=self.instituicao,
+                ativa=True,
             ).order_by("predio", "nome")
+        else:
+            self.salas_disponiveis = Sala.objects.none()
+
+        self.fields["sala"].queryset = self.salas_disponiveis
+        self.fields["sala"].required = False
+
+        # Mapeia "Nome - Prédio" (ou nome da sala) -> objeto Sala
+        self._mapa_salas = {}
+        for sala in self.salas_disponiveis:
+            rotulo = self._formatar_rotulo_sala(sala)
+            self._mapa_salas[rotulo.lower()] = sala
+            self._mapa_salas.setdefault(sala.nome.strip().lower(), sala)
+
+        # Exibe o rótulo legível caso o form seja instanciado com uma instância já vinculada
+        if not self.is_bound and self.instance and self.instance.pk and self.instance.sala:
+            self.initial["sala"] = self._formatar_rotulo_sala(self.instance.sala)
+
+    @staticmethod
+    def _formatar_rotulo_sala(sala):
+        return f"{sala.nome} - {sala.predio}" if sala.predio else sala.nome
+
+    @property
+    def opcoes_datalist_salas(self):
+        """Retorna os rótulos formatados para renderizar no <datalist> da template."""
+        return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
+
+    def clean_sala(self):
+        valor = self.data.get(self.add_prefix("sala"), "").strip()
+        if not valor:
+            return None
+
+        sala = self._mapa_salas.get(valor.lower())
+        if not sala:
+            raise forms.ValidationError(
+                "Selecione uma sala válida da lista de sugestões da instituição."
+            )
+        return sala
 
     def clean_cpf(self):
         cpf = self.cleaned_data.get("cpf", "")
@@ -412,13 +475,12 @@ class ServidorCadastroColegaForm(forms.ModelForm):
 
         if commit:
             usuario.save()
-            # Vincula automaticamente à mesma instituição do servidor
             if self.instituicao:
                 VinculoInstituicao.objects.get_or_create(
                     perfil=usuario,
-                    instituicao=self.instituicao
+                    instituicao=self.instituicao,
                 )
-        return usuario    
+        return usuario
 
 
 
@@ -469,7 +531,6 @@ class ServidorAlterarSenhaForm(PasswordChangeForm):
             field.widget.attrs.update({"class": "form-control"})    
 
 
-
 class ServidorEditarUserForm(forms.ModelForm):
     class Meta:
         model = Perfil
@@ -501,8 +562,11 @@ class ServidorEditarUserForm(forms.ModelForm):
                 "class": "form-control form-control-custom",
                 "accept": "image/png, image/jpeg, image/webp",
             }),
-            "sala": forms.Select(attrs={
-                "class": "form-select form-select-custom",
+            "sala": forms.TextInput(attrs={
+                "class": "form-control form-control-custom",
+                "list": "lista-salas-servidor",
+                "placeholder": "Digite para buscar sua sala/setor (Opcional)...",
+                "autocomplete": "off",
             }),
         }
 
@@ -517,16 +581,49 @@ class ServidorEditarUserForm(forms.ModelForm):
         if instituicao is None and self.instance and self.instance.pk:
             instituicao = self.instance.instituicao.filter(ativo=True).first()
 
-        # 3. Filtra o select de salas apenas para as salas ativas da instituição do servidor
+        # 3. Filtra as salas ativas da instituição do servidor
         if instituicao:
-            self.fields["sala"].queryset = Sala.objects.filter(
+            self.salas_disponiveis = Sala.objects.filter(
                 instituicao=instituicao,
                 ativa=True,
             ).order_by("predio", "nome")
         else:
-            self.fields["sala"].queryset = Sala.objects.none()
+            self.salas_disponiveis = Sala.objects.none()
 
-        self.fields["sala"].empty_label = "Selecione a sua sala/setor de atuação (Opcional)"
+        self.fields["sala"].queryset = self.salas_disponiveis
+        self.fields["sala"].required = False
+
+        # Mapeia "Nome - Prédio" (e o nome isolado da sala) -> objeto Sala
+        self._mapa_salas = {}
+        for sala in self.salas_disponiveis:
+            rotulo = self._formatar_rotulo_sala(sala)
+            self._mapa_salas[rotulo.lower()] = sala
+            self._mapa_salas.setdefault(sala.nome.strip().lower(), sala)
+
+        # Preenche o input com o rótulo legível da sala atual ao abrir a edição
+        if not self.is_bound and self.instance and self.instance.pk and self.instance.sala:
+            self.initial["sala"] = self._formatar_rotulo_sala(self.instance.sala)
+
+    @staticmethod
+    def _formatar_rotulo_sala(sala):
+        return f"{sala.nome} - {sala.predio}" if sala.predio else sala.nome
+
+    @property
+    def opcoes_datalist_salas(self):
+        """Retorna os rótulos formatados para renderizar no <datalist> da template."""
+        return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
+
+    def clean_sala(self):
+        valor = self.data.get(self.add_prefix("sala"), "").strip()
+        if not valor:
+            return None
+
+        sala = self._mapa_salas.get(valor.lower())
+        if not sala:
+            raise forms.ValidationError(
+                "Selecione uma sala válida da lista de sugestões da instituição."
+            )
+        return sala
 
     def clean_telefone(self):
         telefone = self.cleaned_data.get("telefone")
@@ -542,7 +639,7 @@ class ServidorEditarUserForm(forms.ModelForm):
 
         return somente_numeros
 
-
+        
 
 class ServidorEditarPerfilForm(forms.ModelForm):
     class Meta:
