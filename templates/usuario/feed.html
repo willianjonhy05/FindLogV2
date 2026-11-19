@@ -167,9 +167,7 @@
 
                   <h2 class="usr-post-title">{{ item.nome|default:"Item sem identificação" }}</h2>
 
-                  {% if item.descricao %}
-                    <p class="usr-post-desc">{{ item.descricao }}</p>
-                  {% endif %}
+        
                 </div>
 
                 <!-- Foto do item (o placeholder fica atrás e cobre falhas de carregamento) -->
@@ -187,48 +185,6 @@
                   {% endif %}
                 </div>
 
-                <!-- Características -->
-                <div class="usr-post-facts">
-                  <span class="usr-fact" title="{{ item.local.nome|default:'Local não informado' }}">
-                    <i class="bi bi-geo-alt-fill"></i>
-                    <span>{{ item.local.nome|default:"Local não informado" }}</span>
-                  </span>
-                  <span class="usr-fact" title="Data de registro">
-                    <i class="bi bi-calendar3"></i>
-                    <span>{{ item.data_registro|date:"d/m/Y" }}</span>
-                  </span>
-                  {% if item.marca_ou_modelo %}
-                    <span class="usr-fact" title="{{ item.marca_ou_modelo }}">
-                      <i class="bi bi-upc-scan"></i>
-                      <span>{{ item.marca_ou_modelo }}</span>
-                    </span>
-                  {% endif %}
-                  {% if item.cor %}
-                    <span class="usr-fact" title="Cor do item">
-                      <i class="bi bi-palette"></i>
-                      <span>{{ item.cor }}</span>
-                    </span>
-                  {% endif %}
-                  {% if item.material %}
-                    <span class="usr-fact" title="Material do item">
-                      <i class="bi bi-layers"></i>
-                      <span>{{ item.material }}</span>
-                    </span>
-                  {% endif %}
-                  {% if item.tamanho %}
-                    <span class="usr-fact" title="Tamanho do item">
-                      <i class="bi bi-rulers"></i>
-                      <span>{{ item.tamanho }}</span>
-                    </span>
-                  {% endif %}
-                  {% if item.local_guardado %}
-                    <span class="usr-fact" title="Local onde está guardado">
-                      <i class="bi bi-box-seam"></i>
-                      <span>Guardado em {{ item.local_guardado.nome }}</span>
-                    </span>
-                  {% endif %}
-                </div>
-
                 <!-- Ações do post -->
                 <footer class="usr-post-actions">
                   <button type="button" class="usr-action usr-action-primary" data-claim
@@ -242,13 +198,7 @@
                     <span>É meu, quero reivindicar</span>
                   </button>
 
-                  <button type="button" class="usr-action usr-action-save" data-save
-                          data-codigo="{{ item.codigo }}" aria-pressed="false"
-                          aria-label="Salvar {{ item.nome|default:'este item' }}">
-                    <i class="bi bi-bookmark"></i>
-                    <span>Salvar</span>
-                  </button>
-
+               
                   <button type="button" class="usr-action usr-action-icon" data-share
                           data-codigo="{{ item.codigo }}"
                           aria-label="Compartilhar {{ item.nome|default:'este item' }}">
