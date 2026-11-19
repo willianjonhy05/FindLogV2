@@ -1,7 +1,7 @@
 {% extends "usuario/base.html" %}
 {% load static %}
 
-{% block title %}Feed{% endblock %}
+{% block title %}Feed | {{ instituicao_nome|default:instituicao.nome }}{% endblock %}
 
 {% block css %}{% endblock %}
 
@@ -19,7 +19,7 @@
             <div class="usr-mobile-hero-text">
               <span>Achados e perdidos</span>
               <strong>Olá, {{ request.session.primeiro_nome|default:"Usuário" }}</strong>
-              <small><i class="bi bi-building"></i> {{ instituicao_nome }}</small>
+              <small><i class="bi bi-building"></i> {{ instituicao_nome|default:instituicao.nome }}</small>
             </div>
             <div class="usr-mobile-hero-icon" aria-hidden="true">
               <i class="bi bi-search"></i>
@@ -42,9 +42,14 @@
               <div class="usr-search-box">
                 <i class="bi bi-search" aria-hidden="true"></i>
                 <label for="feedSearch" class="visually-hidden">Buscar itens</label>
-                <input type="search" id="feedSearch" placeholder="Buscar item, código ou local..."
+                <input type="search"
+                       id="feedSearch"
+                       value="{{ termo_busca }}"
+                       placeholder="Buscar item, código ou local..."
                        autocomplete="off">
-                <button type="button" class="usr-search-clear usr-hidden" id="feedSearchClear"
+                <button type="button"
+                        class="usr-search-clear {% if not termo_busca %}usr-hidden{% endif %}"
+                        id="feedSearchClear"
                         aria-label="Limpar busca">
                   <i class="bi bi-x-lg"></i>
                 </button>
@@ -82,17 +87,26 @@
                 Achados e perdidos
               </h1>
               <p class="usr-feed-subtitle">
-                Itens registrados em <strong>{{ instituicao_nome }}</strong>
+                Itens registrados em <strong>{{ instituicao_nome|default:instituicao.nome }}</strong>
               </p>
             </div>
             <span class="usr-count-pill" id="feedCount" aria-live="polite">
               <i class="bi bi-collection"></i>
-              {{ itens|length }} {% if itens|length == 1 %}item{% else %}itens{% endif %}
+              {{ total_itens }} {% if total_itens == 1 %}item{% else %}itens{% endif %}
             </span>
           </div>
 
-          <!-- Publicações -->
-          <section class="usr-feed" id="feedGrid" aria-label="Publicações de itens da instituição">
+          <!-- Categorias agregadas no servidor para os filtros laterais/mobile -->
+          {{ categorias_disponiveis|json_script:"feedCategoriasData" }}
+
+          <!-- Publicações (lote inicial SSR + carregamento incremental via scroll infinito) -->
+          <section class="usr-feed"
+                   id="feedGrid"
+                   data-feed-url="{% url 'usuario_feed' %}"
+                   data-has-next="{{ has_next|yesno:'true,false' }}"
+                   data-next-page="{{ next_page }}"
+                   data-total-itens="{{ total_itens }}"
+                   aria-label="Publicações de itens da instituição">
             {% for item in itens %}
               <article class="usr-post{% if request.session.instituicao_cnpj and item.instituicao.cnpj != request.session.instituicao_cnpj %} usr-hidden{% endif %}"
                        id="item-{{ item.codigo }}"
@@ -102,8 +116,7 @@
                        data-codigo="{{ item.codigo }}"
                        data-nome="{{ item.nome|default:'Item sem identificação' }}"
                        data-local="{{ item.local.nome|default:'Local não informado' }}"
-                       data-timestamp="{{ item.data_registro|date:'U' }}"
-                       data-search="{{ item.nome|default:''|striptags }} {{ item.codigo|default:'' }} {{ item.categoria.nome|default:''|striptags }} {{ item.local.nome|default:''|striptags }} {{ item.marca_ou_modelo|default:''|striptags }} {{ item.cor|default:''|striptags }} {{ item.material|default:''|striptags }} {{ item.descricao|default:''|striptags }} {{ item.instituicao.nome|default:''|striptags }}">
+                       data-timestamp="{{ item.data_registro|date:'U' }}">
 
                 <!-- Autor da publicação -->
                 <header class="usr-post-head">
@@ -116,7 +129,7 @@
                       <i class="bi bi-clock" aria-hidden="true"></i>
                       <span>{{ item.data_registro|timesince }} atrás</span>
                       <span class="usr-post-sub-place">
-                        <span aria-hidden="true">·</span>
+                        <span aria-hidden="true">&middot;</span>
                         <i class="bi bi-geo-alt" aria-hidden="true"></i>
                         <span>{{ item.local.nome|default:"Local não informado" }}</span>
                       </span>
@@ -166,8 +179,10 @@
                     <span>Sem foto do item</span>
                   </div>
                   {% if item.foto %}
-                    <img src="{{ item.foto.url }}" alt="Foto de {{ item.nome|default:'item encontrado' }}"
-                         loading="lazy" decoding="async"
+                    <img src="{{ item.foto.url }}"
+                         alt="Foto de {{ item.nome|default:'item encontrado' }}"
+                         loading="lazy"
+                         decoding="async"
                          onerror="this.classList.add('usr-hidden');">
                   {% endif %}
                 </div>
@@ -242,15 +257,17 @@
                 </footer>
               </article>
             {% empty %}
-              <div class="usr-empty">
-                <i class="bi bi-inbox" aria-hidden="true"></i>
-                <h2>Nenhum item publicado ainda</h2>
-                <p>Quando a instituição registrar itens de achados e perdidos, eles aparecerão neste feed.</p>
-              </div>
+              {% if not termo_busca %}
+                <div class="usr-empty" id="feedInitialEmpty">
+                  <i class="bi bi-inbox" aria-hidden="true"></i>
+                  <h2>Nenhum item publicado ainda</h2>
+                  <p>Quando a instituição registrar itens de achados e perdidos, eles aparecerão neste feed.</p>
+                </div>
+              {% endif %}
             {% endfor %}
 
-            <!-- Estado vazio para filtros sem resultado -->
-            <div class="usr-empty usr-hidden" id="feedEmpty" role="status">
+            <!-- Estado vazio para filtros/busca sem resultado -->
+            <div class="usr-empty {% if itens or not termo_busca %}usr-hidden{% endif %}" id="feedEmpty" role="status">
               <i class="bi bi-search" aria-hidden="true"></i>
               <h2 id="feedEmptyTitle">Nenhum item encontrado</h2>
               <p id="feedEmptyText">Nenhum item corresponde aos filtros selecionados. Tente outros termos.</p>
@@ -258,8 +275,15 @@
             </div>
           </section>
 
-        
-        {% endblock %} 
+          <!-- Indicador e sentinela do Scroll Infinito -->
+          <div id="feedInfiniteSentinel"
+               class="text-center py-4 {% if not has_next %}usr-hidden{% endif %}"
+               aria-live="polite">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <span class="small text-muted">Carregando mais itens...</span>
+          </div>
+{% endblock %}
 
-
-      {% block js %}{% endblock %}
+{% block js %}
+<script src="{% static 'js/usuario_feed.js' %}"></script>
+{% endblock %}

@@ -13,7 +13,7 @@ from django.http import Http404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils.http import url_has_allowed_host_and_scheme
-
+from django.utils.timesince import timesince
 
 
 
@@ -48,6 +48,11 @@ def paginar_queryset(request, queryset, por_pagina=10):
     """Pagina qualquer QuerySet usando get_page() (trata páginas inválidas ou vazias)."""
     paginator = Paginator(queryset, por_pagina)
     return paginator.get_page(request.GET.get("page"))
+
+def _paginar_queryset(request, queryset, por_pagina=12):
+    """Helper centralizado para paginar querysets de listagem."""
+    paginator = Paginator(queryset, por_pagina)
+    return paginator.get_page(request.GET.get("page")), paginator.count
 
 
 def formatar_cnpj(cnpj: str) -> str:
@@ -296,3 +301,28 @@ def redirecionar_origem(request, fallback="servidor_listar_salas", **fallback_kw
     ):
         return redirect(destino)
     return redirect(fallback, **fallback_kwargs)
+
+
+def _serializar_item_feed(item):
+    """Serializa um Item para carregamento incremental (scroll infinito) no feed."""
+    return {
+        "uuid": str(item.uuid),
+        "codigo": item.codigo or str(item.uuid)[:8],
+        "nome": item.nome or "Item sem identificação",
+        "descricao": item.descricao or "",
+        "status": item.status,
+        "status_label": item.get_status_display(),
+        "categoria": item.categoria.nome if item.categoria else "Sem categoria",
+        "local": item.local.nome if item.local else "Local não informado",
+        "local_guardado": item.local_guardado.nome if item.local_guardado else "",
+        "marca_ou_modelo": item.marca_ou_modelo or "",
+        "cor": item.cor or "",
+        "material": item.material or "",
+        "tamanho": item.tamanho or "",
+        "foto_url": item.foto.url if item.foto else "",
+        "data_registro_fmt": item.data_registro.strftime("%d/%m/%Y"),
+        "tempo_atras": f"{timesince(item.data_registro)} atrás",
+        "timestamp": int(item.data_registro.timestamp()),
+        "instituicao_nome": item.instituicao.nome,
+        "instituicao_cnpj": item.instituicao.cnpj,
+    }    

@@ -6,19 +6,18 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.http import JsonResponse
 
 from ..models import Item, Reivindicacao, Categoria
-
+from ..utils import _serializar_item_feed
 from ..decorators import usuario_required
-
 
 @usuario_required
 def usuario_feed(request):
     """
-    Essa é a função principal que o usuário vai acessar assim que logar no sistema.
-    Ela vai mostrar os itens encontrados na instituição a que ele está vinculado e
-    que estão disponíveis para reivindicação, com suporte a pesquisa por nome.
+    Feed principal do usuário com paginação incremental (scroll infinito),
+    filtros por busca/categoria/ordenação e zero queries N+1.
     """
     usuario = request.user
     cnpj_sessao = request.session.get("instituicao_cnpj")
@@ -34,23 +33,81 @@ def usuario_feed(request):
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
         return redirect("login")
 
-    itens = (
+    base_qs = (
         Item.objects.filter(
             instituicao=instituicao,
             status=Item.StatusItem.ENCONTRADO,
         )
-        .select_related("categoria", "local")
-        .order_by("-data_registro")
+        .select_related("categoria", "local", "local_guardado", "instituicao")
     )
 
-    # Pesquisa por nome do item
+    # Filtros vindos da query string (usados tanto no SSR quanto no scroll infinito)
     termo_busca = request.GET.get("q", "").strip()
+    categoria_filtro = request.GET.get("categoria", "").strip()
+    ordem = request.GET.get("ordem", "recent").strip()
+    codigos_salvos = request.GET.get("salvos", "").strip()
+
+    itens_qs = base_qs
+
     if termo_busca:
-        itens = itens.filter(nome__icontains=termo_busca)
+        itens_qs = itens_qs.filter(
+            Q(nome__icontains=termo_busca)
+            | Q(codigo__icontains=termo_busca)
+            | Q(categoria__nome__icontains=termo_busca)
+            | Q(local__nome__icontains=termo_busca)
+            | Q(marca_ou_modelo__icontains=termo_busca)
+            | Q(cor__icontains=termo_busca)
+            | Q(material__icontains=termo_busca)
+            | Q(descricao__icontains=termo_busca)
+        )
+
+    if categoria_filtro:
+        if categoria_filtro == "Sem categoria":
+            itens_qs = itens_qs.filter(categoria__isnull=True)
+        else:
+            itens_qs = itens_qs.filter(categoria__nome=categoria_filtro)
+
+    if codigos_salvos:
+        lista_codigos = [c.strip() for c in codigos_salvos.split(",") if c.strip()]
+        itens_qs = itens_qs.filter(codigo__in=lista_codigos)
+
+    itens_qs = itens_qs.order_by("data_registro" if ordem == "old" else "-data_registro")
+
+    paginator = Paginator(itens_qs, 12)  # 12 cards por lote
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    # Resposta leve em JSON para o scroll infinito / filtros dinâmicos
+    if request.GET.get("format") == "json":
+        return JsonResponse({
+            "itens": [_serializar_item_feed(item) for item in page_obj],
+            "has_next": page_obj.has_next(),
+            "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+            "total_itens": paginator.count,
+        })
+
+    # Agregação única no banco para listar categorias reais e totais da instituição
+    categorias_resumo = list(
+            Item.objects.filter(
+                instituicao=instituicao,
+                status=Item.StatusItem.ENCONTRADO,
+            )
+            .values("categoria__nome")
+            .annotate(total=Count("pk"))
+            .order_by("categoria__nome")
+        )
+    categorias_disponiveis = [
+        {"nome": row["categoria__nome"] or "Sem categoria", "total": row["total"]}
+        for row in categorias_resumo
+    ]
 
     contexto = {
         "instituicao": instituicao,
-        "itens": itens,
+        "instituicao_nome": instituicao.nome,
+        "itens": page_obj,
+        "total_itens": paginator.count,
+        "has_next": page_obj.has_next(),
+        "next_page": page_obj.next_page_number() if page_obj.has_next() else "",
+        "categorias_disponiveis": categorias_disponiveis,
         "termo_busca": termo_busca,
     }
 

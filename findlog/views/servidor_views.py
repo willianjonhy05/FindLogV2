@@ -1,48 +1,40 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from ..utils import (
-    gerar_qrcode_base64,
-    apenas_digitos,
-    _obter_perfil_servidor,
-    _obter_instituicao_servidor,
-    redirecionar_origem,
+from ..decorators import servidor_required
+from ..forms.item import ServidorAtualizarItemForm, ServidorItemForm
+from ..forms.perfil import (
+    ServidorAlterarSenhaForm,
+    ServidorCadastroColegaForm,
+    ServidorEditarUserForm,
 )
 from ..forms.reivindicacao import ServidorAnaliseReivindicacaoForm
 from ..forms.sala import ServidorSalaForm, ServidorUpdateSalaForm
-from ..forms.perfil import (
-    ServidorCadastroColegaForm,
-    ServidorAlterarSenhaForm,
-    ServidorEditarUserForm,
+from ..models import Categoria, Item, Perfil, Reivindicacao, Sala
+from ..utils import (
+    _obter_instituicao_servidor,
+    _obter_perfil_servidor,
+    apenas_digitos,
+    gerar_qrcode_base64,
+    redirecionar_origem,
+    _paginar_queryset
 )
-from ..forms.item import ServidorItemForm, ServidorAtualizarItemForm
 
 
-from ..models import Perfil, Sala, Categoria, Item, Reivindicacao
-from ..decorators import servidor_required
-from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST
-from django.db.models import Q
-import re
+# ==============================================================================
+# HELPERS INTERNOS DA ÁREA DO SERVIDOR
+# ==============================================================================
 
 
 def _obter_instituicao_ativa(request):
     """Retorna a instituição ativa da sessão ou o primeiro vínculo ativo do usuário."""
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    usuario = request.user
-
-    instituicao = None
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
-
-    return instituicao
+    return _obter_instituicao_servidor(request)
 
 
 def _obter_perfil_da_instituicao(instituicao, username):
@@ -59,17 +51,14 @@ def _obter_perfil_da_instituicao(instituicao, username):
     )
 
 
+# ==============================================================================
+# 1. DASHBOARD / PAINEL DO SERVIDOR
+# ==============================================================================
+
+
 @servidor_required
 def servidor_painel(request):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = request.user.instituicao.filter(ativo=True).first()
-
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
         return redirect("login")
@@ -77,13 +66,12 @@ def servidor_painel(request):
     # Contagens métricas para os cards do dashboard
     qtde_reivindicacoes = Reivindicacao.objects.filter(instituicao=instituicao).count()
     qtde_itens = Item.objects.filter(instituicao=instituicao).count()
-    qtde_usuarios = Perfil.objects.filter(
-        instituicao=instituicao, tipo=Perfil.TipoUsuario.USUARIO
-    ).count()
-    qtde_servidores = Perfil.objects.filter(
-        instituicao=instituicao, tipo=Perfil.TipoUsuario.SERVIDOR
-    ).count()
     qtde_salas = Sala.objects.filter(instituicao=instituicao).count()
+
+    contagem_perfis = Perfil.objects.filter(instituicao=instituicao).aggregate(
+        usuarios=Count("id", filter=Q(tipo=Perfil.TipoUsuario.USUARIO), distinct=True),
+        servidores=Count("id", filter=Q(tipo=Perfil.TipoUsuario.SERVIDOR), distinct=True),
+    )
 
     # Últimos itens registrados para exibição rápida no painel
     ultimos_itens = (
@@ -101,48 +89,59 @@ def servidor_painel(request):
         reverse("novo_servidor_instituicao", kwargs={"token": token})
     )
 
-    qrcode_usuario = gerar_qrcode_base64(link_convite_usuario)
-    qrcode_servidor = gerar_qrcode_base64(link_convite_servidor)
-
     context = {
         "instituicao": instituicao,
         "qtde_reivindicacoes": qtde_reivindicacoes,
         "qtde_itens": qtde_itens,
-        "qtde_usuarios": qtde_usuarios,
-        "qtde_servidores": qtde_servidores,
+        "qtde_usuarios": contagem_perfis["usuarios"],
+        "qtde_servidores": contagem_perfis["servidores"],
         "qtde_salas": qtde_salas,
         "ultimos_itens": ultimos_itens,
         "link_convite_usuario": link_convite_usuario,
         "link_convite_servidor": link_convite_servidor,
-        "qrcode_usuario": qrcode_usuario,
-        "qrcode_servidor": qrcode_servidor,
+        "qrcode_usuario": gerar_qrcode_base64(link_convite_usuario),
+        "qrcode_servidor": gerar_qrcode_base64(link_convite_servidor),
     }
-
     return render(request, "serv/index.html", context)
+
+
+# ==============================================================================
+# 2. GESTÃO DE SALAS E AMBIENTES
+# ==============================================================================
+
+
+@servidor_required
+def servidor_listar_salas(request):
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
+        return redirect("login")
+
+    salas_qs = Sala.objects.filter(instituicao=instituicao).order_by("predio", "andar", "nome")
+
+    termo_busca = request.GET.get("q", "").strip()
+    if termo_busca:
+        salas_qs = salas_qs.filter(
+            Q(nome__icontains=termo_busca)
+            | Q(predio__icontains=termo_busca)
+            | Q(codigo__icontains=termo_busca)
+            | Q(andar__icontains=termo_busca)
+        )
+
+    page_obj, total_salas = _paginar_queryset(request, salas_qs, por_pagina=9)
+
+    context = {
+        "instituicao": instituicao,
+        "page_obj": page_obj,
+        "termo_busca": termo_busca,
+        "total_salas": total_salas,
+    }
+    return render(request, "serv/salas.html", context)
 
 
 @servidor_required
 def servidor_cadastrar_sala(request):
-    usuario = request.user
-
-    # 1. Garante que apenas Servidores (ou Administradores) acessem
-    if usuario.tipo != Perfil.TipoUsuario.SERVIDOR and not (
-        usuario.tipo == Perfil.TipoUsuario.ADMINISTRADOR or usuario.is_superuser
-    ):
-        messages.error(request, "Acesso restrito ao perfil de servidor.")
-        return redirect("login")
-
-    # 2. Localiza a instituição ativa do servidor
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    # Fallback caso não esteja na sessão: pega a primeira instituição ativa vinculada
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
-
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
         return redirect("servidor_painel")
@@ -151,12 +150,13 @@ def servidor_cadastrar_sala(request):
         form = ServidorSalaForm(request.POST)
         if form.is_valid():
             sala = form.save(commit=False)
-            sala.instituicao = instituicao  # Vincula à instituição do servidor
-            sala.ativa = True  # Inicia sempre como ativa
+            sala.instituicao = instituicao
+            sala.ativa = True
             sala.save()
 
             messages.success(
-                request, f"Sala '{sala.nome}' cadastrada com sucesso na unidade {instituicao.nome}!"
+                request,
+                f"Sala '{sala.nome}' cadastrada com sucesso na unidade {instituicao.nome}!",
             )
             return redirect("servidor_listar_salas")
 
@@ -172,59 +172,23 @@ def servidor_cadastrar_sala(request):
 
 
 @servidor_required
-def servidor_listar_salas(request):
-    usuario = request.user
-
-    # Identifica a instituição ativa (sessão ou primeiro vínculo ativo)
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
+def servidor_detalhar_sala(request, codigo):
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
 
-    if not instituicao:
-        messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
-        return redirect("login")
-
-    # Queryset filtrado exclusivamente pela instituição do servidor
-    salas_qs = Sala.objects.filter(instituicao=instituicao).order_by("predio", "andar", "nome")
-
-    # Filtro de Busca
-    termo_busca = request.GET.get("q", "").strip()
-    if termo_busca:
-        salas_qs = salas_qs.filter(
-            Q(nome__icontains=termo_busca)
-            | Q(predio__icontains=termo_busca)
-            | Q(codigo__icontains=termo_busca)
-            | Q(andar__icontains=termo_busca)
-        )
-
-    # Paginação (9 itens por página)
-    paginator = Paginator(salas_qs, 9)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    context = {
-        "instituicao": instituicao,
-        "page_obj": page_obj,
-        "termo_busca": termo_busca,
-        "total_salas": paginator.count,
-    }
-    return render(request, "serv/salas.html", context)
+    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
+    return render(request, "serv/detalhar_sala.html", {"sala": sala})
 
 
 @servidor_required
 def servidor_editar_sala(request, codigo):
     instituicao = _obter_instituicao_ativa(request)
-
     if not instituicao:
         messages.error(request, "Vínculo institucional não encontrado para este usuário.")
         return redirect("servidor_painel")
 
-    # Garante que a sala pertence obrigatoriamente à instituição do servidor
     sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
 
     if request.method == "POST":
@@ -247,23 +211,18 @@ def servidor_editar_sala(request, codigo):
 @servidor_required
 @require_POST
 def servidor_alternar_status_sala(request, codigo):
-    """
-    Alterna o status da sala (ativa/inativa) de forma atômica via requisição POST
-    e retorna para a página de origem.
-    """
+    """Alterna o status da sala (ativa/inativa) via POST e retorna para a página de origem."""
     instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
 
     sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
-
     sala.ativa = not sala.ativa
     sala.save(update_fields=["ativa"])
 
     status_str = "ativada" if sala.ativa else "desativada"
     messages.success(request, f"A sala '{sala.nome}' foi {status_str} com sucesso.")
-
     return redirecionar_origem(request, fallback="servidor_listar_salas")
 
 
@@ -323,29 +282,14 @@ def servidor_excluir_sala(request, codigo):
     return redirect("servidor_listar_salas")
 
 
-@servidor_required
-def servidor_detalhar_sala(request, codigo):
-    instituicao = _obter_instituicao_ativa(request)
-
-    if not instituicao:
-        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
-        return redirect("servidor_painel")
-
-    sala = get_object_or_404(Sala, codigo=codigo, instituicao=instituicao)
-
-    context = {"sala": sala}
-
-    return render(request, "serv/detalhar_sala.html", context)
+# ==============================================================================
+# 3. GESTÃO DE ITENS ACHADOS E PERDIDOS
+# ==============================================================================
 
 
 @servidor_required
 def servidor_listar_itens(request):
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = (
-        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-        if cnpj_sessao
-        else request.user.instituicao.filter(ativo=True).first()
-    )
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
@@ -356,7 +300,6 @@ def servidor_listar_itens(request):
         .order_by("-data_registro")
     )
 
-    # Filtro de busca textual
     q = request.GET.get("q", "").strip()
     if q:
         itens_qs = itens_qs.filter(
@@ -367,24 +310,19 @@ def servidor_listar_itens(request):
             | Q(cor__icontains=q)
         )
 
-    # Filtro opcional por Categoria
     categoria_filtro = request.GET.get("categoria", "").strip()
     if categoria_filtro:
         itens_qs = itens_qs.filter(categoria_id=categoria_filtro)
 
-    # Filtro opcional por Status
     status_filtro = request.GET.get("status", "").strip()
     if status_filtro.isdigit():
         itens_qs = itens_qs.filter(status=int(status_filtro))
 
-    # Filtro opcional: Apenas itens cadastrados pelo servidor autenticado
     apenas_meus_itens = request.GET.get("meus_itens", "").strip() == "1"
     if apenas_meus_itens:
         itens_qs = itens_qs.filter(usuario_registro=request.user)
 
-    paginator = Paginator(itens_qs, 9)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
+    page_obj, total_itens = _paginar_queryset(request, itens_qs, por_pagina=9)
     categorias = Categoria.objects.filter(ativa=True).order_by("nome")
 
     context = {
@@ -398,25 +336,20 @@ def servidor_listar_itens(request):
         "status_filtro": status_filtro,
         "apenas_meus_itens": apenas_meus_itens,
         "status_choices": Item.StatusItem.choices,
-        "total_itens": paginator.count,
+        "total_itens": total_itens,
     }
     return render(request, "serv/listar_itens.html", context)
 
 
-# ----------------------------------------------------------------------
-# 2. LISTAR ITENS POR SALA (Onde foi encontrado ou guardado)
-# ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_sala(request, sala_codigo):
     instituicao = _obter_instituicao_ativa(request)
-
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
 
     sala = get_object_or_404(Sala, codigo=sala_codigo, instituicao=instituicao)
 
-    # Considera o item associado à sala onde foi achado OU onde está guardado
     itens_qs = (
         Item.objects.filter(Q(instituicao=instituicao) & (Q(local=sala) | Q(local_guardado=sala)))
         .select_related("categoria", "local", "local_guardado")
@@ -433,8 +366,7 @@ def servidor_itens_por_sala(request, sala_codigo):
     if status_filtro.isdigit():
         itens_qs = itens_qs.filter(status=int(status_filtro))
 
-    paginator = Paginator(itens_qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj, total_itens = _paginar_queryset(request, itens_qs, por_pagina=12)
 
     context = {
         "titulo": f"Itens na Sala: {sala.nome}",
@@ -445,18 +377,14 @@ def servidor_itens_por_sala(request, sala_codigo):
         "termo_busca": q,
         "status_filtro": status_filtro,
         "status_choices": Item.StatusItem.choices,
-        "total_itens": paginator.count,
+        "total_itens": total_itens,
     }
     return render(request, "serv/listar_itens.html", context)
 
 
-# ----------------------------------------------------------------------
-# 3. LISTAR ITENS POR CATEGORIA
-# ----------------------------------------------------------------------
 @servidor_required
 def servidor_itens_por_categoria(request, categoria_id):
     instituicao = _obter_instituicao_ativa(request)
-
     if not instituicao:
         messages.error(request, "Nenhuma instituição associada ao seu perfil.")
         return redirect("login")
@@ -479,8 +407,7 @@ def servidor_itens_por_categoria(request, categoria_id):
     if status_filtro.isdigit():
         itens_qs = itens_qs.filter(status=int(status_filtro))
 
-    paginator = Paginator(itens_qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj, total_itens = _paginar_queryset(request, itens_qs, por_pagina=12)
 
     context = {
         "titulo": f"Categoria: {categoria.nome}",
@@ -491,259 +418,15 @@ def servidor_itens_por_categoria(request, categoria_id):
         "termo_busca": q,
         "status_filtro": status_filtro,
         "status_choices": Item.StatusItem.choices,
-        "total_itens": paginator.count,
+        "total_itens": total_itens,
     }
     return render(request, "serv/listar_itens.html", context)
 
 
 @servidor_required
-def servidor_cadastrar_usuario(request):
-    usuario_logado = request.user
-
-    # 1. Identifica a instituição do servidor
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario_logado.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario_logado.instituicao.filter(ativo=True).first()
-
-    if not instituicao:
-        messages.error(request, "Você não está vinculado a nenhuma instituição ativa.")
-        return redirect("login")
-
-    # 2. Processa o envio do formulário
-    if request.method == "POST":
-        dados_post = request.POST.copy()
-
-        # Higienização de segurança antes da validação do form
-        if "cpf" in dados_post and dados_post["cpf"]:
-            dados_post["cpf"] = re.sub(r"\D", "", dados_post["cpf"])
-        if "telefone" in dados_post and dados_post["telefone"]:
-            dados_post["telefone"] = re.sub(r"\D", "", dados_post["telefone"])
-
-        form = ServidorCadastroColegaForm(dados_post, instituicao=instituicao)
-
-        if form.is_valid():
-            novo_usuario = form.save()
-            tipo_label = novo_usuario.get_tipo_display()
-            messages.success(
-                request,
-                f"{tipo_label} '{novo_usuario.nome or novo_usuario.username}' cadastrado(a) com sucesso!",
-            )
-            return redirect("servidor_usuarios_instituicao")
-
-        messages.error(request, "Verifique os erros nos campos antes de continuar.")
-    else:
-        form = ServidorCadastroColegaForm(instituicao=instituicao)
-
-    context = {
-        "form": form,
-        "instituicao": instituicao,
-    }
-    return render(request, "serv/cadastrar_usuario.html", context)
-
-
-@servidor_required
-def servidor_usuarios_instituicao(request):
-    """
-    Lista paginada de todos os usuários e servidores vinculados
-    à instituição ativa na sessão do servidor autenticado.
-    """
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = (
-        request.user.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-        if cnpj_sessao
-        else request.user.instituicao.filter(ativo=True).first()
-    )
-
-    if not instituicao:
-        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
-        return redirect("login")
-
-    # Tipos permitidos na visualização institucional (exclui Administradores globais)
-    tipos_permitidos = [
-        (Perfil.TipoUsuario.USUARIO, "Usuário"),
-        (Perfil.TipoUsuario.SERVIDOR, "Servidor"),
-    ]
-
-    perfis_qs = (
-        Perfil.objects.filter(
-            instituicao=instituicao,
-            is_superuser=False,
-            tipo__in=[Perfil.TipoUsuario.USUARIO, Perfil.TipoUsuario.SERVIDOR],
-        )
-        .select_related("sala")
-        .distinct()
-        .order_by(
-            "ativo", "-criado_em"
-        )  # Pendentes (ativo=False) aparecem no topo para fácil aprovação
-    )
-
-    # 1. Busca textual (nome, e-mail, username, código/matrícula, CPF e telefone)
-    q = request.GET.get("q", "").strip()
-    if q:
-        q_digitos = apenas_digitos(q)
-        filtro_busca = (
-            Q(nome__icontains=q)
-            | Q(email__icontains=q)
-            | Q(username__icontains=q)
-            | Q(codigo__icontains=q)
-        )
-        if q_digitos:
-            filtro_busca |= Q(cpf__icontains=q_digitos) | Q(telefone__icontains=q_digitos)
-
-        perfis_qs = perfis_qs.filter(filtro_busca)
-
-    # 2. Filtro por Tipo de Perfil (Usuário ou Servidor)
-    tipo_filtro = request.GET.get("tipo", "").strip()
-    if tipo_filtro.isdigit() and int(tipo_filtro) in [
-        Perfil.TipoUsuario.USUARIO,
-        Perfil.TipoUsuario.SERVIDOR,
-    ]:
-        perfis_qs = perfis_qs.filter(tipo=int(tipo_filtro))
-
-    # 3. Filtro opcional por Status (Ativo / Pendente-Inativo)
-    status_filtro = request.GET.get("status", "").strip()
-    if status_filtro == "ativo":
-        perfis_qs = perfis_qs.filter(ativo=True)
-    elif status_filtro == "inativo":
-        perfis_qs = perfis_qs.filter(ativo=False)
-
-    # Paginação
-    paginator = Paginator(perfis_qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
-    context = {
-        "titulo": "Usuários & Equipe da Unidade",
-        "subtitulo": f"Perfis vinculados à instituição: {instituicao.nome}",
-        "instituicao": instituicao,
-        "page_obj": page_obj,
-        "termo_busca": q,
-        "tipo_filtro": tipo_filtro,
-        "status_filtro": status_filtro,
-        "tipos_choices": tipos_permitidos,
-        "total_perfis": paginator.count,
-    }
-    return render(request, "serv/usuarios_instituicao.html", context)
-
-
-@servidor_required
-def servidor_visualizar_usuario(request, username):
-    """
-    Exibe os detalhes cadastrais, histórico de reivindicações (se usuário)
-    ou itens registrados (se servidor) dentro da instituição ativa.
-    """
-    instituicao = _obter_instituicao_servidor(request)
-    if not instituicao:
-        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
-        return redirect("login")
-
-    perfil = _obter_perfil_da_instituicao(instituicao, username)
-
-    # Histórico contextualizado na unidade atual
-    reivindicacoes = (
-        Reivindicacao.objects.filter(autor=perfil, instituicao=instituicao)
-        .select_related("item")
-        .order_by("-data")[:10]
-    )
-
-    itens_registrados = (
-        Item.objects.filter(usuario_registro=perfil, instituicao=instituicao)
-        .select_related("categoria", "local")
-        .order_by("-data_registro")[:10]
-    )
-
-    context = {
-        "titulo": "Detalhes do Perfil",
-        "subtitulo": f"Visualização de vínculo na unidade: {instituicao.nome}",
-        "instituicao": instituicao,
-        "perfil": perfil,
-        "reivindicacoes": reivindicacoes,
-        "itens_registrados": itens_registrados,
-    }
-    return render(request, "serv/visualizar_usuario.html", context)
-
-
-@servidor_required
-@require_POST
-def servidor_ativar_usuario(request, username):
-    """
-    Ativa o acesso de um usuário ou aprova o cadastro pendente de um servidor
-    vinculado à instituição ativa.
-    """
-    instituicao = _obter_instituicao_servidor(request)
-    if not instituicao:
-        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
-        return redirect("login")
-
-    perfil = _obter_perfil_da_instituicao(instituicao, username)
-
-    if perfil.pk == request.user.pk:
-        messages.warning(request, "Você não pode alterar o status do seu próprio perfil.")
-        return redirect("servidor_usuarios_instituicao")
-
-    if perfil.ativo:
-        messages.info(request, f"O perfil de {perfil.nome or perfil.username} já está ativo.")
-    else:
-        perfil.ativo = True
-        perfil.is_active = True
-        perfil.save(update_fields=["ativo", "is_active"])
-        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
-        messages.success(
-            request,
-            f"{papel} {perfil.nome or perfil.username} ativado(a) com sucesso!",
-        )
-
-    proxima_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
-    if proxima_url:
-        return redirect(proxima_url)
-    return redirect("servidor_usuarios_instituicao")
-
-
-@servidor_required
-@require_POST
-def servidor_desativar_usuario(request, username):
-    """
-    Bloqueia temporariamente o acesso de um usuário ou servidor vinculado
-    à instituição ativa.
-    """
-    instituicao = _obter_instituicao_servidor(request)
-    if not instituicao:
-        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
-        return redirect("login")
-
-    perfil = _obter_perfil_da_instituicao(instituicao, username)
-
-    if perfil.pk == request.user.pk:
-        messages.error(request, "Operação bloqueada: você não pode desativar sua própria conta.")
-        return redirect("servidor_usuarios_instituicao")
-
-    if not perfil.ativo:
-        messages.info(
-            request, f"O perfil de {perfil.nome or perfil.username} já encontra-se desativado."
-        )
-    else:
-        perfil.ativo = False
-        perfil.save(update_fields=["ativo"])
-        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
-        messages.warning(
-            request,
-            f"O acesso de {papel.lower()} {perfil.nome or perfil.username} foi desativado.",
-        )
-
-    proxima_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
-    if proxima_url:
-        return redirect(proxima_url)
-    return redirect("servidor_usuarios_instituicao")
-
-@servidor_required
 def servidor_cadastra_item(request):
     usuario = request.user
-    instituicao = _obter_instituicao_servidor(request)
-
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Você não possui vínculo ativo com nenhuma instituição parceira.")
         return redirect("login")
@@ -769,10 +452,7 @@ def servidor_cadastra_item(request):
 
         messages.error(request, "Por favor, corrija os erros apontados no formulário.")
     else:
-        dados_iniciais = {
-            "status": Item.StatusItem.ENCONTRADO,
-        }
-        # Formata a sala no mesmo padrão esperado pelo <datalist>
+        dados_iniciais = {"status": Item.StatusItem.ENCONTRADO}
         if usuario.sala and usuario.sala.instituicao == instituicao and usuario.sala.ativa:
             dados_iniciais["local_guardado"] = ServidorItemForm._formatar_rotulo_sala(usuario.sala)
 
@@ -789,29 +469,17 @@ def servidor_cadastra_item(request):
     return render(request, "serv/cadastrar_item.html", context)
 
 
-
 @servidor_required
 def servidor_detalhes_item(request, uuid):
     """
     Exibe os detalhes completos de um item da instituição ativa do servidor
-    (localizado pelo UUID) e lista todas as reivindicações registradas para
-    este objeto, com filtro por status e paginação.
+    e lista todas as reivindicações registradas para este objeto.
     """
-    usuario = request.user
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
-
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
 
-    # Busca o item pelo UUID garantindo que pertence à instituição do servidor
     item = get_object_or_404(
         Item.objects.select_related(
             "categoria",
@@ -824,22 +492,17 @@ def servidor_detalhes_item(request, uuid):
         instituicao=instituicao,
     )
 
-    # Lista todas as reivindicações vinculadas a este item
     reivindicacoes_qs = (
         Reivindicacao.objects.filter(item=item, instituicao=instituicao)
         .select_related("autor", "responsavel_admin", "local_devolucao")
         .order_by("-data")
     )
 
-    # Filtro opcional por status da reivindicação
     status_filtro = request.GET.get("status", "").strip()
     if status_filtro.isdigit() and int(status_filtro) in Reivindicacao.StatusReivindicacao.values:
         reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
 
-    # Paginação das reivindicações (10 por página)
-    paginator = Paginator(reivindicacoes_qs, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj, total_reivindicacoes = _paginar_queryset(request, reivindicacoes_qs, por_pagina=10)
 
     context = {
         "instituicao": instituicao,
@@ -848,140 +511,14 @@ def servidor_detalhes_item(request, uuid):
         "page_obj": page_obj,
         "status_filtro": status_filtro,
         "status_choices": Reivindicacao.StatusReivindicacao.choices,
-        "total_reivindicacoes": paginator.count,
+        "total_reivindicacoes": total_reivindicacoes,
     }
-
     return render(request, "serv/detalhar_item.html", context)
 
 
 @servidor_required
-@require_POST
-def servidor_apagar_item(request, uuid):
-    instituicao = _obter_instituicao_ativa(request)
-    if not instituicao:
-        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
-        return redirect("servidor_painel")
-
-    # Busca o item pelo UUID e restringe à instituição do servidor logado
-    item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
-
-    # Trava de segurança: impede apagar itens já devolvidos para não perder histórico
-    if item.status == Item.StatusItem.DEVOLVIDO:
-        messages.warning(request, "Não é possível apagar um item que já foi devolvido.")
-        return redirect("servidor_detalhes_item", uuid=item.uuid)
-
-    nome_item = item.nome or item.codigo
-    item.delete()
-
-    messages.success(request, f'O item "{nome_item}" foi removido com sucesso.')
-    return redirect("servidor_listar_itens")
-
-
-@servidor_required
-def servidor_detalhar_reivindicacao(request, protocolo):
-    """
-    Exibe todos os detalhes de uma reivindicação pelo protocolo, permitindo que o
-    servidor analise, aprove, rejeite ou conclua a entrega do item.
-    """
-    usuario = request.user
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
-
-    if not instituicao:
-        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
-        return redirect("servidor_painel")
-
-    # Busca a reivindicação garantindo o vínculo institucional
-    reivindicacao = get_object_or_404(
-        Reivindicacao.objects.select_related(
-            "autor",
-            "item",
-            "item__categoria",
-            "item__local",
-            "item__local_guardado",
-            "responsavel_admin",
-            "local_devolucao",
-        ),
-        protocolo=protocolo,
-        instituicao=instituicao,
-    )
-
-    # Lista outras reivindicações concorrentes para o mesmo item (útil para comparação)
-    outras_reivindicacoes = (
-        Reivindicacao.objects.filter(
-            item=reivindicacao.item,
-            instituicao=instituicao,
-        )
-        .exclude(protocolo=reivindicacao.protocolo)
-        .select_related("autor")
-        .order_by("-data")
-    )
-
-    if request.method == "POST":
-        form = ServidorAnaliseReivindicacaoForm(
-            request.POST,
-            instance=reivindicacao,
-            instituicao=instituicao,
-        )
-        if form.is_valid():
-            reiv_atualizada = form.save(commit=False)
-            reiv_atualizada.responsavel_admin = usuario
-
-            # Se marcada como CONCLUÍDA, registra data e atualiza o status do Item para DEVOLVIDO
-            if reiv_atualizada.status == Reivindicacao.StatusReivindicacao.CONCLUIDA:
-                agora = timezone.now()
-                if not reiv_atualizada.data_devolucao:
-                    reiv_atualizada.data_devolucao = agora
-
-                item = reiv_atualizada.item
-                item.status = Item.StatusItem.DEVOLVIDO
-                item.dono = reiv_atualizada.autor
-                item.data_devolucao = agora
-                item.save(update_fields=["status", "dono", "data_devolucao"])
-
-            reiv_atualizada.save()
-
-            messages.success(
-                request,
-                f"Reivindicação #{reiv_atualizada.protocolo} atualizada para '{reiv_atualizada.get_status_display()}'.",
-            )
-            return redirect(
-                "servidor_detalhar_reivindicacao",
-                protocolo=reiv_atualizada.protocolo,
-            )
-
-        messages.error(request, "Verifique os erros apontados no formulário de análise.")
-    else:
-        # Sugere por padrão a sala onde o item está guardado caso ainda não haja local de devolução
-        dados_iniciais = {}
-        if not reivindicacao.local_devolucao and reivindicacao.item.local_guardado:
-            dados_iniciais["local_devolucao"] = reivindicacao.item.local_guardado
-
-        form = ServidorAnaliseReivindicacaoForm(
-            instance=reivindicacao,
-            initial=dados_iniciais,
-            instituicao=instituicao,
-        )
-
-    context = {
-        "instituicao": instituicao,
-        "reivindicacao": reivindicacao,
-        "item": reivindicacao.item,
-        "outras_reivindicacoes": outras_reivindicacoes,
-        "form": form,
-    }
-
-    return render(request, "serv/detalhar_reivindicacao.html", context)
-
-@servidor_required
 def servidor_atualizar_item(request, uuid):
-    instituicao = _obter_instituicao_servidor(request)
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Ação não permitida: vínculo institucional ausente.")
         return redirect("servidor_painel")
@@ -1023,29 +560,248 @@ def servidor_atualizar_item(request, uuid):
     }
     return render(request, "serv/atualizar_item.html", context)
 
-    
+
+@servidor_required
+@require_POST
+def servidor_apagar_item(request, uuid):
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    item = get_object_or_404(Item, uuid=uuid, instituicao=instituicao)
+
+    if item.status == Item.StatusItem.DEVOLVIDO:
+        messages.warning(request, "Não é possível apagar um item que já foi devolvido.")
+        return redirect("servidor_detalhes_item", uuid=item.uuid)
+
+    nome_item = item.nome or item.codigo
+    item.delete()
+
+    messages.success(request, f'O item "{nome_item}" foi removido com sucesso.')
+    return redirect("servidor_listar_itens")
+
+
+# ==============================================================================
+# 4. GESTÃO DE USUÁRIOS & EQUIPE DA UNIDADE
+# ==============================================================================
+
+
+@servidor_required
+def servidor_cadastrar_usuario(request):
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Você não está vinculado a nenhuma instituição ativa.")
+        return redirect("login")
+
+    if request.method == "POST":
+        dados_post = request.POST.copy()
+
+        if dados_post.get("cpf"):
+            dados_post["cpf"] = apenas_digitos(dados_post["cpf"])
+        if dados_post.get("telefone"):
+            dados_post["telefone"] = apenas_digitos(dados_post["telefone"])
+
+        form = ServidorCadastroColegaForm(dados_post, instituicao=instituicao)
+
+        if form.is_valid():
+            novo_usuario = form.save()
+            tipo_label = novo_usuario.get_tipo_display()
+            messages.success(
+                request,
+                f"{tipo_label} '{novo_usuario.nome or novo_usuario.username}' cadastrado(a) com sucesso!",
+            )
+            return redirect("servidor_usuarios_instituicao")
+
+        messages.error(request, "Verifique os erros nos campos antes de continuar.")
+    else:
+        form = ServidorCadastroColegaForm(instituicao=instituicao)
+
+    context = {
+        "form": form,
+        "instituicao": instituicao,
+    }
+    return render(request, "serv/cadastrar_usuario.html", context)
+
+
+@servidor_required
+def servidor_usuarios_instituicao(request):
+    """Lista paginada de todos os usuários e servidores vinculados à instituição ativa."""
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    tipos_permitidos = [
+        (Perfil.TipoUsuario.USUARIO, "Usuário"),
+        (Perfil.TipoUsuario.SERVIDOR, "Servidor"),
+    ]
+
+    perfis_qs = (
+        Perfil.objects.filter(
+            instituicao=instituicao,
+            is_superuser=False,
+            tipo__in=[Perfil.TipoUsuario.USUARIO, Perfil.TipoUsuario.SERVIDOR],
+        )
+        .select_related("sala")
+        .distinct()
+        .order_by("ativo", "-criado_em")
+    )
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        q_digitos = apenas_digitos(q)
+        filtro_busca = (
+            Q(nome__icontains=q)
+            | Q(email__icontains=q)
+            | Q(username__icontains=q)
+            | Q(codigo__icontains=q)
+        )
+        if q_digitos:
+            filtro_busca |= Q(cpf__icontains=q_digitos) | Q(telefone__icontains=q_digitos)
+
+        perfis_qs = perfis_qs.filter(filtro_busca)
+
+    tipo_filtro = request.GET.get("tipo", "").strip()
+    if tipo_filtro.isdigit() and int(tipo_filtro) in [
+        Perfil.TipoUsuario.USUARIO,
+        Perfil.TipoUsuario.SERVIDOR,
+    ]:
+        perfis_qs = perfis_qs.filter(tipo=int(tipo_filtro))
+
+    status_filtro = request.GET.get("status", "").strip()
+    if status_filtro == "ativo":
+        perfis_qs = perfis_qs.filter(ativo=True)
+    elif status_filtro == "inativo":
+        perfis_qs = perfis_qs.filter(ativo=False)
+
+    page_obj, total_perfis = _paginar_queryset(request, perfis_qs, por_pagina=12)
+
+    context = {
+        "titulo": "Usuários & Equipe da Unidade",
+        "subtitulo": f"Perfis vinculados à instituição: {instituicao.nome}",
+        "instituicao": instituicao,
+        "page_obj": page_obj,
+        "termo_busca": q,
+        "tipo_filtro": tipo_filtro,
+        "status_filtro": status_filtro,
+        "tipos_choices": tipos_permitidos,
+        "total_perfis": total_perfis,
+    }
+    return render(request, "serv/usuarios_instituicao.html", context)
+
+
+@servidor_required
+def servidor_visualizar_usuario(request, username):
+    """Exibe os detalhes cadastrais e o histórico institucional de um usuário ou servidor."""
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
+
+    reivindicacoes = (
+        Reivindicacao.objects.filter(autor=perfil, instituicao=instituicao)
+        .select_related("item")
+        .order_by("-data")[:10]
+    )
+
+    itens_registrados = (
+        Item.objects.filter(usuario_registro=perfil, instituicao=instituicao)
+        .select_related("categoria", "local")
+        .order_by("-data_registro")[:10]
+    )
+
+    context = {
+        "titulo": "Detalhes do Perfil",
+        "subtitulo": f"Visualização de vínculo na unidade: {instituicao.nome}",
+        "instituicao": instituicao,
+        "perfil": perfil,
+        "reivindicacoes": reivindicacoes,
+        "itens_registrados": itens_registrados,
+    }
+    return render(request, "serv/visualizar_usuario.html", context)
+
+
+@servidor_required
+@require_POST
+def servidor_ativar_usuario(request, username):
+    """Ativa o acesso de um usuário ou aprova o cadastro pendente de um servidor."""
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
+
+    if perfil.pk == request.user.pk:
+        messages.warning(request, "Você não pode alterar o status do seu próprio perfil.")
+        return redirect("servidor_usuarios_instituicao")
+
+    if perfil.ativo:
+        messages.info(request, f"O perfil de {perfil.nome or perfil.username} já está ativo.")
+    else:
+        perfil.ativo = True
+        perfil.is_active = True
+        perfil.save(update_fields=["ativo", "is_active"])
+        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
+        messages.success(
+            request,
+            f"{papel} {perfil.nome or perfil.username} ativado(a) com sucesso!",
+        )
+
+    return redirecionar_origem(request, fallback="servidor_usuarios_instituicao")
+
+
+@servidor_required
+@require_POST
+def servidor_desativar_usuario(request, username):
+    """Bloqueia temporariamente o acesso de um usuário ou servidor da unidade."""
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Nenhuma instituição associada ao seu perfil.")
+        return redirect("login")
+
+    perfil = _obter_perfil_da_instituicao(instituicao, username)
+
+    if perfil.pk == request.user.pk:
+        messages.error(request, "Operação bloqueada: você não pode desativar sua própria conta.")
+        return redirect("servidor_usuarios_instituicao")
+
+    if not perfil.ativo:
+        messages.info(
+            request, f"O perfil de {perfil.nome or perfil.username} já encontra-se desativado."
+        )
+    else:
+        perfil.ativo = False
+        perfil.is_active = False
+        perfil.save(update_fields=["ativo", "is_active"])
+        papel = "Servidor" if perfil.tipo == Perfil.TipoUsuario.SERVIDOR else "Usuário"
+        messages.warning(
+            request,
+            f"O acesso de {papel.lower()} {perfil.nome or perfil.username} foi desativado.",
+        )
+
+    return redirecionar_origem(request, fallback="servidor_usuarios_instituicao")
+
+
+# ==============================================================================
+# 5. ANÁLISE E LISTAGEM DE REIVINDICAÇÕES
+# ==============================================================================
+
+
 @servidor_required
 def servidor_listar_reivindicacoes(request):
     """
-    Inicia exibindo por padrão apenas as reivindicações de itens cadastrados
-    pelo servidor autenticado, permitindo alternar para todas as reivindicações
-    da unidade através do filtro na interface.
+    Exibe por padrão as reivindicações de itens cadastrados pelo servidor logado,
+    permitindo alternar para todas as reivindicações da unidade.
     """
-    usuario = request.user
-    cnpj_sessao = request.session.get("instituicao_cnpj")
-    instituicao = None
-
-    if cnpj_sessao:
-        instituicao = usuario.instituicao.filter(cnpj=cnpj_sessao, ativo=True).first()
-
-    if not instituicao:
-        instituicao = usuario.instituicao.filter(ativo=True).first()
-
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Você não possui vínculo ativo com nenhuma instituição.")
         return redirect("servidor_painel")
 
-    # Queryset base filtrado pela instituição do servidor e ordenado das mais recentes
     reivindicacoes_qs = (
         Reivindicacao.objects.filter(instituicao=instituicao)
         .select_related(
@@ -1059,7 +815,6 @@ def servidor_listar_reivindicacoes(request):
         .order_by("-data")
     )
 
-    # 1. Pesquisa textual (Protocolo, Item, Solicitante ou Descrição do Pedido)
     termo_busca = request.GET.get("q", "").strip()
     if termo_busca:
         filtro_busca = (
@@ -1076,14 +831,10 @@ def servidor_listar_reivindicacoes(request):
 
         reivindicacoes_qs = reivindicacoes_qs.filter(filtro_busca)
 
-    # 2. Filtro por Status da Reivindicação
     status_filtro = request.GET.get("status", "").strip()
     if status_filtro.isdigit():
         reivindicacoes_qs = reivindicacoes_qs.filter(status=int(status_filtro))
 
-    # 3. Filtro: Inicia ativo por padrão (meus_itens=1).
-    # Só desativa quando o formulário for submetido com o switch desmarcado (filtrar=1 sem meus_itens=1)
-    # ou se ?meus_itens=0 for passado explicitamente na URL.
     meus_itens_param = request.GET.get("meus_itens", "").strip()
     foi_filtrado = request.GET.get("filtrar", "").strip() == "1"
 
@@ -1095,12 +846,9 @@ def servidor_listar_reivindicacoes(request):
         apenas_meus_itens = True
 
     if apenas_meus_itens:
-        reivindicacoes_qs = reivindicacoes_qs.filter(item__usuario_registro=usuario)
+        reivindicacoes_qs = reivindicacoes_qs.filter(item__usuario_registro=request.user)
 
-    # 4. Paginação (12 registros por página)
-    paginator = Paginator(reivindicacoes_qs, 12)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj, total_reivindicacoes = _paginar_queryset(request, reivindicacoes_qs, por_pagina=12)
 
     context = {
         "titulo": (
@@ -1114,10 +862,104 @@ def servidor_listar_reivindicacoes(request):
         "status_filtro": status_filtro,
         "apenas_meus_itens": apenas_meus_itens,
         "status_choices": Reivindicacao.StatusReivindicacao.choices,
-        "total_reivindicacoes": paginator.count,
+        "total_reivindicacoes": total_reivindicacoes,
     }
-
     return render(request, "serv/listar_reivindicacoes.html", context)
+
+
+@servidor_required
+def servidor_detalhar_reivindicacao(request, protocolo):
+    """
+    Exibe todos os detalhes de uma reivindicação pelo protocolo, permitindo que o
+    servidor analise, aprove, rejeite ou conclua a entrega do item.
+    """
+    instituicao = _obter_instituicao_ativa(request)
+    if not instituicao:
+        messages.error(request, "Ação não permitida: vínculo institucional ausente.")
+        return redirect("servidor_painel")
+
+    reivindicacao = get_object_or_404(
+        Reivindicacao.objects.select_related(
+            "autor",
+            "item",
+            "item__categoria",
+            "item__local",
+            "item__local_guardado",
+            "responsavel_admin",
+            "local_devolucao",
+        ),
+        protocolo=protocolo,
+        instituicao=instituicao,
+    )
+
+    outras_reivindicacoes = (
+        Reivindicacao.objects.filter(
+            item=reivindicacao.item,
+            instituicao=instituicao,
+        )
+        .exclude(protocolo=reivindicacao.protocolo)
+        .select_related("autor")
+        .order_by("-data")
+    )
+
+    if request.method == "POST":
+        form = ServidorAnaliseReivindicacaoForm(
+            request.POST,
+            instance=reivindicacao,
+            instituicao=instituicao,
+        )
+        if form.is_valid():
+            with transaction.atomic():
+                reiv_atualizada = form.save(commit=False)
+                reiv_atualizada.responsavel_admin = request.user
+
+                if reiv_atualizada.status == Reivindicacao.StatusReivindicacao.CONCLUIDA:
+                    agora = timezone.now()
+                    if not reiv_atualizada.data_devolucao:
+                        reiv_atualizada.data_devolucao = agora
+
+                    item = reiv_atualizada.item
+                    item.status = Item.StatusItem.DEVOLVIDO
+                    item.dono = reiv_atualizada.autor
+                    item.data_devolucao = agora
+                    item.save(update_fields=["status", "dono", "data_devolucao"])
+
+                reiv_atualizada.save()
+
+            messages.success(
+                request,
+                f"Reivindicação #{reiv_atualizada.protocolo} atualizada para '{reiv_atualizada.get_status_display()}'.",
+            )
+            return redirect(
+                "servidor_detalhar_reivindicacao",
+                protocolo=reiv_atualizada.protocolo,
+            )
+
+        messages.error(request, "Verifique os erros apontados no formulário de análise.")
+    else:
+        dados_iniciais = {}
+        if not reivindicacao.local_devolucao and reivindicacao.item.local_guardado:
+            dados_iniciais["local_devolucao"] = reivindicacao.item.local_guardado
+
+        form = ServidorAnaliseReivindicacaoForm(
+            instance=reivindicacao,
+            initial=dados_iniciais,
+            instituicao=instituicao,
+        )
+
+    context = {
+        "instituicao": instituicao,
+        "reivindicacao": reivindicacao,
+        "item": reivindicacao.item,
+        "outras_reivindicacoes": outras_reivindicacoes,
+        "form": form,
+    }
+    return render(request, "serv/detalhar_reivindicacao.html", context)
+
+
+# ==============================================================================
+# 6. PERFIL E SEGURANÇA DO SERVIDOR AUTENTICADO
+# ==============================================================================
 
 
 @servidor_required
@@ -1132,7 +974,6 @@ def servidor_visualizar_meu_perfil(request):
         messages.error(request, "Você não possui vínculo com nenhuma instituição ativa.")
         return redirect("login")
 
-    # Resumo rápido de atividade do servidor para exibir no card do perfil
     total_itens_registrados = Item.objects.filter(
         instituicao=instituicao,
         usuario_registro=perfil,
@@ -1160,7 +1001,7 @@ def servidor_editar_meu_perfil(request):
         messages.error(request, "Acesso negado. Apenas servidores podem acessar esta página.")
         return redirect("servidor_painel")
 
-    instituicao = _obter_instituicao_servidor(request)
+    instituicao = _obter_instituicao_ativa(request)
     if not instituicao:
         messages.error(request, "Nenhuma instituição ativa associada à sua sessão.")
         return redirect("servidor_painel")
@@ -1177,7 +1018,6 @@ def servidor_editar_meu_perfil(request):
             with transaction.atomic():
                 perfil_salvo = user_form.save()
 
-            # Sincroniza os dados atualizados com a sessão (exibidos na topbar/painel)
             request.session["primeiro_nome"] = perfil_salvo.primeiro_nome
             request.session["foto_url"] = perfil_salvo.foto.url if perfil_salvo.foto else None
 
@@ -1207,12 +1047,11 @@ def servidor_alterar_senha(request):
         form = ServidorAlterarSenhaForm(user=request.user, data=request.POST)
         if form.is_valid():
             user = form.save()
-            # Mantém a sessão ativa após a troca de senha
             update_session_auth_hash(request, user)
             messages.success(request, "Sua senha foi alterada com sucesso.")
             return redirect("servidor_visualizar_meu_perfil")
-        else:
-            messages.error(request, "Não foi possível alterar a senha. Verifique os erros abaixo.")
+
+        messages.error(request, "Não foi possível alterar a senha. Verifique os erros abaixo.")
     else:
         form = ServidorAlterarSenhaForm(user=request.user)
 

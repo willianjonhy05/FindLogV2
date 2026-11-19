@@ -80,3 +80,6 @@ class Item(models.Model):
     class Meta:
         verbose_name = "Item"
         verbose_name_plural = "Itens"
+        indexes = [
+            models.Index(fields=["instituicao", "status", "-data_registro"], name="idx_item_feed_inst"),
+        ]
