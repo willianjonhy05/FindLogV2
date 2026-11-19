@@ -43,88 +43,49 @@
   <!-- ====================================================================
        CABEÇALHO SUPERIOR
        ==================================================================== -->
-  <header class="app-header">
-    <div class="container-fluid px-3 px-lg-4 h-100">
-      <div class="d-flex align-items-center justify-content-between gap-3 h-100">
+      <header class="app-header">
+      <div class="container-fluid px-3 px-lg-4 h-100">
+        <div class="d-flex align-items-center h-100 position-relative">
 
-        <a href="{% url 'usuario_feed' %}" class="app-brand" aria-label="FindLog — feed de achados e perdidos">
-          <span class="brand-icon-wrapper">
-            <i class="bi bi-search"></i>
-          </span>
-          <div class="d-flex flex-column">
-            <span class="lh-1">Find<span style="color: var(--laranja-destaque);">Log</span></span>
-            <span class="text-white-50 small fw-medium" style="font-size: 0.65rem; letter-spacing: 0.05em;">Usuário</span>
-          </div>
-        </a>
-
-        <nav class="d-none d-lg-flex align-items-center gap-1" aria-label="Navegação principal">
-          <a href="{% url 'usuario_feed' %}" class="desktop-nav-link usr-view-feed-link active" aria-current="page">
-            <i class="bi bi-house-door-fill"></i> Feed
-          </a>
-          <!-- <button type="button" class="desktop-nav-link usr-nav-btn" data-view="saved">
-            <i class="bi bi-bookmark"></i> Salvos
-            <span class="usr-nav-count" id="headerSavedCount">0</span>
-          </button> -->
-          <a href="#" class="desktop-nav-link" title="Disponível em breve">
-            <i class="bi bi-folder-check"></i> Reivindicações
-          </a>
-        </nav>
-
-        <div class="dropdown">
-          <button class="user-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                  aria-label="Abrir menu do usuário">
-            {% if request.session.foto_url %}
-              <img src="{{ request.session.foto_url }}" alt="{{ request.session.primeiro_nome|default:'Perfil' }}"
-                   class="user-avatar-img">
-            {% elif request.user.foto %}
-              <img src="{{ request.user.foto.url }}" alt="{{ request.session.primeiro_nome|default:'Perfil' }}"
-                   class="user-avatar-img">
-            {% else %}
-              <div class="user-avatar-img d-grid text-white" style="line-height: 36px; text-align: center; place-items: center;">
-                <i class="bi bi-person-fill fs-5"></i>
-              </div>
-            {% endif %}
-          </button>
-
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2"
-              style="min-width: 220px; border-radius: 12px; background: var(--bege-card); border: 1px solid var(--bege-areia);">
-            <li class="px-3 py-2 border-bottom border-secondary-subtle">
-              <span class="d-block fw-bold small text-dark">
-                {{ request.session.primeiro_nome|default:"Usuário" }}
+          <!-- Logo à esquerda -->
+          <a href="{% url 'usuario_feed' %}" class="app-brand"
+            aria-label="FindLog — feed de achados e perdidos">
+            <span class="brand-icon-wrapper">
+              <i class="bi bi-search"></i>
+            </span>
+            <div class="d-flex flex-column">
+              <span class="lh-1">Find<span style="color: var(--laranja-destaque);">Log</span></span>
+              <span class="text-white-50 small fw-medium"
+                    style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                Usuário
               </span>
-              <span class="d-block text-muted text-truncate" style="font-size: 0.72rem; max-width: 190px;">
-                {{ request.user.email }}
-              </span>
-            </li>
-            <li>
-              <a class="dropdown-item py-2 small" href="#" title="Disponível em breve">
-                <i class="bi bi-person-gear me-2"></i>Meu Perfil
-              </a>
-            </li>
-            {% if request.session.total_instituicoes > 1 or request.user.instituicao.count > 1 %}
-              <li>
-                <a class="dropdown-item py-2 small" href="{% url 'selecionar_instituicao' %}">
-                  <i class="bi bi-building me-2"></i>Trocar Instituição
-                </a>
-              </li>
-            {% endif %}
-            <li>
-              <a class="dropdown-item py-2 small" href="#" title="Disponível em breve">
-                <i class="bi bi-shield-check me-2"></i>Segurança e Senha
-              </a>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li>
-              <a class="dropdown-item py-2 small text-danger fw-semibold" href="{% url 'logout' %}">
-                <i class="bi bi-box-arrow-right me-2"></i>Encerrar Sessão
-              </a>
-            </li>
-          </ul>
+            </div>
+          </a>
+
+          <!-- Menu centralizado -->
+          <nav class="d-none d-lg-flex align-items-center gap-2
+                      position-absolute top-50 start-50 translate-middle"
+              aria-label="Navegação principal">
+
+            <a href="{% url 'usuario_feed' %}"
+              class="desktop-nav-link usr-view-feed-link active"
+              aria-current="page">
+              <i class="bi bi-house-door-fill"></i> Feed
+            </a>
+
+            <a href="#" class="desktop-nav-link">
+              <i class="bi bi-folder-check"></i> Reivindicações
+            </a>
+
+            <a href="#" class="desktop-nav-link">
+              <i class="bi bi-person-circle"></i> Perfil
+            </a>
+
+          </nav>
+
         </div>
-
       </div>
-    </div>
-  </header>
+    </header>
 
   <!-- ====================================================================
        MENSAGENS DO DJANGO

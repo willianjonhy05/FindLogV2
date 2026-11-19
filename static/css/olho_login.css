@@ -94,3 +94,25 @@
     border-color: #ff8c00 !important;
     box-shadow: 0 0 0 0.20rem rgba(255, 140, 0, 0.20) !important;
 }
+
+/* ====================================================================
+   Wrapper para páginas internas que reutilizam o olho do login
+   (sem o ícone de cadeado, portanto sem o padding da esquerda)
+   ==================================================================== */
+.campo-senha {
+    position: relative;
+    width: 100%;
+}
+
+.campo-senha input,
+.campo-senha .form-control,
+.campo-senha .form-control-custom {
+    width: 100%;
+    padding-right: 2.9rem !important;
+}
+
+.campo-senha:focus-within .form-control,
+.campo-senha:focus-within .form-control-custom {
+    border-color: #ff8c00 !important;
+    box-shadow: 0 0 0 0.20rem rgba(255, 140, 0, 0.20) !important;
+}
