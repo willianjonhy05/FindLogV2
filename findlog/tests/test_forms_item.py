@@ -75,17 +75,21 @@ class ItemFormsTestCase(TestCase):
         """Testa o preenchimento válido do formulário de registro de item pelo servidor."""
         form_data = {
             "nome": "Garrafa térmica",
-            "categoria": self.categoria_ativa.pk,
+            "categoria": self.categoria_ativa.nome,  # Datalist espera o nome ("Eletrônicos")
             "status": Item.StatusItem.ENCONTRADO,
-            "local": self.sala_inst.pk,
-            "local_guardado": self.sala_inst.pk,
+            "local": f"{self.sala_inst.nome} - {self.sala_inst.predio}",  # Datalist espera "Sala 101 - Bloco A" (ou self.sala_inst.nome)
+            "local_guardado": self.sala_inst.nome,
             "cor": "Inox",
             "tamanho": "500ml",
             "material": "Aço"
         }
         form = ServidorItemForm(data=form_data, instituicao=self.instituicao)
         
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(), msg=form.errors)
+        item = form.save(commit=False)
+        self.assertEqual(item.categoria, self.categoria_ativa)
+        self.assertEqual(item.local, self.sala_inst)
+        self.assertEqual(item.local_guardado, self.sala_inst)
 
     def test_servidor_item_form_filtra_categorias_apenas_ativas(self):
         """Testa se o queryset de categoria no ServidorItemForm inclui apenas as ativas."""

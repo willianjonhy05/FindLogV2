@@ -1,10 +1,10 @@
+import re
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import PasswordChangeForm
 from ..models import Instituicao, VinculoInstituicao, Sala, Perfil
 from ..utils import apenas_digitos, validar_cpf
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import get_user_model
 
-import re
 
 class NovoUsuarioForm(forms.ModelForm):
     senha = forms.CharField(
@@ -61,7 +61,6 @@ class NovoUsuarioForm(forms.ModelForm):
 
     def clean_cpf(self):
         cpf_bruto = self.cleaned_data.get("cpf", "")
-        # Remove espaços, pontos, traços, símbolos e letras
         cpf_limpo = re.sub(r"\D", "", str(cpf_bruto))
 
         if not cpf_limpo:
@@ -70,7 +69,6 @@ class NovoUsuarioForm(forms.ModelForm):
         if len(cpf_limpo) != 11:
             raise forms.ValidationError("O CPF deve conter exatamente 11 dígitos numéricos.")
 
-        # Impede sequências repetidas óbvias (ex: 111.111.111-11)
         if cpf_limpo == cpf_limpo[0] * 11:
             raise forms.ValidationError("Número de CPF inválido.")
 
@@ -84,10 +82,8 @@ class NovoUsuarioForm(forms.ModelForm):
         if not tel_bruto:
             return ""
 
-        # Remove espaços, parênteses, hifens e caracteres especiais
         tel_limpo = re.sub(r"\D", "", str(tel_bruto))
 
-        # Validação do formato brasileiro com DDD (10 ou 11 dígitos numéricos)
         if len(tel_limpo) not in (10, 11):
             raise forms.ValidationError("O telefone deve conter DDD e número válidos (10 ou 11 dígitos).")
 
@@ -103,7 +99,6 @@ class NovoUsuarioForm(forms.ModelForm):
         if senha and confirmar_senha and senha != confirmar_senha:
             self.add_error("confirmar_senha", "As senhas informadas não coincidem.")
 
-        # Validação mandatória da sala para Servidores
         if tipo == Perfil.TipoUsuario.SERVIDOR and not sala:
             self.add_error("sala_codigo", "É obrigatório associar uma sala para usuários do tipo Servidor.")
 
@@ -112,8 +107,7 @@ class NovoUsuarioForm(forms.ModelForm):
     def save(self, commit=True):
         usuario = super().save(commit=False)
         usuario.set_password(self.cleaned_data["senha"])
-        
-        # Conecta a sala caso seja do tipo Servidor
+
         if self.cleaned_data.get("tipo") == Perfil.TipoUsuario.SERVIDOR:
             usuario.sala = self.cleaned_data.get("sala_codigo")
         else:
@@ -121,16 +115,14 @@ class NovoUsuarioForm(forms.ModelForm):
 
         if commit:
             usuario.save()
-            # Vincula a instituição selecionada através do modelo intermediário
             instituicao = self.cleaned_data.get("instituicao_cnpj")
             if instituicao:
                 VinculoInstituicao.objects.get_or_create(
                     perfil=usuario,
-                    instituicao=instituicao
-                    
+                    instituicao=instituicao,
                 )
 
-        return usuario    
+        return usuario
 
 
 class AutoCadastroBaseForm(forms.ModelForm):
@@ -217,7 +209,7 @@ class AutoCadastroBaseForm(forms.ModelForm):
     def clean_cpf(self):
         cpf = self.cleaned_data.get("cpf", "")
         cpf_limpo = apenas_digitos(cpf)
-        validar_cpf(cpf_limpo)  # Usa seu validador matemático do utils.py
+        validar_cpf(cpf_limpo)
         if Perfil.objects.filter(cpf=cpf_limpo).exists():
             raise forms.ValidationError(
                 "Este CPF já possui cadastro no FindLog. Caso já tenha conta, faça login."
@@ -236,7 +228,7 @@ class AutoCadastroBaseForm(forms.ModelForm):
         if senha and confirmar_senha and senha != confirmar_senha:
             self.add_error("confirmar_senha", "As senhas informadas não coincidem.")
 
-        return cleaned_data    
+        return cleaned_data
 
 
 class AutoCadastroUsuarioForm(AutoCadastroBaseForm):
@@ -258,11 +250,10 @@ class AutoCadastroUsuarioForm(AutoCadastroBaseForm):
                     perfil=usuario,
                     instituicao=self.instituicao,
                 )
-        return usuario    
+        return usuario
 
 
 class AutoCadastroServidorForm(AutoCadastroBaseForm):
-    
     """Formulário público para autocadastro de Servidores (aguarda aprovação institucional)."""
 
     sala = forms.ModelChoiceField(
@@ -298,7 +289,7 @@ class AutoCadastroServidorForm(AutoCadastroBaseForm):
     def save(self, commit=True):
         servidor = super().save(commit=False)
         servidor.tipo = Perfil.TipoUsuario.SERVIDOR
-        servidor.ativo = False          # Nasce bloqueado aguardando aprovação do Admin ou Servidor da unidade
+        servidor.ativo = False
         servidor.is_staff = False
         servidor.is_superuser = False
         servidor.set_password(self.cleaned_data["senha"])
@@ -310,7 +301,8 @@ class AutoCadastroServidorForm(AutoCadastroBaseForm):
                     perfil=servidor,
                     instituicao=self.instituicao,
                 )
-        return servidor        
+        return servidor
+
 
 class ServidorCadastroColegaForm(forms.ModelForm):
     senha = forms.CharField(
@@ -398,8 +390,14 @@ class ServidorCadastroColegaForm(forms.ModelForm):
         else:
             self.salas_disponiveis = Sala.objects.none()
 
+        # Converte o campo 'sala' para CharField para aceitar texto do <datalist>
+        campo_sala_antigo = self.fields["sala"]
+        self.fields["sala"] = forms.CharField(
+            required=False,
+            label=campo_sala_antigo.label,
+            widget=campo_sala_antigo.widget,
+        )
         self.fields["sala"].queryset = self.salas_disponiveis
-        self.fields["sala"].required = False
 
         # Mapeia "Nome - Prédio" (ou nome da sala) -> objeto Sala
         self._mapa_salas = {}
@@ -408,7 +406,6 @@ class ServidorCadastroColegaForm(forms.ModelForm):
             self._mapa_salas[rotulo.lower()] = sala
             self._mapa_salas.setdefault(sala.nome.strip().lower(), sala)
 
-        # Exibe o rótulo legível caso o form seja instanciado com uma instância já vinculada
         if not self.is_bound and self.instance and self.instance.pk and self.instance.sala:
             self.initial["sala"] = self._formatar_rotulo_sala(self.instance.sala)
 
@@ -422,7 +419,7 @@ class ServidorCadastroColegaForm(forms.ModelForm):
         return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
 
     def clean_sala(self):
-        valor = self.data.get(self.add_prefix("sala"), "").strip()
+        valor = str(self.data.get(self.add_prefix("sala")) or "").strip()
         if not valor:
             return None
 
@@ -456,11 +453,9 @@ class ServidorCadastroColegaForm(forms.ModelForm):
         if senha and confirmar_senha and senha != confirmar_senha:
             self.add_error("confirmar_senha", "As senhas não coincidem.")
 
-        # Obriga a seleção de sala se for cadastrado como Servidor
         if tipo == Perfil.TipoUsuario.SERVIDOR and not sala:
             self.add_error("sala", "É obrigatório associar uma sala para perfis do tipo Servidor.")
 
-        # Limpa o campo sala se for usuário comum
         if tipo == Perfil.TipoUsuario.USUARIO:
             cleaned_data["sala"] = None
 
@@ -481,7 +476,6 @@ class ServidorCadastroColegaForm(forms.ModelForm):
                     instituicao=self.instituicao,
                 )
         return usuario
-
 
 
 class EditarMeuPerfilForm(forms.ModelForm):
@@ -517,9 +511,9 @@ class TrocarMinhaSenhaForm(PasswordChangeForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({"class": "form-control form-control-custom"})
-            field.widget.attrs.pop("autofocus", None)        
+            field.widget.attrs.pop("autofocus", None)
 
-    
+
 class ServidorAlterarSenhaForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -528,7 +522,7 @@ class ServidorAlterarSenhaForm(PasswordChangeForm):
         self.fields["new_password2"].label = "Confirmar nova senha"
 
         for field in self.fields.values():
-            field.widget.attrs.update({"class": "form-control"})    
+            field.widget.attrs.update({"class": "form-control"})
 
 
 class ServidorEditarUserForm(forms.ModelForm):
@@ -573,15 +567,12 @@ class ServidorEditarUserForm(forms.ModelForm):
     def __init__(self, *args, instituicao=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # 1. Bloqueia alteração do e-mail no HTML e no processamento do Django
         self.fields["email"].disabled = True
         self.fields["email"].required = False
 
-        # 2. Resolve a instituição vinculada (prioriza a instituição ativa passada pela view)
         if instituicao is None and self.instance and self.instance.pk:
             instituicao = self.instance.instituicao.filter(ativo=True).first()
 
-        # 3. Filtra as salas ativas da instituição do servidor
         if instituicao:
             self.salas_disponiveis = Sala.objects.filter(
                 instituicao=instituicao,
@@ -590,17 +581,21 @@ class ServidorEditarUserForm(forms.ModelForm):
         else:
             self.salas_disponiveis = Sala.objects.none()
 
+        # Converte o campo 'sala' para CharField para aceitar texto do <datalist>
+        campo_sala_antigo = self.fields["sala"]
+        self.fields["sala"] = forms.CharField(
+            required=False,
+            label=campo_sala_antigo.label,
+            widget=campo_sala_antigo.widget,
+        )
         self.fields["sala"].queryset = self.salas_disponiveis
-        self.fields["sala"].required = False
 
-        # Mapeia "Nome - Prédio" (e o nome isolado da sala) -> objeto Sala
         self._mapa_salas = {}
         for sala in self.salas_disponiveis:
             rotulo = self._formatar_rotulo_sala(sala)
             self._mapa_salas[rotulo.lower()] = sala
             self._mapa_salas.setdefault(sala.nome.strip().lower(), sala)
 
-        # Preenche o input com o rótulo legível da sala atual ao abrir a edição
         if not self.is_bound and self.instance and self.instance.pk and self.instance.sala:
             self.initial["sala"] = self._formatar_rotulo_sala(self.instance.sala)
 
@@ -614,7 +609,7 @@ class ServidorEditarUserForm(forms.ModelForm):
         return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
 
     def clean_sala(self):
-        valor = self.data.get(self.add_prefix("sala"), "").strip()
+        valor = str(self.data.get(self.add_prefix("sala")) or "").strip()
         if not valor:
             return None
 
@@ -639,13 +634,10 @@ class ServidorEditarUserForm(forms.ModelForm):
 
         return somente_numeros
 
-        
 
 class ServidorEditarPerfilForm(forms.ModelForm):
     class Meta:
         model = Perfil
-        # Ajuste os campos abaixo conforme os atributos exatos do seu model Perfil
-        # Campos críticos como 'tipo', 'instituicao', 'ativo' ou 'matricula/siape' ficam fora para não serem editados pelo próprio servidor
         fields = [
             "telefone",
             "foto",
@@ -653,4 +645,4 @@ class ServidorEditarPerfilForm(forms.ModelForm):
         widgets = {
             "telefone": forms.TextInput(attrs={"class": "form-control", "placeholder": "(86) 99999-9999", "id": "telefone"}),
             "foto": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
-        }            
+        }

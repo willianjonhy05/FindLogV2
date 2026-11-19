@@ -155,12 +155,12 @@ class UserFormsTestCase(TestCase):
             "cpf": "06239480010",
             "email": "colega@ifpi.edu.br",
             "tipo": Perfil.TipoUsuario.SERVIDOR,
-            "sala": self.sala_servidor.pk,
+            "sala": f"{self.sala_servidor.nome} - {self.sala_servidor.predio}",  # Datalist espera "Secretaria - Bloco A"
             "senha": "senha123",
             "confirmar_senha": "senha123",
         }
         form = ServidorCadastroColegaForm(data=form_data, instituicao=self.instituicao)
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(), msg=form.errors)
         novo_colega = form.save()
         
         self.assertTrue(novo_colega.ativo)

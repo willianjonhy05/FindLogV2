@@ -92,12 +92,14 @@ class ReivindicacaoFormsTestCase(TestCase):
         """Testa se a aprovação da reivindicação passa na validação quando o local de devolução é informado."""
         form_data = {
             "status": Reivindicacao.StatusReivindicacao.APROVADA,
-            "local_devolucao": self.sala_valida.pk,
+            "local_devolucao": f"{self.sala_valida.nome} - {self.sala_valida.predio}",  # Datalist espera "Sala de Apoio - Bloco A"
             "resposta_admin": "Reivindicação aprovada. Pode retirar.",
         }
         form = ServidorAnaliseReivindicacaoForm(data=form_data, instance=self.reivindicacao, instituicao=self.instituicao)
         
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(), msg=form.errors)
+        reiv = form.save(commit=False)
+        self.assertEqual(reiv.local_devolucao, self.sala_valida)
 
     def test_servidor_analise_aprovada_sem_local_falha(self):
         """Testa se a aprovação é rejeitada caso o local de devolução não seja preenchido."""

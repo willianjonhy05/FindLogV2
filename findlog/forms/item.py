@@ -1,6 +1,7 @@
 from django import forms
 from ..models import Item, Categoria, Sala, Perfil
 
+
 class ItemUpdateForm(forms.ModelForm):
     class Meta:
         model = Item
@@ -37,6 +38,7 @@ class ItemUpdateForm(forms.ModelForm):
             "descricao": forms.Textarea(attrs={"class": "form-control form-control-custom", "rows": 4, "placeholder": "Descreva detalhes específicos do item..."}),
         }
 
+
 class ItemDatalistMixin:
     """
     Configura campos de datalist para 'categoria', 'local' e 'local_guardado',
@@ -51,7 +53,14 @@ class ItemDatalistMixin:
         }
 
         if "categoria" in self.fields:
+            campo_antigo = self.fields["categoria"]
+            self.fields["categoria"] = forms.CharField(
+                required=True,
+                label=campo_antigo.label,
+                widget=campo_antigo.widget,
+            )
             self.fields["categoria"].queryset = self.categorias_disponiveis
+
             if not self.is_bound and self.instance and self.instance.pk and self.instance.categoria:
                 self.initial["categoria"] = self.instance.categoria.nome
 
@@ -80,8 +89,13 @@ class ItemDatalistMixin:
 
         for campo_sala in ("local", "local_guardado"):
             if campo_sala in self.fields:
+                campo_antigo = self.fields[campo_sala]
+                self.fields[campo_sala] = forms.CharField(
+                    required=False,
+                    label=campo_antigo.label,
+                    widget=campo_antigo.widget,
+                )
                 self.fields[campo_sala].queryset = self.salas_disponiveis
-                self.fields[campo_sala].required = False
 
                 if not self.is_bound and self.instance and self.instance.pk:
                     sala_atual = getattr(self.instance, campo_sala, None)
@@ -101,7 +115,7 @@ class ItemDatalistMixin:
         return [self._formatar_rotulo_sala(sala) for sala in self.salas_disponiveis]
 
     def clean_categoria(self):
-        valor = self.data.get(self.add_prefix("categoria"), "").strip()
+        valor = str(self.data.get(self.add_prefix("categoria")) or "").strip()
         if not valor:
             if self.fields["categoria"].required:
                 raise forms.ValidationError("Selecione uma categoria válida da lista.")
@@ -113,7 +127,7 @@ class ItemDatalistMixin:
         return categoria
 
     def _resolver_sala(self, nome_campo):
-        valor = self.data.get(self.add_prefix(nome_campo), "").strip()
+        valor = str(self.data.get(self.add_prefix(nome_campo)) or "").strip()
         if not valor:
             return None
 
@@ -206,7 +220,6 @@ class ServidorItemForm(ItemDatalistMixin, forms.ModelForm):
 
     def __init__(self, *args, instituicao=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["categoria"].required = True
         self._configurar_datalists_item(instituicao=instituicao, user=user)
 
 
@@ -265,7 +278,6 @@ class ServidorAtualizarItemForm(ItemDatalistMixin, forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        self.fields["categoria"].required = True
         self._configurar_datalists_item(instituicao=instituicao, user=user)
 
         # Restringe também o select de dono aos membros da mesma instituição
